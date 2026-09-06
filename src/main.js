@@ -30,8 +30,10 @@ import { parseSong, songFitsTuning } from './core/song.js';
 import { encodeSheetLink, decodeSheetLink } from './state/codec.js';
 import { instrumentInstance, formatTuning } from './core/instrument.js';
 import { setupUpdates } from './ui/update-toast.js';
+import { setupInstallPrompt } from './ui/install-prompt.js';
 
 const store = createStore();
+let install = null;
 const fromUrl = readUrl();
 
 const root = document.querySelector('#app');
@@ -48,6 +50,7 @@ const nodes = {
     'aria-live': 'polite',
   }),
   toast: el('div', { class: 'ec-toast-slot', hidden: true }),
+  install: el('div', { class: 'ec-install-slot', hidden: true }),
 };
 
 function mount() {
@@ -56,7 +59,15 @@ function mount() {
     el('h1', { class: 'ec-title' }, 'Explore Chords'),
     nodes.chip
   );
-  root.append(nodes.header, nodes.nav, nodes.viewAs, nodes.main, nodes.live, nodes.toast);
+  root.append(
+    nodes.header,
+    nodes.nav,
+    nodes.viewAs,
+    nodes.main,
+    nodes.live,
+    nodes.install,
+    nodes.toast
+  );
 }
 
 /** Apply anything the URL carried, once, at startup. */
@@ -112,6 +123,9 @@ function runSearch() {
       ? 'No fingerings found.'
       : `${results.count} fingerings in ${results.groups.length} positions.`
   );
+
+  // Now the user has seen what the app does, it is fair to ask about installing.
+  if (results.count > 0) install?.offer();
 }
 
 // --- the chord explorer ----------------------------------------------------
@@ -540,10 +554,12 @@ render();
 
 // Exposed for the end-to-end tests, which need to reason about state rather
 // than only about pixels.
-globalThis.__ec = { store, updates: null };
+globalThis.__ec = { store, updates: null, install: null };
 
-const updates = setupUpdates(nodes.toast);
-globalThis.__ec.updates = updates;
+globalThis.__ec.updates = setupUpdates(nodes.toast);
+
+install = setupInstallPrompt(nodes.install, { store });
+globalThis.__ec.install = install;
 
 applySharedSheet();
 

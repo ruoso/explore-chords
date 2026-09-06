@@ -1124,3 +1124,53 @@ body {
   color: var(--muted);
   font-weight: 600;
 }
+
+/* --- install suggestion ------------------------------------------------- */
+
+.ec-install {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 15;
+  display: grid;
+  gap: 0.5rem;
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+.ec-install-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+.ec-install .ec-help {
+  margin: 0;
+}
+
+.ec-install-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.ec-install-never {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+/* It sits above the content on a phone, so leave room to scroll past it. */
+@media (max-width: 40rem) {
+  .app {
+    padding-bottom: 9rem;
+  }
+}

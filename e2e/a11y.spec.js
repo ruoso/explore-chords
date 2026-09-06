@@ -64,6 +64,21 @@ test.describe('axe finds no violations', () => {
     expect(await scan(page)).toEqual([]);
   });
 
+  test('on the install suggestion', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await page.evaluate(() => {
+      const event = new Event('beforeinstallprompt');
+      event.preventDefault = () => {};
+      event.prompt = () => {};
+      event.userChoice = Promise.resolve({ outcome: 'dismissed' });
+      window.dispatchEvent(event);
+    });
+    await searchChord(page, 'C');
+    await expect(page.locator('.ec-install')).toBeVisible();
+    expect(await scan(page)).toEqual([]);
+  });
+
   test('on the delete confirmation', async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page);

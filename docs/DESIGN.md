@@ -819,7 +819,17 @@ constraint on phase 4 rather than a phase of its own.
   available — reload" toast appears rather than reloading under the user.
 - Manifest with maskable icons, standalone display, portrait-primary.
 - A teacher should be able to add it to a phone home screen and use it in a
-  lesson with no signal.
+  lesson with no signal — which means **telling them it is possible**. Installing
+  is buried in a browser menu on Android and is Share then "Add to Home Screen"
+  on iOS; nobody finds either by accident. The app offers it once, with a
+  "don't ask again" checkbox.
+
+  Two paths, because the platforms differ: where `beforeinstallprompt` fires the
+  button installs directly, and on iOS, which has no such API, the only honest
+  thing is to show the steps rather than a button that cannot work.
+
+  It waits until the user has actually searched a chord. Asking before someone
+  has seen what the app does invites a refusal, and the refusal is permanent.
 
 ---
 
