@@ -1106,3 +1106,21 @@ body {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* --- songs for other instruments ---------------------------------------- */
+
+.ec-other-songs {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.ec-sheet-row.is-other {
+  background: none;
+  border-style: dashed;
+}
+
+.ec-sheet-row.is-other .ec-sheet-name {
+  color: var(--muted);
+  font-weight: 600;
+}

@@ -6,7 +6,12 @@ import {
   isReentrant,
   configFor,
 } from './instrument.js';
-import { searchFingerings, allFingerings, shorthandOf } from './search.js';
+import {
+  searchFingerings,
+  allFingerings,
+  shorthandOf,
+  fingeringFromFrets,
+} from './search.js';
 import { handProblem } from './fingers.js';
 import { pitchClass } from './pitch.js';
 import { bassNote } from './chord.js';
@@ -289,5 +294,23 @@ describe('shorthand stays readable', () => {
     // [8,10,10,0,8,0] run together would read as "81010080".
     expect(shorthandOf([8, 10, 10, 0, 8, 0])).toBe('8-10-10-0-8-0');
     expect(shorthandOf(['x', 12, 14, 14, 'x', 'x'])).toBe('x-12-14-14-x-x');
+  });
+});
+
+describe('rebuilding a fingering from stored frets', () => {
+  it('refuses a pattern with the wrong number of strings', () => {
+    // A guitar shape on a ukulele would index past the tuning and throw.
+    const chord = parseChord('C').chord;
+    const uke = instrumentInstance({ catalogId: 'ukulele', strings: 'G4, C4, E4, A4' });
+    expect(() => fingeringFromFrets(['x', 3, 2, 0, 1, 0], chord, uke)).not.toThrow();
+    expect(fingeringFromFrets(['x', 3, 2, 0, 1, 0], chord, uke)).toBeNull();
+    expect(fingeringFromFrets([0, 0, 0, 3], chord, uke)).not.toBeNull();
+  });
+
+  it('refuses rubbish', () => {
+    const chord = parseChord('C').chord;
+    const guitar = instrumentInstance({ catalogId: '6guitar', strings: 'E2, A2, D3, G3, B3, E4' });
+    expect(fingeringFromFrets(null, chord, guitar)).toBeNull();
+    expect(fingeringFromFrets([], chord, guitar)).toBeNull();
   });
 });

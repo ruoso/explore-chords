@@ -26,8 +26,9 @@ import { confirmDialog } from './ui/confirm-dialog.js';
 import { renderSheetList, renderSheetEditor } from './ui/sheets-view.js';
 import { renderSheetPrint } from './ui/sheet-print.js';
 import { sheetForSharing, sheetFromSharing } from './state/sheets.js';
+import { parseSong, songFitsTuning } from './core/song.js';
 import { encodeSheetLink, decodeSheetLink } from './state/codec.js';
-import { instrumentInstance } from './core/instrument.js';
+import { instrumentInstance, formatTuning } from './core/instrument.js';
 import { setupUpdates } from './ui/update-toast.js';
 
 const store = createStore();
@@ -241,8 +242,16 @@ function printSheet() {
 }
 
 function renderSheets() {
+  const instrument = store.effectiveInstrument;
   const sheet = store.activeSheet;
-  if (!sheet) {
+
+  // A song open from another instrument cannot be rendered here: its voicings
+  // are fret patterns for a different number of strings. Fall back to the list
+  // rather than showing something meaningless.
+  const fits = sheet ? songFitsTuning(parseSong(sheet.body), formatTuning(instrument.strings)) : false;
+  if (sheet && !fits) store.setActiveSheet(null);
+
+  if (!sheet || !fits) {
     renderSheetList(nodes.main, {
       store,
       onOpen: (id) => {
@@ -252,6 +261,10 @@ function renderSheets() {
       onChange: () => {
         clear(nodes.main);
         renderSheets();
+      },
+      onBring: (source) => {
+        const copy = store.bringSheetHere(source.id);
+        if (copy) navigate('sheets');
       },
     });
     return;
@@ -371,20 +384,20 @@ function showCreate({ firstRun }) {
   });
 }
 
-/** Deleting takes a song's or a shape's home with it, so it asks first. */
+/** Deleting takes its saved shapes with it, so it asks first. */
 function confirmDeleteInstrument(instrument) {
   const shapes = store.favoritesFor(instrument.id).length;
-  const songs = store.sheetsFor(instrument.id).length;
-  const belongings = [
-    shapes > 0 ? `${shapes} saved shape${shapes === 1 ? '' : 's'}` : null,
-    songs > 0 ? `${songs} song${songs === 1 ? '' : 's'}` : null,
-  ].filter(Boolean);
+  // Songs are not tied to an instrument: they carry their own tuning, so they
+  // survive and simply appear under "songs for other instruments" until
+  // something is tuned to match again.
+  const message = shapes
+    ? `Its ${shapes} saved shape${shapes === 1 ? '' : 's'} will go with it. ` +
+      'Songs are kept, since they carry their own tuning. This cannot be undone.'
+    : 'Songs are kept, since they carry their own tuning. This cannot be undone.';
 
   confirmDialog({
     title: `Delete ${instrument.label}?`,
-    message: belongings.length
-      ? `Its ${belongings.join(' and ')} will go with it. This cannot be undone.`
-      : 'This cannot be undone.',
+    message,
     confirmLabel: 'Delete instrument',
     onConfirm: () => {
       store.removeInstrument(instrument.id);
@@ -506,7 +519,7 @@ async function applySharedSheet() {
     }
   }
 
-  const sheet = sheetFromSharing(payload, instrument?.id ?? null);
+  const sheet = sheetFromSharing(payload);
   store.addSheet(sheet);
   // Land on the song that was just imported, rather than leaving the user on
   // the chord screen wondering whether the link worked.

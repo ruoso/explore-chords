@@ -7,6 +7,9 @@ import {
   songLegend,
   unvoicedKeys,
   measureCount,
+  setSongTuning,
+  songFitsTuning,
+  clearAllVoicings,
 } from './song.js';
 import { shorthandOf, parseShorthand } from './fretstring.js';
 
@@ -351,5 +354,85 @@ describe('changing a voicing everywhere', () => {
     expect(countForKey(song, 'Cm')).toBe(2);
     expect(countForKey(song, 'Cm[2]')).toBe(1);
     expect(countForKey(song, 'A')).toBe(1);
+  });
+});
+
+describe('a song records the tuning it was written for', () => {
+  it('writes the tuning at the top, where it can be seen', () => {
+    const text = setSongTuning('# Verse\nC | G', 'E2, A2, D3, G3, B3, E4');
+    expect(text.startsWith('# Tuning\nE2, A2, D3, G3, B3, E4\n')).toBe(true);
+    expect(text).toContain('# Verse');
+    expect(parseSong(text).tuning).toBe('E2, A2, D3, G3, B3, E4');
+  });
+
+  it('replaces an existing tuning rather than adding a second', () => {
+    let text = setSongTuning('C | G', 'E2, A2, D3, G3, B3, E4');
+    text = setSongTuning(text, 'G4, C4, E4, A4');
+    expect(text.match(/# Tuning/g)).toHaveLength(1);
+    expect(parseSong(text).tuning).toBe('G4, C4, E4, A4');
+  });
+
+  it('does not treat the tuning block as part of the chart', () => {
+    const song = parseSong('# Tuning\nE2, A2, D3, G3, B3, E4\n\n# Verse\nC | G');
+    expect(song.sections.map((s) => s.name)).toEqual(['Verse']);
+    expect(song.occurrences.map((c) => c.symbol)).toEqual(['C', 'G']);
+  });
+
+  it('matches a song to a tuning, and only that tuning', () => {
+    const song = parseSong(setSongTuning('C | G', 'E2, A2, D3, G3, B3, E4'));
+    expect(songFitsTuning(song, 'E2, A2, D3, G3, B3, E4')).toBe(true);
+    // Spacing and case are not meaningful.
+    expect(songFitsTuning(song, 'e2 a2 d3 g3 b3 e4')).toBe(true);
+    expect(songFitsTuning(song, 'G4, C4, E4, A4')).toBe(false);
+  });
+
+  it('takes a song with no tuning to belong wherever it is read', () => {
+    // Hand-written, with nothing to contradict.
+    const song = parseSong('C | G');
+    expect(songFitsTuning(song, 'G4, C4, E4, A4')).toBe(true);
+  });
+});
+
+describe('bringing a song to another instrument', () => {
+  it('keeps the chart and drops the voicings', () => {
+    const guitar = setSongTuning('# Verse\nC | G | C', 'E2, A2, D3, G3, B3, E4');
+    let text = setVoicing(guitar, parseSong(guitar).occurrences[0].start, ['x', 3, 2, 0, 1, 0]);
+    text = setVoicing(text, parseSong(text).occurrences[1].start, [3, 2, 0, 0, 0, 3]);
+    expect(parseSong(text).voicings.size).toBe(2);
+
+    const brought = setSongTuning(clearAllVoicings(text), 'G4, C4, E4, A4');
+    const song = parseSong(brought);
+
+    // The chart survives; the six-string shapes do not.
+    expect(song.occurrences.map((c) => c.symbol)).toEqual(['C', 'G', 'C']);
+    expect(song.voicings.size).toBe(0);
+    expect(brought).not.toContain('# Voicings');
+    expect(song.tuning).toBe('G4, C4, E4, A4');
+  });
+
+  it('drops footnote markers too, since they numbered shapes that are gone', () => {
+    let text = setSongTuning('Cm | Cm', 'E2, A2, D3, G3, B3, E4');
+    text = setVoicing(text, parseSong(text).occurrences[0].start, CM_OPEN);
+    text = setVoicing(text, parseSong(text).occurrences[1].start, CM_HIGH);
+    expect(text).toContain('Cm[2]');
+
+    const brought = clearAllVoicings(text);
+    expect(brought).not.toContain('Cm[2]');
+    expect(parseSong(brought).occurrences.map((c) => c.key)).toEqual(['Cm', 'Cm']);
+  });
+});
+
+describe('the tuning block is exactly one line', () => {
+  it('does not swallow a chart written straight after it', () => {
+    const song = parseSong('# Tuning\nE2, A2, D3, G3, B3, E4\n\nCm | Cm');
+    expect(song.tuning).toBe('E2, A2, D3, G3, B3, E4');
+    expect(song.occurrences.map((c) => c.symbol)).toEqual(['Cm', 'Cm']);
+  });
+
+  it('leaves the chart alone when the tuning is rewritten', () => {
+    const before = '# Tuning\nE2, A2, D3, G3, B3, E4\n\nCm | Cm';
+    const after = setSongTuning(before, 'G4, C4, E4, A4');
+    expect(parseSong(after).occurrences.map((c) => c.symbol)).toEqual(['Cm', 'Cm']);
+    expect(after).toContain('Cm | Cm');
   });
 });

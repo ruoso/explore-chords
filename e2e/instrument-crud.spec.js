@@ -101,10 +101,11 @@ test.describe('deleting asks first', () => {
 
     const dialog = page.locator('#confirm-dialog');
     await expect(dialog).toBeVisible();
-    // Deleting an instrument takes its saved shapes and songs with it, so the
-    // prompt says so rather than letting that be a surprise.
+    // Saved shapes are tagged by instrument and go with it, so the prompt says
+    // so rather than letting that be a surprise. Songs carry their own tuning
+    // and survive, which it also says.
     await expect(dialog).toContainText('1 saved shape');
-    await expect(dialog).toContainText('1 song');
+    await expect(dialog).toContainText('Songs are kept');
 
     await page.locator('#confirm-cancel').click();
     await expect(page.locator('.ec-instrument-row')).toHaveCount(2);

@@ -26,6 +26,8 @@ import {
   saveActiveSheetId,
 } from './persist.js';
 import { loadSheets, saveSheets, newSheet } from './sheets.js';
+import { parseSong, songFitsTuning, setSongTuning, clearAllVoicings } from '../core/song.js';
+import { formatTuning } from '../core/instrument.js';
 import { DEFAULT_VIEW, isView } from './views.js';
 
 /**
@@ -125,9 +127,14 @@ export function createStore(initial = {}) {
     removeInstrument(id) {
       const instruments = state.instruments.filter((i) => i.id !== id);
       const activeId = state.activeId === id ? (instruments[0]?.id ?? null) : state.activeId;
+      // Saved shapes are tagged by instrument, so they go too rather than
+      // lingering as rows nothing can ever show.
+      const favorites = state.favorites.filter((f) => f.instrumentId !== id);
+
       saveInstruments(instruments);
+      saveFavorites(favorites);
       if (activeId) saveActiveId(activeId);
-      return store.set({ instruments, activeId });
+      return store.set({ instruments, activeId, favorites });
     },
 
     updateInstrument(id, patch) {
@@ -201,14 +208,32 @@ export function createStore(initial = {}) {
       return state.sheets.find((s) => s.id === state.activeSheetId) ?? null;
     },
 
-    /** Sheets written for one instrument. */
-    sheetsFor(instrumentId) {
-      return state.sheets.filter((s) => s.instrumentId === instrumentId);
+    /**
+     * Songs split by whether they were written for this instrument's tuning.
+     *
+     * The tuning lives in the song text, so this cannot disagree with what a
+     * song's voicings actually fit — which a stored instrument id could.
+     */
+    sheetsFor(instrument) {
+      const tuning = instrument ? formatTuning(instrument.strings) : '';
+      const mine = [];
+      const others = [];
+      for (const sheet of state.sheets) {
+        const parsed = parseSong(sheet.body);
+        if (songFitsTuning(parsed, tuning)) mine.push(sheet);
+        else others.push({ sheet, tuning: parsed.tuning });
+      }
+      return { mine, others };
     },
 
-    createSheet(title) {
+    createSheet(title, body = '') {
       const instrument = store.effectiveInstrument;
-      const sheet = newSheet({ title, instrumentId: instrument?.id ?? null });
+      // The tuning goes into the text from the start, so a song always says
+      // what it was written for.
+      const sheet = newSheet({
+        title,
+        body: instrument ? setSongTuning(body, formatTuning(instrument.strings)) : body,
+      });
       const sheets = [...state.sheets, sheet];
       saveSheets(sheets);
       saveActiveSheetId(sheet.id);
@@ -248,14 +273,30 @@ export function createStore(initial = {}) {
       return store.set({ activeSheetId: sheet?.id ?? null });
     },
 
+    /**
+     * Copy a song across to the instrument in use.
+     *
+     * The chart still means something on another instrument; the voicings do
+     * not, so they are cleared and the tuning rewritten. The original is left
+     * alone — a guitar arrangement should not vanish because someone wanted a
+     * ukulele one.
+     */
+    bringSheetHere(id) {
+      const original = state.sheets.find((s) => s.id === id);
+      const instrument = store.effectiveInstrument;
+      if (!original || !instrument) return null;
+
+      const body = setSongTuning(
+        clearAllVoicings(original.body),
+        formatTuning(instrument.strings)
+      );
+      return store.addSheet(newSheet({ title: original.title, body }));
+    },
+
     duplicateSheet(id) {
       const original = state.sheets.find((s) => s.id === id);
       if (!original) return null;
-      const copy = newSheet({
-        title: `${original.title} (copy)`,
-        instrumentId: original.instrumentId,
-        body: original.body,
-      });
+      const copy = newSheet({ title: `${original.title} (copy)`, body: original.body });
       // Deliberately not activated: duplicating from the list should leave you
       // looking at the list.
       return store.addSheet(copy, { activate: false });

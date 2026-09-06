@@ -1,12 +1,15 @@
 /**
  * Song sheets (docs/DESIGN.md §2.5).
  *
- * A sheet belongs to an instrument instance, because its voicings are
- * meaningless without one.
+ * A sheet is a title and one block of song text. The chart, the tuning and the
+ * chosen voicings all live in that text (see core/song.js), so there is no
+ * hidden state the app remembers on the user's behalf: what you read is what
+ * you have.
  *
- * A sheet is a title and one block of song text. The chart and the chosen
- * voicings both live in that text (see core/song.js), so there is no hidden
- * state the app remembers on the user's behalf: what you read is what you have.
+ * Which instrument a song belongs to is therefore the *tuning written in it*,
+ * not a stored id. Two instruments tuned alike can both play it, which is
+ * true, and a song can never claim to belong to an instrument whose strings
+ * its voicings do not fit.
  */
 
 import { KEYS, readJson, writeJson } from './persist.js';
@@ -19,11 +22,10 @@ function newId(prefix) {
 
 export const EXAMPLE_BODY = '# Verse\nC  Am | F  G | C\n';
 
-export function newSheet({ title = 'Untitled song', instrumentId, body } = {}) {
+export function newSheet({ title = 'Untitled song', body } = {}) {
   return {
     id: newId('sheet'),
     title,
-    instrumentId,
     body: body ?? '',
     updated: Date.now(),
   };
@@ -47,6 +49,9 @@ export function sheetForSharing(sheet, instrument) {
   return {
     v: 1,
     title: sheet.title,
+    // The tuning is inside the body already; the instrument block adds the
+    // catalog entry and fret count so a recipient gets a usable instrument
+    // rather than a bare list of strings.
     body: sheet.body,
     instrument: instrument
       ? {
@@ -67,13 +72,9 @@ export function sheetForSharing(sheet, instrument) {
 }
 
 /** Rebuild a sheet from a shared payload. */
-export function sheetFromSharing(payload, instrumentId) {
+export function sheetFromSharing(payload) {
   if (!payload || typeof payload.body !== 'string') {
     throw new Error('That link does not contain a song sheet.');
   }
-  return newSheet({
-    title: payload.title ?? 'Shared song',
-    instrumentId,
-    body: payload.body,
-  });
+  return newSheet({ title: payload.title ?? 'Shared song', body: payload.body });
 }

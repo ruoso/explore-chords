@@ -293,6 +293,13 @@ export function searchFingerings(chord, instrument, config, options = {}) {
  */
 export function fingeringFromFrets(frets, chord, instrument, config) {
   config = config ?? instrument.heuristics;
+
+  // A pattern from another instrument has the wrong number of strings, and
+  // would otherwise index past the tuning and throw. Song sheets carry their
+  // own tuning to prevent this (core/song.js), but a stored or hand-written
+  // pattern should never be able to break a render.
+  if (!Array.isArray(frets) || frets.length !== instrument.strings.length) return null;
+
   const hand = assignFingers(frets, config);
   if (!hand) return null;
 

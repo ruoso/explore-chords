@@ -32,12 +32,12 @@ import { EXAMPLE_BODY } from '../state/sheets.js';
 import { openVoicingDialog } from './voicing-dialog.js';
 
 /** The list of sheets for the active instrument, with create and delete. */
-export function renderSheetList(container, { store, onOpen, onChange }) {
+export function renderSheetList(container, { store, onOpen, onChange, onBring }) {
   clear(container);
   const instrument = store.effectiveInstrument;
   if (!instrument) return;
 
-  const sheets = store.sheetsFor(instrument.id);
+  const { mine, others } = store.sheetsFor(instrument);
   const dialect = store.state.prefs.dialect;
 
   const page = el('div', { class: 'ec-page' });
@@ -65,17 +65,18 @@ export function renderSheetList(container, { store, onOpen, onChange }) {
   );
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    const sheet = store.createSheet(input.value.trim() || 'Untitled song');
-    store.updateSheet(sheet.id, (s) => ({ ...s, body: EXAMPLE_BODY }));
+    // The starter body goes through createSheet so it gets the tuning written
+    // into it; setting the body afterwards would overwrite that.
+    const sheet = store.createSheet(input.value.trim() || 'Untitled song', EXAMPLE_BODY);
     onOpen(sheet.id);
   });
   page.append(form);
 
-  if (sheets.length === 0) {
-    page.append(el('p', { class: 'ec-empty' }, 'No songs yet.'));
+  if (mine.length === 0) {
+    page.append(el('p', { class: 'ec-empty' }, `No songs for ${instrument.label} yet.`));
   } else {
     const list = el('ul', { class: 'ec-sheet-list' });
-    for (const sheet of sheets) {
+    for (const sheet of mine) {
       const song = parseSong(sheet.body, dialect);
       const missing = unvoicedKeys(song).length;
       const bars = measureCount(song);
@@ -139,6 +140,67 @@ export function renderSheetList(container, { store, onOpen, onChange }) {
       );
     }
     page.append(list);
+  }
+
+  // --- songs written for something else -----------------------------------
+
+  if (others.length > 0) {
+    const section = el('section', { class: 'ec-other-songs', 'aria-labelledby': 'other-songs' });
+    section.append(
+      el('h3', { class: 'ec-panel-title', id: 'other-songs' }, 'Songs for other instruments'),
+      el(
+        'p',
+        { class: 'ec-help' },
+        'Their voicings are fret patterns for a different tuning, so they cannot be ' +
+          'shown here. Bringing one across copies the chart and leaves its voicings ' +
+          'to be chosen again.'
+      )
+    );
+
+    const list = el('ul', { class: 'ec-sheet-list' });
+    for (const { sheet, tuning } of others) {
+      list.append(
+        el(
+          'li',
+          { class: 'ec-sheet-row is-other' },
+          el(
+            'div',
+            { class: 'ec-sheet-info' },
+            el('p', { class: 'ec-sheet-name' }, sheet.title),
+            el('p', { class: 'ec-sheet-meta ec-instrument-tuning' }, tuning ?? 'unknown tuning')
+          ),
+          el(
+            'div',
+            { class: 'ec-sheet-actions' },
+            el(
+              'button',
+              {
+                type: 'button',
+                class: 'ec-button ec-button-small',
+                'aria-label': `Bring ${sheet.title} to ${instrument.label}`,
+                onClick: () => onBring(sheet),
+              },
+              'Bring to this instrument'
+            ),
+            el(
+              'button',
+              {
+                type: 'button',
+                class: 'ec-button ec-button-small',
+                'aria-label': `Delete ${sheet.title}`,
+                onClick: () => {
+                  store.deleteSheet(sheet.id);
+                  onChange();
+                },
+              },
+              'Delete'
+            )
+          )
+        )
+      );
+    }
+    section.append(list);
+    page.append(section);
   }
 
   container.append(page);

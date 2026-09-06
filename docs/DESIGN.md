@@ -198,10 +198,12 @@ switches the preset label to `Custom` for that instrument.
 
 ### 2.6 Song sheets
 
-A sheet **belongs to an instrument instance** — its voicings are meaningless
-without one — and is edited as **one block of text**:
+A song is **one block of text**, and that text says which instrument it is for:
 
 ```
+# Tuning
+E2, A2, D3, G3, B3, E4
+
 # Verse
 A | Cm | A | Cm[2]
 
@@ -210,6 +212,17 @@ A = x02220
 Cm = x35543
 Cm[2] = 8-10-10-8-8-8
 ```
+
+**The tuning is part of the song**, not a stored instrument id, because the
+voicings are fret patterns and mean nothing without it — a six-string shape on a
+ukulele is not a different chord, it is not a chord at all. Matching on the
+tuning cannot disagree with what the voicings actually fit, and two instruments
+tuned alike can both play the song, which is true.
+
+A song written for another tuning is listed separately under **"songs for other
+instruments"**, with a *bring to this instrument* action that copies the chart,
+clears the voicings and rewrites the tuning. The original is left alone: a
+guitar arrangement should not vanish because someone wanted a ukulele one.
 
 A `#` line names a section. Every other line is a line of the chart: a vertical
 bar separates measures, spaces separate chords inside one. That is how a

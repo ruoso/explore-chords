@@ -35,13 +35,12 @@ describe('sharing a song', () => {
     body = setVoicing(body, parseSong(body).occurrences[1].start, ['x', 3, 5, 5, 4, 3]);
     body = setVoicing(body, parseSong(body).occurrences[3].start, [8, 10, 10, 8, 8, 8]);
 
-    const sheet = newSheet({ title: 'Blackbird', instrumentId: guitar.id, body });
+    const sheet = newSheet({ title: 'Blackbird', body });
     const payload = sheetForSharing(sheet, guitar);
     expect(payload.instrument.strings).toBe('E2, A2, D3, G3, B3, E4');
 
-    const restored = sheetFromSharing(await decodePayload(await encodePayload(payload)), 'other');
+    const restored = sheetFromSharing(await decodePayload(await encodePayload(payload)));
     expect(restored.title).toBe('Blackbird');
-    expect(restored.instrumentId).toBe('other');
 
     // The voicings travel because they are part of the text — there is no
     // separate map that could be dropped on the way.
@@ -52,7 +51,7 @@ describe('sharing a song', () => {
   });
 
   it('refuses a payload that is not a song', () => {
-    expect(() => sheetFromSharing({ nope: true }, 'i')).toThrow(/song sheet/);
-    expect(() => sheetFromSharing(null, 'i')).toThrow(/song sheet/);
+    expect(() => sheetFromSharing({ nope: true })).toThrow(/song sheet/);
+    expect(() => sheetFromSharing(null)).toThrow(/song sheet/);
   });
 });

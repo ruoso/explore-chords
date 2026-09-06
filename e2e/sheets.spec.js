@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshVisit, completeSetup, goToView, appState } from './helpers.js';
+import { freshVisit, completeSetup, goToView, appState, addInstrument } from './helpers.js';
 
 /**
  * Song sheets (docs/DESIGN.md §2.5, §8.2).
@@ -30,7 +30,7 @@ test.describe('the song list', () => {
 
   test('creates, duplicates and deletes songs', async ({ page }) => {
     await goToView(page, 'sheets');
-    await expect(page.locator('.ec-empty')).toContainText('No songs yet');
+    await expect(page.locator('.ec-empty')).toContainText('No songs for');
 
     await page.fill('#new-sheet-title', 'Blackbird');
     await page.getByRole('button', { name: 'New song' }).click();
@@ -370,5 +370,86 @@ test.describe('sharing a song', () => {
     expect(state.body).toContain('Cm[2] = 8-10-10-8-8-8');
     await expect(other.locator('#sheet-title')).toHaveValue('Shared song');
     await context.close();
+  });
+});
+
+test.describe('songs and instruments', () => {
+  test.beforeEach(async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+  });
+
+  test('a song records the tuning it was written for', async ({ page }) => {
+    await newSong(page, 'Guitar song');
+    const body = await page.locator('#sheet-body').inputValue();
+    expect(body).toContain('# Tuning');
+    expect(body).toContain('E2, A2, D3, G3, B3, E4');
+  });
+
+  test('switching instrument moves the song aside instead of breaking', async ({ page }) => {
+    await newSong(page, 'Guitar song');
+    await setBody(page, '# Tuning\nE2, A2, D3, G3, B3, E4\n\n# Verse\nC | G');
+    await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
+    await page.locator('.ec-dialog-choice').first().click();
+    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(1);
+
+    await addInstrument(page, { instrument: 'ukulele' });
+    await goToView(page, 'sheets');
+
+    // The guitar song is not shown as playable here — its voicings are shapes
+    // for six strings — but it is not lost either.
+    await expect(page.locator('.ec-empty')).toContainText('No songs for');
+    const others = page.locator('.ec-sheet-row.is-other');
+    await expect(others).toHaveCount(1);
+    await expect(others).toContainText('Guitar song');
+    await expect(others).toContainText('E2, A2, D3, G3, B3, E4');
+  });
+
+  test('bringing a song across keeps the chart and clears the voicings', async ({ page }) => {
+    await newSong(page, 'Guitar song');
+    await setBody(page, '# Tuning\nE2, A2, D3, G3, B3, E4\n\n# Verse\nC | G | C');
+    for (const symbol of ['C', 'G']) {
+      await page.locator('.ec-measure-chord', { hasText: new RegExp(`^${symbol}$`) }).first().click();
+      await page.locator('.ec-dialog-choice').first().click();
+    }
+
+    await addInstrument(page, { instrument: 'ukulele' });
+    await goToView(page, 'sheets');
+    await page.getByRole('button', { name: /Bring Guitar song to/ }).click();
+
+    // It opens straight into the copy, since the next thing to do is choose
+    // voicings for it. Same chart, ukulele tuning, nothing voiced yet.
+    await expect(page.locator('#sheet-body')).toBeVisible();
+    const body = await page.locator('#sheet-body').inputValue();
+    expect(body).toContain('G4, C4, E4, A4');
+    expect(body).toContain('C | G | C');
+    expect(body).not.toContain('# Voicings');
+    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(0);
+
+    // And voicing it now works, on this instrument's strings.
+    await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
+    await page.locator('.ec-dialog-choice').first().click();
+    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(1);
+
+    // The guitar original survives.
+    await page.locator('#sheet-back').click();
+    await page.locator('.ec-chip-summary').click();
+    await page.locator('.ec-chip-item', { hasText: 'Guitar' }).click();
+    await goToView(page, 'sheets');
+    await expect(page.locator('.ec-sheet-row:not(.is-other)')).toHaveCount(1);
+    await expect(page.locator('.ec-sheet-row.is-other')).toHaveCount(1);
+  });
+
+  test('a song open from another instrument falls back to the list', async ({ page }) => {
+    await newSong(page, 'Guitar song');
+    await setBody(page, '# Tuning\nE2, A2, D3, G3, B3, E4\n\n# Verse\nC | G');
+    await expect(page.locator('#sheet-body')).toBeVisible();
+
+    // Switching while a song is open must not render six-string shapes on four
+    // strings — that used to throw and blank the screen.
+    await addInstrument(page, { instrument: 'ukulele' });
+    await goToView(page, 'sheets');
+    await expect(page.locator('#sheet-body')).toHaveCount(0);
+    await expect(page.locator('.ec-sheet-row.is-other')).toHaveCount(1);
   });
 });

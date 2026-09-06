@@ -3,6 +3,9 @@
  *
  * The whole chart is one block of text, the way a musician writes it out:
  *
+ *     # Tuning
+ *     E2, A2, D3, G3, B3, E4
+ *
  *     # Verse
  *     A | Cm | A | Cm[2]
  *
@@ -14,6 +17,11 @@
  * A line starting with `#` names a section. Every other line is a line of the
  * chart: a vertical bar separates measures, spaces separate chords inside one
  * measure.
+ *
+ * The tuning is part of the song because the voicings are fret patterns, which
+ * mean nothing without it — a six-string shape on a ukulele is not a different
+ * chord, it is not a chord at all. Recording it is what lets the app tell a
+ * guitar song from a ukulele one rather than rendering nonsense.
  *
  * A chord may carry a footnote marker when the song plays it more than one way.
  * The bare symbol is the default voicing; `[2]`, `[3]` and so on are the
@@ -29,10 +37,12 @@ import { shorthandOf, parseShorthand } from './fretstring.js';
 
 const HEADING = /^(\s*)(#+)\s*(.*?)\s*$/;
 const VOICINGS_HEADING = /^voicings?$/i;
+const TUNING_HEADING = /^tuning$/i;
 const VOICING_LINE = /^\s*([^\s=[\]]+)(?:\[(\d+)\])?\s*=\s*(\S+)\s*$/;
 const CHORD_TOKEN = /^(.*?)(?:\[(\d+)\])?$/;
 
 export const VOICINGS_SECTION = 'Voicings';
+export const TUNING_SECTION = 'Tuning';
 
 /**
  * @typedef {object} ChordRef
@@ -50,6 +60,8 @@ export const VOICINGS_SECTION = 'Voicings';
  * @property {ChordRef[]} occurrences  every chord in the chart, in order
  * @property {string[]} symbols   distinct chord symbols, first-seen order
  * @property {string[]} unknown   symbols that do not parse
+ * @property {string|null} tuning   the tuning the song is written for
+ * @property {{start:number, end:number}|null} tuningRange
  * @property {{start:number, end:number}|null} voicingsRange  the block's extent
  * @property {string[]} problems  malformed voicing lines
  */
@@ -71,6 +83,9 @@ export function parseSong(text, dialect) {
 
   let voicingsRange = null;
   let inVoicings = false;
+  let tuningRange = null;
+  let inTuning = false;
+  let tuning = null;
   // Anything written before the first heading is still part of the song, so it
   // gets an unnamed section rather than being dropped.
   let current = { name: '', lines: [] };
@@ -87,6 +102,16 @@ export function parseSong(text, dialect) {
     const heading = HEADING.exec(raw);
     if (heading) {
       const name = heading[3];
+      if (inVoicings) {
+        // A heading after a special block ends it.
+        voicingsRange.end = lineStart;
+        inVoicings = false;
+      }
+      if (inTuning) {
+        tuningRange.end = lineStart;
+        inTuning = false;
+      }
+
       if (VOICINGS_HEADING.test(name)) {
         flush();
         current = { name: '', lines: [] };
@@ -94,13 +119,26 @@ export function parseSong(text, dialect) {
         voicingsRange = { start: lineStart, end: source.length };
         continue;
       }
-      if (inVoicings) {
-        // A heading after the voicings block ends it.
-        voicingsRange.end = lineStart;
-        inVoicings = false;
+      if (TUNING_HEADING.test(name)) {
+        flush();
+        current = { name: '', lines: [] };
+        inTuning = true;
+        tuningRange = { start: lineStart, end: source.length };
+        continue;
       }
+
       flush();
       current = { name, lines: [] };
+      continue;
+    }
+
+    if (inTuning) {
+      if (raw.trim() === '') continue;
+      // The tuning is one line. It must not run on to the next heading, or a
+      // chart written straight after it would be swallowed.
+      tuning = raw.trim();
+      tuningRange.end = offset;
+      inTuning = false;
       continue;
     }
 
@@ -122,9 +160,20 @@ export function parseSong(text, dialect) {
   }
 
   if (inVoicings && voicingsRange) voicingsRange.end = source.length;
+  if (inTuning && tuningRange) tuningRange.end = source.length;
   flush();
 
-  return { sections, voicings, occurrences, symbols, unknown, voicingsRange, problems };
+  return {
+    sections,
+    voicings,
+    occurrences,
+    symbols,
+    unknown,
+    voicingsRange,
+    problems,
+    tuning,
+    tuningRange,
+  };
 }
 
 /**
@@ -296,6 +345,55 @@ export function setVoicingForKey(text, key, frets, dialect) {
   );
 
   return applyResolved(text, parsed, resolved, dialect);
+}
+
+/**
+ * Write (or replace) the song's tuning, at the top where it can be seen.
+ *
+ * @param {string} text
+ * @param {string} tuning  as written, e.g. "E2, A2, D3, G3, B3, E4"
+ * @returns {string}
+ */
+export function setSongTuning(text, tuning) {
+  const parsed = parseSong(text);
+  const block = `# ${TUNING_SECTION}\n${tuning}\n`;
+
+  if (parsed.tuningRange) {
+    const before = text.slice(0, parsed.tuningRange.start);
+    const after = text.slice(parsed.tuningRange.end);
+    return `${before}${block}${after.startsWith('\n') ? '' : '\n'}${after}`;
+  }
+  return `${block}\n${text.replace(/^\s*\n/, '')}`;
+}
+
+/**
+ * Strip every voicing from a song, keeping the chart.
+ *
+ * Used when a song is brought to another instrument: the chart still means
+ * something there, but fret patterns from six strings do not.
+ */
+export function clearAllVoicings(text, dialect) {
+  const parsed = parseSong(text, dialect);
+  return applyResolved(text, parsed, parsed.occurrences.map(() => null), dialect);
+}
+
+/**
+ * Whether a song was written for this tuning.
+ *
+ * A song with no recorded tuning is taken to belong wherever it is being read:
+ * it was typed by hand, and there is nothing to contradict.
+ */
+export function songFitsTuning(parsed, tuning) {
+  if (!parsed.tuning) return true;
+  return normaliseTuning(parsed.tuning) === normaliseTuning(tuning);
+}
+
+function normaliseTuning(text) {
+  return String(text ?? '')
+    .split(/[,\s]+/)
+    .filter(Boolean)
+    .join(' ')
+    .toUpperCase();
 }
 
 /** How many places in the chart use one voicing key. */
