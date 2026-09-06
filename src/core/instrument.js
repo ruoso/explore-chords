@@ -46,6 +46,20 @@ export function formatTuning(pitches) {
 let instanceCounter = 0;
 
 /**
+ * A unique instance id.
+ *
+ * The counter alone is not enough: it restarts on every page load, so an
+ * instrument built from a shared link would be `inst_1` and collide with the
+ * `inst_1` already saved from a previous session. Lookups by id would then find
+ * the wrong instrument.
+ */
+function nextInstanceId() {
+  instanceCounter += 1;
+  const random = Math.random().toString(36).slice(2, 8);
+  return `inst_${Date.now().toString(36)}${instanceCounter}${random}`;
+}
+
+/**
  * Build an instrument instance.
  *
  * @param {object} options
@@ -72,7 +86,7 @@ export function instrumentInstance({
   const resolvedFretCount = fretCount ?? entry?.fretCount ?? 20;
 
   const instrument = {
-    id: id ?? `inst_${++instanceCounter}`,
+    id: id ?? nextInstanceId(),
     catalogId,
     label: label ?? entry?.name ?? 'Custom instrument',
     strings: pitches,

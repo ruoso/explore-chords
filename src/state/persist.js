@@ -1,0 +1,133 @@
+/**
+ * localStorage persistence (docs/DESIGN.md §8.3).
+ *
+ * All keys are versioned so a migration can run when the shape changes.
+ * Every read and write is guarded: a private window, cleared site data or a
+ * browser configured to block storage must degrade to "no saved state", never
+ * to a broken app.
+ */
+
+import { instrumentInstance, formatTuning } from '../core/instrument.js';
+import { DEFAULT_DIALECT } from '../core/notation/dialects.js';
+
+export const VERSION = 'v1';
+const KEY = (name) => `ec:${VERSION}:${name}`;
+
+export const KEYS = {
+  instruments: KEY('instruments'),
+  active: KEY('active'),
+  prefs: KEY('prefs'),
+  favorites: KEY('favorites'),
+  sheets: KEY('sheets'),
+};
+
+function readRaw(key) {
+  try {
+    return globalThis.localStorage?.getItem(key) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function writeRaw(key, value) {
+  try {
+    globalThis.localStorage?.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function readJson(key, fallback) {
+  const raw = readRaw(key);
+  if (raw === null) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+export function writeJson(key, value) {
+  try {
+    return writeRaw(key, JSON.stringify(value));
+  } catch {
+    return false;
+  }
+}
+
+export function removeKey(key) {
+  try {
+    globalThis.localStorage?.removeItem(key);
+  } catch {
+    /* nothing to do */
+  }
+}
+
+/** Instruments are stored as plain data; tunings as text, so they stay legible. */
+export function serialiseInstrument(instrument) {
+  return {
+    id: instrument.id,
+    catalogId: instrument.catalogId,
+    label: instrument.label,
+    strings: formatTuning(instrument.strings),
+    fretCount: instrument.fretCount,
+    heuristics: instrument.heuristics,
+  };
+}
+
+export function deserialiseInstrument(data) {
+  return instrumentInstance({
+    id: data.id,
+    catalogId: data.catalogId,
+    label: data.label,
+    strings: data.strings,
+    fretCount: data.fretCount,
+    heuristics: data.heuristics,
+  });
+}
+
+export function loadInstruments() {
+  const raw = readJson(KEYS.instruments, null);
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (const item of raw) {
+    try {
+      out.push(deserialiseInstrument(item));
+    } catch {
+      // A tuning that no longer parses should not take the whole list with it.
+    }
+  }
+  return out;
+}
+
+export function saveInstruments(instruments) {
+  return writeJson(KEYS.instruments, instruments.map(serialiseInstrument));
+}
+
+export function loadActiveId() {
+  return readRaw(KEYS.active);
+}
+
+export function saveActiveId(id) {
+  return writeRaw(KEYS.active, id);
+}
+
+export const DEFAULT_PREFS = {
+  dialect: DEFAULT_DIALECT,
+  orientation: 'vertical',
+  handed: 'right',
+};
+
+export function loadPrefs() {
+  return { ...DEFAULT_PREFS, ...(readJson(KEYS.prefs, {}) ?? {}) };
+}
+
+export function savePrefs(prefs) {
+  return writeJson(KEYS.prefs, prefs);
+}
+
+/** Wipe everything this app owns. Used by tests and by a future reset action. */
+export function clearAll() {
+  for (const key of Object.values(KEYS)) removeKey(key);
+}

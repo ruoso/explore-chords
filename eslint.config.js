@@ -56,4 +56,11 @@ export default [
     files: ['src/core/**/*.js'],
     rules: { 'no-restricted-syntax': noAsyncInCore },
   },
+  {
+    // Test and tooling files run in Node. The e2e specs also contain callbacks
+    // that Playwright serialises and executes inside the page, so they legitimately
+    // reference browser globals too.
+    files: ['e2e/**/*.js', '*.config.js'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
 ];

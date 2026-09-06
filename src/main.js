@@ -1,58 +1,213 @@
 /**
- * Phase 4 entry point.
+ * Application entry point (docs/DESIGN.md §3.4).
  *
- * Still not the app — the store, chord input and instrument switcher arrive in
- * phase 5. This renders real search output with real diagrams so the pipeline
- * is verifiable in a browser, and so the deployment keeps proving itself.
+ * State changes are the only way the UI updates: the store notifies, each
+ * module re-renders its own subtree.
  */
+
 import { parseChord } from './core/notation/parse.js';
-import { formatChord } from './core/notation/format.js';
-import { instrumentInstance } from './core/instrument.js';
 import { searchFingerings } from './core/search.js';
-import { renderDiagram } from './render/index.js';
-import { DIFFICULTY_LABELS } from './core/score.js';
+import { createStore, sameTuning } from './state/store.js';
+import { readUrl, syncUrl } from './state/url.js';
+import { el, clear, announce } from './ui/dom.js';
+import { renderInstrumentSetup } from './ui/instrument-setup.js';
+import { renderInstrumentChip } from './ui/instrument-chip.js';
+import { renderViewAsBar } from './ui/view-as-bar.js';
+import { renderResults } from './ui/results.js';
 
-const guitar = instrumentInstance({
-  catalogId: '6guitar',
-  label: 'Guitar · Standard',
-  strings: 'E2, A2, D3, G3, B3, E4',
-  fretCount: 22,
-});
+const store = createStore();
+const fromUrl = readUrl();
 
-const dialect = 'brazilian';
-const symbols = ['C', 'Am', 'F', 'G7', 'C7M(9)', 'Dm7(5-)'];
+const root = document.querySelector('#app');
 
-const sections = symbols.map((symbol) => {
-  const chord = parseChord(symbol, dialect).chord;
-  const result = searchFingerings(chord, guitar);
-  const shown = result.groups
-    .flatMap((group) => group.fingerings.slice(0, group.displayCount))
-    .slice(0, 5);
+const nodes = {
+  header: el('header', { class: 'ec-header' }),
+  chip: el('div', { class: 'ec-header-chip' }),
+  viewAs: el('div', { class: 'ec-viewas-slot', hidden: true }),
+  main: el('main', { class: 'ec-main', id: 'main' }),
+  live: el('div', {
+    class: 'ec-visually-hidden',
+    role: 'status',
+    'aria-live': 'polite',
+  }),
+};
 
-  const items = shown
-    .map(
-      (f) => `<li class="ec-card">
-        ${renderDiagram(f, { chord, dialect, instrument: guitar })}
-        <p class="ec-caption">
-          <span class="ec-shorthand">${f.shorthand}</span>
-          <span class="ec-badge ec-badge-${f.difficulty}">${DIFFICULTY_LABELS[f.difficulty]}</span>
-        </p>
-      </li>`
-    )
-    .join('');
+function mount() {
+  clear(root);
+  nodes.header.append(
+    el('h1', { class: 'ec-title' }, 'Explore Chords'),
+    nodes.chip
+  );
+  root.append(nodes.header, nodes.viewAs, nodes.main, nodes.live);
+}
 
-  const heading = formatChord(chord, dialect);
-  const id = `chord-${heading.replace(/[^a-zA-Z0-9]/g, '')}`;
-  return `<section class="ec-section" aria-labelledby="${id}">
-      <h2 id="${id}" class="ec-chord-name">${heading}</h2>
-      <ul class="ec-grid">${items}</ul>
-    </section>`;
-});
+/** Apply anything the URL carried, once, at startup. */
+function applyUrlState() {
+  const patch = {};
+  if (fromUrl.chordText) patch.chordText = fromUrl.chordText;
+  if (fromUrl.dialect) patch.prefs = { ...store.state.prefs, dialect: fromUrl.dialect };
+  if (fromUrl.orientation) {
+    patch.prefs = { ...(patch.prefs ?? store.state.prefs), orientation: fromUrl.orientation };
+  }
+  if (Object.keys(patch).length) store.set(patch);
 
-document.querySelector('#status').innerHTML = `
-  <p class="ec-note">
-    <strong>Phase 4.</strong> Search and diagrams, on ${guitar.label}.
-    Chord input, instrument switching and filters arrive in the next phases.
-  </p>
-  ${sections.join('')}
-`;
+  // A link carrying a different instrument borrows it for this view only.
+  if (fromUrl.instrument) {
+    const mine = store.activeInstrument;
+    if (!mine) {
+      store.addInstrument(fromUrl.instrument);
+    } else if (!sameTuning(mine, fromUrl.instrument)) {
+      store.setViewAs(fromUrl.instrument, 'link');
+    }
+  }
+}
+
+function runSearch() {
+  const { chordText, prefs } = store.state;
+  const instrument = store.effectiveInstrument;
+  if (!instrument || !chordText) {
+    store.set({ chord: null, results: null, ambiguities: [], errors: [] });
+    return;
+  }
+
+  const parsed = parseChord(chordText, prefs.dialect);
+  if (!parsed.chord) {
+    // Parse errors are non-blocking: the last valid chord stays on screen.
+    store.set({ ambiguities: parsed.ambiguities, errors: parsed.errors });
+    return;
+  }
+
+  const results = searchFingerings(parsed.chord, instrument);
+  store.set({
+    chord: parsed.chord,
+    ambiguities: parsed.ambiguities,
+    errors: [],
+    results,
+    expandedGroups: {},
+  });
+  announce(
+    nodes.live,
+    results.count === 0
+      ? 'No fingerings found.'
+      : `${results.count} fingerings in ${results.groups.length} positions.`
+  );
+}
+
+function showSetup({ firstRun }) {
+  clear(nodes.main);
+  nodes.chip.hidden = true;
+  renderInstrumentSetup(nodes.main, {
+    firstRun,
+    onDone: (instrument) => {
+      store.addInstrument(instrument);
+      nodes.chip.hidden = false;
+      render();
+      runSearch();
+    },
+    onCancel: firstRun
+      ? null
+      : () => {
+          render();
+        },
+  });
+}
+
+function renderExplorer() {
+  clear(nodes.main);
+
+  const instrument = store.effectiveInstrument;
+  const { chordText, chord, results, errors } = store.state;
+
+  const form = el('form', { class: 'ec-chordform', novalidate: true });
+  const input = el('input', {
+    id: 'chord-input',
+    name: 'chord',
+    type: 'text',
+    class: 'ec-chord-input',
+    value: chordText,
+    placeholder: 'C7M, Am7, F#m7b5…',
+    autocomplete: 'off',
+    autocapitalize: 'off',
+    spellcheck: 'false',
+    'aria-describedby': 'chord-error',
+  });
+  form.append(
+    el('label', { for: 'chord-input', class: 'ec-visually-hidden' }, 'Chord'),
+    input,
+    el('button', { type: 'submit', class: 'ec-button ec-button-primary' }, 'Show')
+  );
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    store.set({ chordText: input.value.trim() });
+    runSearch();
+    syncUrl(store.state, { instrument: store.effectiveInstrument });
+    renderExplorer();
+  });
+
+  const errorBox = el(
+    'p',
+    { class: 'ec-error', id: 'chord-error', role: 'alert', hidden: errors.length === 0 },
+    errors[0]?.message ?? ''
+  );
+
+  const resultsBox = el('div', { class: 'ec-results' });
+
+  nodes.main.append(form, errorBox, resultsBox);
+
+  renderResults(resultsBox, {
+    store,
+    results,
+    chord,
+    instrument,
+    onShowMore: (position) => {
+      const expanded = { ...(store.state.expandedGroups ?? {}) };
+      expanded[position] = !expanded[position];
+      store.set({ expandedGroups: expanded });
+      renderExplorer();
+    },
+  });
+}
+
+function render() {
+  if (store.needsSetup) {
+    showSetup({ firstRun: true });
+    return;
+  }
+
+  nodes.chip.hidden = false;
+  renderInstrumentChip(nodes.chip, {
+    store,
+    onSwitch: (id) => {
+      store.setActive(id);
+      runSearch();
+      syncUrl(store.state, { instrument: store.effectiveInstrument });
+      render();
+    },
+    onAdd: () => showSetup({ firstRun: false }),
+  });
+
+  renderViewAsBar(nodes.viewAs, {
+    store,
+    onBack: () => {
+      store.clearViewAs();
+      runSearch();
+      render();
+    },
+    onKeep: () => {
+      store.keepViewAsDefault();
+      runSearch();
+      render();
+    },
+  });
+
+  renderExplorer();
+}
+
+mount();
+applyUrlState();
+if (!store.needsSetup) runSearch();
+render();
+
+// Exposed for the end-to-end tests, which need to reason about state rather
+// than only about pixels.
+globalThis.__ec = { store };

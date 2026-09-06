@@ -1,11 +1,23 @@
+/*
+ * Application shell (docs/DESIGN.md §7).
+ *
+ * Mobile-first: one column on a phone, with the instrument chip pinned to the
+ * header, and a wider layout above 40rem. Every colour is a token so light,
+ * dark and print run off one set.
+ */
+
 :root {
   color-scheme: light dark;
   --bg: #fbfbf9;
   --fg: #1a1a18;
   --muted: #5c5c56;
   --accent: #7a4b2a;
+  --accent-fg: #ffffff;
   --panel: #ffffff;
-  --border: #e2e0da;
+  --border: #d9d7d0;
+  --focus: #2a6099;
+  --warn-bg: #fdf3e3;
+  --warn-border: #e0c48a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -14,8 +26,12 @@
     --fg: #ecebe6;
     --muted: #a3a29b;
     --accent: #d8a179;
+    --accent-fg: #1d1a17;
     --panel: #1f1f24;
-    --border: #33333a;
+    --border: #3a3a42;
+    --focus: #8fbcea;
+    --warn-bg: #2c2519;
+    --warn-border: #6b5730;
   }
 }
 
@@ -24,8 +40,12 @@
   --fg: #ecebe6;
   --muted: #a3a29b;
   --accent: #d8a179;
+  --accent-fg: #1d1a17;
   --panel: #1f1f24;
-  --border: #33333a;
+  --border: #3a3a42;
+  --focus: #8fbcea;
+  --warn-bg: #2c2519;
+  --warn-border: #6b5730;
 }
 
 * {
@@ -40,69 +60,295 @@ body {
 }
 
 .app {
-  max-width: 44rem;
+  max-width: 60rem;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 0 1rem 3rem;
 }
 
-h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.6rem;
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.ec-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- header ---------------------------------------------------------- */
+
+.ec-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.ec-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
   letter-spacing: -0.01em;
 }
 
-.tagline {
-  margin: 0 0 1.5rem;
+.ec-chip {
+  position: relative;
+}
+
+.ec-chip-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  background: var(--panel);
+  cursor: pointer;
+  font-size: 0.85rem;
+  list-style: none;
+}
+
+.ec-chip-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ec-chip-summary::after {
+  content: '▾';
   color: var(--muted);
 }
 
-.status {
-  padding: 1rem;
+.ec-chip-icon {
+  color: var(--accent);
+}
+
+.ec-chip-list {
+  position: absolute;
+  right: 0;
+  z-index: 10;
+  min-width: 15rem;
+  margin: 0.35rem 0 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 0.5rem;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+}
+
+.ec-chip-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ec-chip-item:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.ec-chip-item.is-active {
+  font-weight: 600;
+}
+
+.ec-chip-add {
+  color: var(--accent);
+}
+
+/* --- viewing-as bar --------------------------------------------------- */
+
+.ec-viewas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.75rem;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.ec-viewas-text {
+  margin: 0;
+}
+
+.ec-viewas-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* --- forms and buttons ------------------------------------------------ */
+
+.ec-main {
+  padding-top: 1.25rem;
+}
+
+.ec-chordform {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ec-chord-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
   background: var(--panel);
+  color: inherit;
+  font: inherit;
 }
 
-.status dl {
-  margin: 0;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.35rem 1rem;
+.ec-button {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--panel);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
-.status dt {
+.ec-button:hover {
+  border-color: var(--accent);
+}
+
+.ec-button-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.ec-button-small {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
+}
+
+.ec-field {
+  margin-bottom: 0.9rem;
+}
+
+.ec-field label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ec-field select,
+.ec-field input {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--panel);
+  color: inherit;
+  font: inherit;
+}
+
+.ec-help {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.ec-error {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--warn-border);
+  border-radius: 0.45rem;
+  background: var(--warn-bg);
+  font-size: 0.85rem;
+}
+
+.ec-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* --- setup ------------------------------------------------------------ */
+
+.ec-setup {
+  max-width: 30rem;
+}
+
+.ec-setup-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.3rem;
+}
+
+.ec-setup-lead {
+  margin: 0 0 1.25rem;
   color: var(--muted);
 }
 
-.status dd {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
+/* --- results ---------------------------------------------------------- */
+
+.ec-results {
+  margin-top: 1.5rem;
 }
 
-/* --- phase 4: result cards ------------------------------------------- */
-
-.ec-note {
-  margin: 0 0 1.5rem;
+.ec-empty {
+  padding: 1.25rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.5rem;
   color: var(--muted);
 }
 
-.ec-section + .ec-section {
+.ec-empty p {
+  margin: 0 0 0.5rem;
+}
+
+.ec-group + .ec-group {
   margin-top: 1.75rem;
 }
 
-.ec-chord-name {
+.ec-group-title {
   margin: 0 0 0.6rem;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 650;
+}
+
+.ec-group-count {
+  color: var(--muted);
+  font-weight: 400;
 }
 
 .ec-grid {
   display: flex;
   gap: 0.75rem;
   margin: 0;
-  padding: 0 0 0.25rem;
+  padding: 0 0 0.35rem;
   list-style: none;
   overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .ec-card {
@@ -129,14 +375,14 @@ h1 {
 
 /* The badge carries a word, never colour alone (DESIGN.md 6.1). */
 .ec-badge {
-  padding: 0.05rem 0.35rem;
+  padding: 0.05rem 0.4rem;
   border: 1px solid var(--border);
   border-radius: 0.6rem;
   font-size: 0.7rem;
 }
 
 .ec-badge-easy {
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
 }
 
 .ec-badge-hard {
@@ -144,9 +390,20 @@ h1 {
   font-weight: 600;
 }
 
+.ec-showmore {
+  margin-top: 0.5rem;
+}
+
 @media (min-width: 40rem) {
   .ec-grid {
     flex-wrap: wrap;
     overflow-x: visible;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

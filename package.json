@@ -12,10 +12,13 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:e2e": "npm run build && playwright test",
+    "test:all": "vitest run && npm run test:e2e"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "axe-core": "^4.13.0",
     "eslint": "^10.10.0",
     "globals": "^17.12.0",
