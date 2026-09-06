@@ -941,13 +941,15 @@ body {
   font-size: 1.05rem;
 }
 
-.ec-dialog-grid {
-  display: flex;
+/* The picker reuses the explorer's groups, so it inherits .ec-group and
+   .ec-grid; only the choice cards themselves differ. */
+.ec-dialog-groups .ec-group + .ec-group {
+  margin-top: 1.1rem;
+}
+
+.ec-dialog-groups .ec-grid {
   flex-wrap: wrap;
-  gap: 0.6rem;
-  margin: 0.75rem 0 0;
-  padding: 0;
-  list-style: none;
+  overflow-x: visible;
 }
 
 .ec-dialog-choice {

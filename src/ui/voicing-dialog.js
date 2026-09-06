@@ -1,19 +1,24 @@
 /**
  * Choose how one chord is played in a song sheet.
  *
- * A modal listing every fingering the search found for that chord on the
- * sheet's instrument, so a teacher picks the shape they want taught rather than
+ * A modal listing the fingerings the search found for that chord on the song's
+ * instrument, so a teacher picks the shape they want taught rather than
  * accepting whichever the ranking put first.
+ *
+ * Grouped and ordered exactly as the chord explorer shows them — open position
+ * first, then up the neck, easiest first within each — because a shape a user
+ * has already found there should be in the same place here.
  *
  * Uses a native <dialog>, which brings focus trapping, Escape to close and
  * inert background for free — all of which are easy to get wrong by hand.
  */
 
-import { el } from './dom.js';
+import { el, clear } from './dom.js';
 import { parseChord } from '../core/notation/parse.js';
-import { searchFingerings, allFingerings } from '../core/search.js';
+import { searchFingerings } from '../core/search.js';
 import { renderDiagram } from '../render/index.js';
 import { DIFFICULTY_LABELS } from '../core/score.js';
+import { renderFingeringGroups } from './fingering-groups.js';
 
 export function openVoicingDialog({ store, chordText, instrument, chosen, onChoose }) {
   const existing = document.querySelector('#voicing-dialog');
@@ -40,9 +45,8 @@ export function openVoicingDialog({ store, chordText, instrument, chosen, onChoo
     );
   } else {
     const results = searchFingerings(parsed.chord, instrument);
-    const fingerings = allFingerings(results);
 
-    if (fingerings.length === 0) {
+    if (results.count === 0) {
       body.append(
         el(
           'p',
@@ -55,52 +59,74 @@ export function openVoicingDialog({ store, chordText, instrument, chosen, onChoo
         el(
           'p',
           { class: 'ec-help' },
-          `${fingerings.length} ways to play it, easiest first. The choice applies wherever ${chordText} appears in this song.`
+          `${results.count} ways to play it, grouped by position and easiest first.`
         )
       );
 
-      const list = el('ul', { class: 'ec-dialog-grid', 'aria-label': `Fingerings for ${chordText}` });
-      for (const fingering of fingerings) {
-        const isChosen =
-          Array.isArray(chosen) && chosen.join(',') === fingering.frets.join(',');
-        list.append(
-          el(
-            'li',
-            {},
-            el(
-              'button',
-              {
-                type: 'button',
-                class: `ec-dialog-choice${isChosen ? ' is-chosen' : ''}`,
-                'aria-pressed': isChosen ? 'true' : 'false',
-                onClick: () => {
-                  onChoose(fingering.frets);
-                  close();
-                },
-              },
-              el('span', {
-                class: 'ec-card-diagram',
-                html: renderDiagram(
-                  fingering,
-                  { chord: parsed.chord, dialect, instrument },
-                  { orientation: store.state.prefs.orientation, handed: store.state.prefs.handed }
-                ),
-              }),
+      const grid = el('div', { class: 'ec-dialog-groups' });
+      // Expansion is local to the dialog: which groups you opened while picking
+      // a voicing is not app state worth keeping.
+      const expanded = {};
+
+      const draw = () => {
+        clear(grid);
+        renderFingeringGroups(grid, {
+          groups: results.groups,
+          expanded,
+          idPrefix: 'voicing-group',
+          onToggleGroup: (position) => {
+            expanded[position] = !expanded[position];
+            draw();
+          },
+          renderItem: (fingering) => {
+            const isChosen =
+              Array.isArray(chosen) && chosen.join(',') === fingering.frets.join(',');
+            return el(
+              'li',
+              {},
               el(
-                'span',
-                { class: 'ec-caption' },
-                el('span', { class: 'ec-shorthand' }, fingering.shorthand),
+                'button',
+                {
+                  type: 'button',
+                  class: `ec-dialog-choice${isChosen ? ' is-chosen' : ''}`,
+                  'aria-pressed': isChosen ? 'true' : 'false',
+                  'aria-label': `${fingering.shorthand}, ${
+                    DIFFICULTY_LABELS[fingering.difficulty]
+                  }${isChosen ? ', currently chosen' : ''}`,
+                  onClick: () => {
+                    onChoose(fingering.frets);
+                    close();
+                  },
+                },
+                el('span', {
+                  class: 'ec-card-diagram',
+                  html: renderDiagram(
+                    fingering,
+                    { chord: parsed.chord, dialect, instrument },
+                    {
+                      orientation: store.state.prefs.orientation,
+                      handed: store.state.prefs.handed,
+                    }
+                  ),
+                }),
                 el(
                   'span',
-                  { class: `ec-badge ec-badge-${fingering.difficulty}` },
-                  DIFFICULTY_LABELS[fingering.difficulty]
+                  { class: 'ec-caption' },
+                  el('span', { class: 'ec-shorthand' }, fingering.shorthand),
+                  el(
+                    'span',
+                    { class: `ec-badge ec-badge-${fingering.difficulty}` },
+                    DIFFICULTY_LABELS[fingering.difficulty]
+                  )
                 )
               )
-            )
-          )
-        );
-      }
-      body.append(list);
+            );
+          },
+        });
+      };
+
+      draw();
+      body.append(grid);
     }
   }
 

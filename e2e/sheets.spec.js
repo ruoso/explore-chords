@@ -160,6 +160,48 @@ test.describe('choosing voicings', () => {
     await expect(page.locator('.ec-voicings .ec-shorthand').first()).toHaveText('x35543');
   });
 
+  test('the picker groups and orders shapes exactly as the explorer does', async ({ page }) => {
+    // A shape someone has already found on the chords screen should be in the
+    // same place here: same groups, same order, same headings.
+    await goToView(page, 'explore');
+    await page.fill('#chord-input', 'Cm');
+    await page.getByRole('button', { name: 'Show', exact: true }).click();
+    await expect(page.locator('.ec-card').first()).toBeVisible();
+
+    const explorerGroups = await page.locator('.ec-group-title').allTextContents();
+    const explorerShapes = await page.locator('.ec-results .ec-shorthand').allTextContents();
+    expect(explorerGroups.length).toBeGreaterThan(1);
+
+    await goToView(page, 'sheets');
+    await page.locator('.ec-measure-chord', { hasText: 'Cm' }).first().click();
+    await expect(page.locator('#voicing-dialog')).toBeVisible();
+
+    const dialogGroups = await page
+      .locator('#voicing-dialog .ec-group-title')
+      .allTextContents();
+    const dialogShapes = await page
+      .locator('#voicing-dialog .ec-dialog-choice .ec-shorthand')
+      .allTextContents();
+
+    expect(dialogGroups).toEqual(explorerGroups);
+    expect(dialogShapes).toEqual(explorerShapes);
+  });
+
+  test('a group in the picker expands the same way', async ({ page }) => {
+    await page.locator('.ec-measure-chord', { hasText: 'Cm' }).first().click();
+    const dialog = page.locator('#voicing-dialog');
+    const first = dialog.locator('.ec-group').first();
+    const before = await first.locator('.ec-dialog-choice').count();
+
+    const more = first.getByRole('button', { name: /Show all/ });
+    await expect(more).toHaveAttribute('aria-expanded', 'false');
+    await more.click();
+    expect(await first.locator('.ec-dialog-choice').count()).toBeGreaterThan(before);
+
+    await first.getByRole('button', { name: 'Show fewer' }).click();
+    expect(await first.locator('.ec-dialog-choice').count()).toBe(before);
+  });
+
   test('the dialog can be dismissed without choosing', async ({ page }) => {
     const before = await page.locator('#sheet-body').inputValue();
     await page.locator('.ec-measure-chord', { hasText: 'Cm' }).first().click();

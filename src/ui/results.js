@@ -4,6 +4,9 @@
  * Ranked by difficulty, grouped by position, open first. Each group is a
  * horizontally scrollable row on a phone and a wrapped grid on a wider screen.
  *
+ * The grouping itself lives in fingering-groups.js, shared with the song's
+ * voicing picker so the same search reads the same way wherever you meet it.
+ *
  * The scroll containers are the accessibility risk here: a row that can only be
  * reached with a mouse or a swipe is unusable by keyboard, so each is focusable
  * and every card is in the tab order (§6.1).
@@ -12,10 +15,7 @@
 import { el, clear } from './dom.js';
 import { renderDiagram } from '../render/index.js';
 import { DIFFICULTY_LABELS } from '../core/score.js';
-
-function positionLabel(position) {
-  return position === 0 ? 'Open position' : `Fret ${position}`;
-}
+import { renderFingeringGroups } from './fingering-groups.js';
 
 export function renderResults(
   container,
@@ -58,42 +58,20 @@ export function renderResults(
     return;
   }
 
-  const { prefs, expandedGroups = {} } = store.state;
+  const { prefs } = store.state;
 
-  for (const group of results.groups) {
-    const headingId = `group-${group.position}`;
-    const expanded = expandedGroups[group.position];
-    const shown = expanded ? group.fingerings : group.fingerings.slice(0, group.displayCount);
-
-    const section = el('section', {
-      class: 'ec-group',
-      'aria-labelledby': headingId,
-    });
-
-    section.append(
-      el(
-        'h3',
-        { class: 'ec-group-title', id: headingId },
-        positionLabel(group.position),
-        el('span', { class: 'ec-group-count' }, ` ${group.total}`)
-      )
-    );
-
-    const list = el('ul', {
-      class: 'ec-grid',
-      tabindex: '0',
-      role: 'list',
-      'aria-label': `${positionLabel(group.position)} fingerings`,
-    });
-
-    for (const fingering of shown) {
+  renderFingeringGroups(container, {
+    groups: results.groups,
+    expanded: store.state.expandedGroups ?? {},
+    onToggleGroup: onShowMore,
+    renderItem: (fingering) => {
       const starred = store.isFavorite({
         instrumentId: instrument.id,
         chordText: store.state.chordText,
         frets: fingering.frets,
       });
 
-      const card = el(
+      return el(
         'li',
         { class: 'ec-card' },
         el('div', {
@@ -125,32 +103,10 @@ export function renderResults(
             } your library`,
             onClick: () => onToggleFavorite?.(fingering),
           },
-          el('span', { 'aria-hidden': 'true' }, starred ? '★' : '☆'),
+          el('span', { 'aria-hidden': 'true' }, starred ? '\u2605' : '\u2606'),
           starred ? ' Saved' : ' Save'
         )
       );
-      list.append(card);
-    }
-
-    section.append(list);
-
-    if (group.fingerings.length > group.displayCount) {
-      section.append(
-        el(
-          'button',
-          {
-            type: 'button',
-            class: 'ec-button ec-button-small ec-showmore',
-            'aria-expanded': expanded ? 'true' : 'false',
-            onClick: () => onShowMore(group.position),
-          },
-          expanded
-            ? 'Show fewer'
-            : `Show all ${group.fingerings.length}`
-        )
-      );
-    }
-
-    container.append(section);
-  }
+    },
+  });
 }
