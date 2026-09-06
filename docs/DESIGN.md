@@ -217,7 +217,10 @@ musician writes a chart out, and it is far quicker than a form for adding
 sections and chords one at a time.
 
 **Voicings live in the text, not beside it.** Clicking any chord in the chart
-opens a picker; the choice is written back as a footnote. The bare symbol is the
+opens a picker and changes *that* occurrence; clicking a shape in the voicings
+panel changes it *everywhere it is used*, since re-voicing a chord across a
+whole song is otherwise a click per bar. Either way the choice is written back
+as a footnote. The bare symbol is the
 chord's default voicing and `[2]`, `[3]` … are the others, defined under a
 `# Voicings` heading. This is what lets one song play `Cm` two ways, and it
 means the sheet has no hidden state: what you read is what you have, and a

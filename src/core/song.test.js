@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { parseSong, setVoicing, songLegend, unvoicedKeys, measureCount } from './song.js';
+import {
+  parseSong,
+  setVoicing,
+  setVoicingForKey,
+  countForKey,
+  songLegend,
+  unvoicedKeys,
+  measureCount,
+} from './song.js';
 import { shorthandOf, parseShorthand } from './fretstring.js';
 
 const CM_OPEN = ['x', 3, 5, 5, 4, 3];
@@ -279,5 +287,69 @@ describe('the display sorts even when the text does not', () => {
     const after = setVoicing(text, at(song, 'Am'), ['x', 0, 2, 2, 1, 0]);
     const block = after.slice(after.indexOf('# Voicings')).trim().split('\n').slice(1);
     expect(block.map((line) => line.split(' =')[0])).toEqual(['Am', 'G']);
+  });
+});
+
+describe('changing a voicing everywhere', () => {
+  const at = (song, symbol, nth = 0) =>
+    song.occurrences.filter((c) => c.symbol === symbol)[nth].start;
+  const shapes = (text) => {
+    const song = parseSong(text);
+    return song.occurrences.map((c) => song.voicings.get(c.key) ?? null);
+  };
+
+  it('moves every occurrence that uses the key', () => {
+    let text = 'Cm | A | Cm | Cm';
+    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
+    expect(shapes(text)).toEqual([CM_OPEN, null, CM_OPEN, CM_OPEN]);
+
+    // One change, three bars.
+    text = setVoicingForKey(text, 'Cm', CM_HIGH);
+    expect(shapes(text)).toEqual([CM_HIGH, null, CM_HIGH, CM_HIGH]);
+    expect(text).toContain('Cm = 8-10-10-8-8-8');
+    expect(text).not.toContain('Cm[2]');
+  });
+
+  it('leaves the chord\'s other voicing alone', () => {
+    let text = 'Cm | Cm | Cm';
+    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
+    text = setVoicing(text, at(parseSong(text), 'Cm', 2), CM_HIGH);
+    expect(text.split('\n')[0]).toBe('Cm | Cm | Cm[2]');
+
+    // Changing the default must not disturb the footnoted one.
+    const other = ['x', 3, 1, 0, 1, 3];
+    text = setVoicingForKey(text, 'Cm', other);
+    expect(shapes(text)).toEqual([other, other, CM_HIGH]);
+    expect(text.split('\n')[0]).toBe('Cm | Cm | Cm[2]');
+  });
+
+  it('collapses two entries when one is changed to match the other', () => {
+    let text = 'Cm | Cm[2]\n\n# Voicings\nCm = x35543\nCm[2] = 8-10-10-8-8-8';
+    text = setVoicingForKey(text, 'Cm[2]', CM_OPEN);
+
+    // They are the same shape now, so there is nothing to footnote.
+    expect(text.split('\n')[0]).toBe('Cm | Cm');
+    expect(text).not.toContain('Cm[2]');
+    expect(shapes(text)).toEqual([CM_OPEN, CM_OPEN]);
+  });
+
+  it('clears the key everywhere when given null', () => {
+    let text = 'Cm | A | Cm';
+    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
+    text = setVoicingForKey(text, 'Cm', null);
+    expect(shapes(text)).toEqual([null, null, null]);
+    expect(text).not.toContain('# Voicings');
+  });
+
+  it('ignores a key the chart does not use', () => {
+    const text = 'Cm | A\n\n# Voicings\nCm = x35543';
+    expect(setVoicingForKey(text, 'Bb', CM_OPEN)).toBe(text);
+  });
+
+  it('counts how many places use a key', () => {
+    const song = parseSong('Cm | A | Cm | Cm[2]');
+    expect(countForKey(song, 'Cm')).toBe(2);
+    expect(countForKey(song, 'Cm[2]')).toBe(1);
+    expect(countForKey(song, 'A')).toBe(1);
   });
 });

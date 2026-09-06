@@ -196,7 +196,7 @@ export function voicingFor(parsed, chord) {
 }
 
 /**
- * Choose the voicing for one occurrence, returning the new song text.
+ * Rewrite the song so each occurrence resolves to the pattern given for it.
  *
  * The result is normalised rather than patched, which is what keeps the text
  * tidy over time:
@@ -208,29 +208,10 @@ export function voicingFor(parsed, chord) {
  * - Entries nothing refers to are dropped.
  *
  * @param {string} text
- * @param {number} offset  the `start` of the occurrence being changed
- * @param {(number|'x')[]|null} frets  null clears the choice
- * @param {string} [dialect]
- * @returns {string}
+ * @param {ParsedSong} parsed
+ * @param {((number|'x')[]|null)[]} resolved  one entry per occurrence, in order
  */
-export function setVoicing(text, offset, frets, dialect) {
-  const parsed = parseSong(text, dialect);
-
-  const target = parsed.occurrences.find((chord) => chord.start === offset);
-  if (!target) return text;
-
-  // What each occurrence resolves to, with this one change applied.
-  //
-  // Clearing removes the *entry*, not just this occurrence's link to it: every
-  // occurrence sharing the key loses it. Otherwise clearing one of two chords
-  // that share a voicing would appear to do nothing, because the other would
-  // keep the entry alive and both point at it.
-  const resolved = parsed.occurrences.map((chord) => {
-    if (frets === null && chord.key === target.key) return null;
-    if (chord.start === offset) return frets;
-    return voicingFor(parsed, chord);
-  });
-
+function applyResolved(text, parsed, resolved, dialect) {
   // Distinct patterns per symbol, in the order they first appear.
   /** @type {Map<string, (number|'x')[][]>} */
   const bySymbol = new Map();
@@ -262,6 +243,64 @@ export function setVoicing(text, offset, frets, dialect) {
   }
 
   return writeVoicingsBlock(out, bySymbol, dialect);
+}
+
+/**
+ * Choose the voicing for one occurrence, returning the new song text.
+ *
+ * @param {string} text
+ * @param {number} offset  the `start` of the occurrence being changed
+ * @param {(number|'x')[]|null} frets  null clears the choice
+ * @param {string} [dialect]
+ * @returns {string}
+ */
+export function setVoicing(text, offset, frets, dialect) {
+  const parsed = parseSong(text, dialect);
+
+  const target = parsed.occurrences.find((chord) => chord.start === offset);
+  if (!target) return text;
+
+  // Clearing removes the *entry*, not just this occurrence's link to it: every
+  // occurrence sharing the key loses it. Otherwise clearing one of two chords
+  // that share a voicing would appear to do nothing, because the other would
+  // keep the entry alive and both point at it.
+  const resolved = parsed.occurrences.map((chord) => {
+    if (frets === null && chord.key === target.key) return null;
+    if (chord.start === offset) return frets;
+    return voicingFor(parsed, chord);
+  });
+
+  return applyResolved(text, parsed, resolved, dialect);
+}
+
+/**
+ * Change one voicing everywhere it is used.
+ *
+ * The complement of setVoicing: that one repoints a single chord in the chart,
+ * this one changes the shape itself, so every occurrence written with that key
+ * moves together. Re-voicing a chord across a whole song is otherwise a click
+ * per bar.
+ *
+ * @param {string} text
+ * @param {string} key    a voicings-block key: `Cm` or `Cm[2]`
+ * @param {(number|'x')[]|null} frets  null clears it everywhere
+ * @param {string} [dialect]
+ * @returns {string}
+ */
+export function setVoicingForKey(text, key, frets, dialect) {
+  const parsed = parseSong(text, dialect);
+  if (!parsed.occurrences.some((chord) => chord.key === key)) return text;
+
+  const resolved = parsed.occurrences.map((chord) =>
+    chord.key === key ? frets : voicingFor(parsed, chord)
+  );
+
+  return applyResolved(text, parsed, resolved, dialect);
+}
+
+/** How many places in the chart use one voicing key. */
+export function countForKey(parsed, key) {
+  return parsed.occurrences.filter((chord) => chord.key === key).length;
 }
 
 /** Replace (or append) the voicings block to match the chart. */

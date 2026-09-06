@@ -235,6 +235,69 @@ test.describe('choosing voicings', () => {
     expect(await first.locator('.ec-dialog-choice').count()).toBe(before);
   });
 
+  test('clicking a voicing changes every place it is used', async ({ page }) => {
+    await setBody(page, 'Cm | A | Cm | Cm');
+    await page.locator('.ec-measure-chord', { hasText: 'Cm' }).first().click();
+    await page.locator('.ec-dialog-choice').first().click();
+
+    // One entry, used three times.
+    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(1);
+    await expect(page.locator('.ec-used-in')).toHaveText('3\u00d7');
+    const before = await page.locator('#sheet-body').inputValue();
+    const firstShape = /^Cm = (\S+)$/m.exec(before)[1];
+
+    // Change the shape itself.
+    await page.locator('.ec-voicing-choice').click();
+    await expect(page.locator('#voicing-dialog')).toContainText('Change Cm everywhere');
+    await expect(page.locator('#voicing-dialog')).toContainText('in 3 places');
+    await page.locator('.ec-dialog-choice').nth(2).click();
+
+    const after = await page.locator('#sheet-body').inputValue();
+    const newShape = /^Cm = (\S+)$/m.exec(after)[1];
+    expect(newShape).not.toBe(firstShape);
+
+    // All three moved together, and no footnote was introduced.
+    expect(after.split('\n')[0]).toBe('Cm | A | Cm | Cm');
+    expect(after).not.toContain('Cm[2]');
+    await expect(page.locator('.ec-used-in')).toHaveText('3\u00d7');
+  });
+
+  test('changing one voicing everywhere leaves the other alone', async ({ page }) => {
+    await setBody(page, 'Cm | Cm | Cm');
+    await page.locator('.ec-measure-chord', { hasText: 'Cm' }).first().click();
+    await page.locator('.ec-dialog-choice').first().click();
+    await page.locator('.ec-measure-chord', { hasText: 'Cm' }).nth(2).click();
+    await page.locator('.ec-dialog-choice').nth(2).click();
+
+    expect((await page.locator('#sheet-body').inputValue()).split('\n')[0]).toBe('Cm | Cm | Cm[2]');
+    await expect(page.locator('.ec-voicings .ec-card-chord')).toHaveText(['Cm', 'Cm[2]']);
+    await expect(page.locator('.ec-used-in')).toHaveText(['2\u00d7', '1\u00d7']);
+
+    const footnoted = /^Cm\[2\] = (\S+)$/m.exec(await page.locator('#sheet-body').inputValue())[1];
+
+    // Re-voice the default; the footnoted one must not move.
+    await page.locator('.ec-voicing-choice').first().click();
+    await page.locator('.ec-dialog-choice').nth(3).click();
+
+    const after = await page.locator('#sheet-body').inputValue();
+    expect(after.split('\n')[0]).toBe('Cm | Cm | Cm[2]');
+    expect(/^Cm\[2\] = (\S+)$/m.exec(after)[1]).toBe(footnoted);
+  });
+
+  test('clearing a voicing everywhere empties all its places', async ({ page }) => {
+    await setBody(page, 'Cm | A | Cm');
+    await page.locator('.ec-measure-chord', { hasText: 'Cm' }).first().click();
+    await page.locator('.ec-dialog-choice').first().click();
+    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(1);
+
+    await page.locator('.ec-voicing-choice').click();
+    await page.getByRole('button', { name: 'Clear everywhere' }).click();
+
+    const after = await page.locator('#sheet-body').inputValue();
+    expect(after).not.toContain('# Voicings');
+    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(0);
+  });
+
   test('the dialog can be dismissed without choosing', async ({ page }) => {
     const before = await page.locator('#sheet-body').inputValue();
     await page.locator('.ec-measure-chord', { hasText: 'Cm' }).first().click();

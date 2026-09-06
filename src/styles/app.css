@@ -1071,3 +1071,38 @@ body {
     padding: 0.7rem 0.5rem;
   }
 }
+
+/* --- voicing cards ------------------------------------------------------ */
+
+/* A voicing card is a button: clicking it re-voices that shape everywhere. */
+.ec-voicing-choice {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ec-voicing-choice .ec-card-chord {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.ec-voicings .ec-card:hover {
+  border-color: var(--accent);
+}
+
+.ec-voicings .ec-card:has(.ec-voicing-choice:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.ec-used-in {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}

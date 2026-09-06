@@ -9,10 +9,22 @@
  * choose how *that* occurrence is played. The choice is written into the text
  * as a footnote — `A | Cm | A | Cm[2]` with a `# Voicings` block — so nothing is
  * hidden from the person typing.
+ *
+ * The voicings panel is the complement: clicking a shape there changes it
+ * everywhere it is used, because re-voicing a chord across a whole song is
+ * otherwise a click per bar.
  */
 
 import { el, clear } from './dom.js';
-import { parseSong, setVoicing, songLegend, unvoicedKeys, measureCount } from '../core/song.js';
+import {
+  parseSong,
+  setVoicing,
+  setVoicingForKey,
+  countForKey,
+  songLegend,
+  unvoicedKeys,
+  measureCount,
+} from '../core/song.js';
 import { parseChord } from '../core/notation/parse.js';
 import { fingeringFromFrets } from '../core/search.js';
 import { renderDiagram } from '../render/index.js';
@@ -294,7 +306,16 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
   const missing = unvoicedKeys(song);
 
   const chordsPanel = el('section', { class: 'ec-panel', 'aria-labelledby': 'sheet-chords' });
-  chordsPanel.append(el('h3', { class: 'ec-panel-title', id: 'sheet-chords' }, 'Voicings'));
+  chordsPanel.append(
+    el('h3', { class: 'ec-panel-title', id: 'sheet-chords' }, 'Voicings'),
+    legend.length > 0
+      ? el(
+          'p',
+          { class: 'ec-help' },
+          'Click a shape to change it everywhere it is used.'
+        )
+      : null
+  );
 
   if (legend.length === 0) {
     chordsPanel.append(
@@ -318,23 +339,55 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       const fingering = chord ? fingeringFromFrets(entry.frets, chord, instrument) : null;
       if (!fingering) continue;
 
+      const usedIn = countForKey(song, entry.key);
+
       grid.append(
         el(
           'li',
           { class: 'ec-card' },
-          el('p', { class: 'ec-card-chord' }, entry.key),
-          el('div', {
-            class: 'ec-card-diagram',
-            html: renderDiagram(
-              fingering,
-              { chord, dialect, instrument },
-              { orientation: store.state.prefs.orientation, handed: store.state.prefs.handed }
-            ),
-          }),
           el(
-            'p',
-            { class: 'ec-caption' },
-            el('span', { class: 'ec-shorthand' }, fingering.shorthand)
+            'button',
+            {
+              type: 'button',
+              class: 'ec-voicing-choice',
+              'aria-label': `Change ${entry.key} everywhere. Used in ${usedIn} place${
+                usedIn === 1 ? '' : 's'
+              }.`,
+              onClick: () =>
+                openVoicingDialog({
+                  store,
+                  chordText: entry.symbol,
+                  label: entry.key,
+                  instrument,
+                  chosen: entry.frets,
+                  scope: 'all',
+                  usedIn,
+                  onChoose: (frets) => {
+                    const next = setVoicingForKey(sheet.body, entry.key, frets, dialect);
+                    store.updateSheet(sheet.id, (s) => ({ ...s, body: next }));
+                    onChange();
+                  },
+                }),
+            },
+            el('span', { class: 'ec-card-chord' }, entry.key),
+            el('span', {
+              class: 'ec-card-diagram',
+              html: renderDiagram(
+                fingering,
+                { chord, dialect, instrument },
+                { orientation: store.state.prefs.orientation, handed: store.state.prefs.handed }
+              ),
+            }),
+            el(
+              'span',
+              { class: 'ec-caption' },
+              el('span', { class: 'ec-shorthand' }, fingering.shorthand),
+              el(
+                'span',
+                { class: 'ec-used-in' },
+                `${usedIn}\u00d7`
+              )
+            )
           )
         )
       );

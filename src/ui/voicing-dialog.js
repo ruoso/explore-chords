@@ -20,7 +20,16 @@ import { renderDiagram } from '../render/index.js';
 import { DIFFICULTY_LABELS } from '../core/score.js';
 import { renderFingeringGroups } from './fingering-groups.js';
 
-export function openVoicingDialog({ store, chordText, instrument, chosen, onChoose }) {
+export function openVoicingDialog({
+  store,
+  chordText,
+  instrument,
+  chosen,
+  onChoose,
+  scope = 'occurrence',
+  usedIn = 1,
+  label,
+}) {
   const existing = document.querySelector('#voicing-dialog');
   if (existing) existing.remove();
 
@@ -28,8 +37,14 @@ export function openVoicingDialog({ store, chordText, instrument, chosen, onChoo
   const dialect = store.state.prefs.dialect;
   const parsed = parseChord(chordText, dialect);
 
-  const heading = el('h2', { class: 'ec-dialog-title', id: 'voicing-dialog-title' },
-    `How is ${chordText} played?`);
+  const everywhere = scope === 'all';
+  const heading = el(
+    'h2',
+    { class: 'ec-dialog-title', id: 'voicing-dialog-title' },
+    everywhere
+      ? `Change ${label ?? chordText} everywhere`
+      : `How is ${chordText} played here?`
+  );
   dialog.setAttribute('aria-labelledby', 'voicing-dialog-title');
 
   const close = () => {
@@ -59,7 +74,11 @@ export function openVoicingDialog({ store, chordText, instrument, chosen, onChoo
         el(
           'p',
           { class: 'ec-help' },
-          `${results.count} ways to play it, grouped by position and easiest first.`
+          everywhere
+            ? `Replaces this shape in ${usedIn} place${usedIn === 1 ? '' : 's'}. ` +
+              `${results.count} ways to play it, grouped by position and easiest first.`
+            : `Changes this one chord. ${results.count} ways to play it, ` +
+              'grouped by position and easiest first.'
         )
       );
 
@@ -145,7 +164,7 @@ export function openVoicingDialog({ store, chordText, instrument, chosen, onChoo
               close();
             },
           },
-          'Clear choice'
+          everywhere ? 'Clear everywhere' : 'Clear choice'
         )
       : null,
     el(
