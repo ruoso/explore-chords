@@ -294,6 +294,52 @@ export function searchFingerings(chord, instrument, config, options = {}) {
   return { groups, count: results.length, truncated, nodesExhausted };
 }
 
+/**
+ * Rebuild one fingering from a stored fret pattern.
+ *
+ * Favourites and song sheets store the frets, not a snapshot of the rendered
+ * fingering: finger assignment and scoring are recomputed, so a saved shape
+ * never drifts out of date when those rules change.
+ *
+ * @returns {Fingering|null} null when the pattern is not playable
+ */
+export function fingeringFromFrets(frets, chord, instrument, config) {
+  config = config ?? instrument.heuristics;
+  const hand = assignFingers(frets, config);
+  if (!hand) return null;
+
+  const midis = frets.map((f, i) => (f === 'x' ? null : midiAt(instrument, i, f)));
+  const sounding = midis.filter((m) => m !== null);
+  if (sounding.length === 0) return null;
+
+  const soundingPcs = new Set(sounding.map((m) => (((m % 12) + 12) % 12)));
+  const omittedRoles = chordTones(chord)
+    .filter((t) => !soundingPcs.has(t.pitchClass))
+    .map((t) => t.role);
+
+  const lowest = Math.min(...sounding);
+  const score = scoreFingering({
+    frets,
+    hand,
+    omittedRoles,
+    bassIsRoot: (((lowest % 12) + 12) % 12) === pitchClass(chord.root),
+    bassRequested: hasDistinctBass(chord),
+    config,
+  });
+
+  return {
+    frets,
+    fingers: hand.fingers,
+    barre: hand.barre,
+    midis,
+    omittedRoles,
+    position: frets.includes(0) ? 0 : hand.lowestFret,
+    score,
+    difficulty: difficultyBucket(score.total),
+    shorthand: shorthandOf(frets),
+  };
+}
+
 /** Flatten a search result back to a plain ranked list. */
 export function allFingerings(result) {
   return result.groups.flatMap((g) => g.fingerings);

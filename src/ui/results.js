@@ -17,7 +17,10 @@ function positionLabel(position) {
   return position === 0 ? 'Open position' : `Fret ${position}`;
 }
 
-export function renderResults(container, { store, results, chord, instrument, onShowMore }) {
+export function renderResults(
+  container,
+  { store, results, chord, instrument, onShowMore, onToggleFavorite }
+) {
   clear(container);
 
   if (!chord) {
@@ -83,6 +86,12 @@ export function renderResults(container, { store, results, chord, instrument, on
     });
 
     for (const fingering of shown) {
+      const starred = store.isFavorite({
+        instrumentId: instrument.id,
+        chordText: store.state.chordText,
+        frets: fingering.frets,
+      });
+
       const card = el(
         'li',
         { class: 'ec-card' },
@@ -103,6 +112,20 @@ export function renderResults(container, { store, results, chord, instrument, on
             { class: `ec-badge ec-badge-${fingering.difficulty}` },
             DIFFICULTY_LABELS[fingering.difficulty]
           )
+        ),
+        el(
+          'button',
+          {
+            type: 'button',
+            class: `ec-star${starred ? ' is-on' : ''}`,
+            'aria-pressed': starred ? 'true' : 'false',
+            'aria-label': `${starred ? 'Remove' : 'Save'} ${fingering.shorthand} ${
+              starred ? 'from' : 'to'
+            } your library`,
+            onClick: () => onToggleFavorite?.(fingering),
+          },
+          el('span', { 'aria-hidden': 'true' }, starred ? '★' : '☆'),
+          starred ? ' Saved' : ' Save'
         )
       );
       list.append(card);

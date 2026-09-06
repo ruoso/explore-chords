@@ -19,6 +19,9 @@ import {
   saveActiveId,
   loadPrefs,
   savePrefs,
+  loadFavorites,
+  saveFavorites,
+  favoriteKey,
 } from './persist.js';
 
 /**
@@ -51,6 +54,7 @@ export function createStore(initial = {}) {
     ambiguities: [],
     errors: [],
     prefs: initial.prefs ?? loadPrefs(),
+    favorites: initial.favorites ?? loadFavorites(),
     results: null,
     searching: false,
     ...initial.state,
@@ -150,6 +154,32 @@ export function createStore(initial = {}) {
         return store.set({ activeId: existing.id, viewAs: null });
       }
       return store.addInstrument(borrowed);
+    },
+
+    /** Star or unstar a shape. Returns true when it is now starred. */
+    toggleFavorite({ instrumentId, chordText, frets }) {
+      const entry = { instrumentId, chordText, frets };
+      const key = favoriteKey(entry);
+      const existing = state.favorites.findIndex((f) => favoriteKey(f) === key);
+      const favorites =
+        existing >= 0
+          ? state.favorites.filter((_, i) => i !== existing)
+          : [...state.favorites, { ...entry, added: Date.now() }];
+      saveFavorites(favorites);
+      store.set({ favorites });
+      return existing < 0;
+    },
+
+    isFavorite({ instrumentId, chordText, frets }) {
+      const key = favoriteKey({ instrumentId, chordText, frets });
+      return state.favorites.some((f) => favoriteKey(f) === key);
+    },
+
+    /** Starred shapes for one instrument, newest first. */
+    favoritesFor(instrumentId) {
+      return state.favorites
+        .filter((f) => f.instrumentId === instrumentId)
+        .sort((a, b) => (b.added ?? 0) - (a.added ?? 0));
     },
 
     setPrefs(patch) {

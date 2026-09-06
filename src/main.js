@@ -17,6 +17,7 @@ import { renderResults } from './ui/results.js';
 import { renderChordInput } from './ui/chord-input.js';
 import { renderDisplayToggles } from './ui/display-toggles.js';
 import { renderHeuristicsPanel } from './ui/heuristics-dialog.js';
+import { renderLibrary } from './ui/library.js';
 
 const store = createStore();
 const fromUrl = readUrl();
@@ -140,6 +141,26 @@ function applyChordText(text, { source } = {}) {
   renderResultsOnly();
 }
 
+let libraryBox = null;
+
+function renderLibraryOnly() {
+  if (!libraryBox) return;
+  const wasOpen = libraryBox.querySelector('details')?.open;
+  renderLibrary(libraryBox, {
+    store,
+    onOpen: (entry) => {
+      applyChordText(entry.chordText, { source: 'library' });
+      chordInput?.setText(entry.chordText);
+    },
+    onRemove: (entry) => {
+      store.toggleFavorite(entry);
+      renderLibraryOnly();
+      renderResultsOnly();
+    },
+  });
+  if (wasOpen) libraryBox.querySelector('details').open = true;
+}
+
 function renderResultsOnly() {
   if (!resultsBox) return;
   renderResults(resultsBox, {
@@ -153,6 +174,15 @@ function renderResultsOnly() {
       store.set({ expandedGroups: expanded });
       renderResultsOnly();
     },
+    onToggleFavorite: (fingering) => {
+      store.toggleFavorite({
+        instrumentId: store.effectiveInstrument.id,
+        chordText: store.state.chordText,
+        frets: fingering.frets,
+      });
+      renderResultsOnly();
+      renderLibraryOnly();
+    },
   });
 }
 
@@ -164,9 +194,10 @@ function renderExplorer() {
 
   const inputBox = el('div', { class: 'ec-input-area' });
   const heuristicsBox = el('div', { class: 'ec-heuristics-area' });
+  libraryBox = el('div', { class: 'ec-library-area' });
   const toggleBox = el('div', { class: 'ec-toggle-area' });
   resultsBox = el('div', { class: 'ec-results' });
-  nodes.main.append(inputBox, heuristicsBox, toggleBox, resultsBox);
+  nodes.main.append(inputBox, heuristicsBox, libraryBox, toggleBox, resultsBox);
 
   const drawHeuristics = () => {
     const panel = renderHeuristicsPanel(heuristicsBox, {
@@ -190,6 +221,7 @@ function renderExplorer() {
     return panel;
   };
   drawHeuristics();
+  renderLibraryOnly();
 
   const drawToggles = () =>
     renderDisplayToggles(toggleBox, {
@@ -214,18 +246,10 @@ function renderExplorer() {
     },
   });
 
-  renderResults(resultsBox, {
-    store,
-    results,
-    chord,
-    instrument,
-    onShowMore: (position) => {
-      const expanded = { ...(store.state.expandedGroups ?? {}) };
-      expanded[position] = !expanded[position];
-      store.set({ expandedGroups: expanded });
-      renderResultsOnly();
-    },
-  });
+  void chord;
+  void results;
+  void instrument;
+  renderResultsOnly();
 }
 
 function render() {

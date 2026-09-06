@@ -131,3 +131,22 @@ export function savePrefs(prefs) {
 export function clearAll() {
   for (const key of Object.values(KEYS)) removeKey(key);
 }
+
+/**
+ * Favourites store the chord and the fret pattern, not a rendered snapshot.
+ * Finger assignment and scoring are recomputed on load, so a saved shape never
+ * drifts out of date when those rules change.
+ */
+export function loadFavorites() {
+  const raw = readJson(KEYS.favorites, []);
+  return Array.isArray(raw) ? raw : [];
+}
+
+export function saveFavorites(favorites) {
+  return writeJson(KEYS.favorites, favorites);
+}
+
+/** A stable identity for one starred shape. */
+export function favoriteKey({ instrumentId, chordText, frets }) {
+  return `${instrumentId}|${chordText}|${frets.join(',')}`;
+}
