@@ -487,3 +487,31 @@ body {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+
+/* --- display toggles -------------------------------------------------- */
+
+.ec-toggle-area {
+  margin-top: 1rem;
+}
+
+.ec-toggles {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.ec-toggle {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--panel);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.ec-toggle.is-on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  font-weight: 600;
+}

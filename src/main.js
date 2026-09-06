@@ -15,6 +15,7 @@ import { renderInstrumentChip } from './ui/instrument-chip.js';
 import { renderViewAsBar } from './ui/view-as-bar.js';
 import { renderResults } from './ui/results.js';
 import { renderChordInput } from './ui/chord-input.js';
+import { renderDisplayToggles } from './ui/display-toggles.js';
 
 const store = createStore();
 const fromUrl = readUrl();
@@ -161,8 +162,21 @@ function renderExplorer() {
   const { chord, results } = store.state;
 
   const inputBox = el('div', { class: 'ec-input-area' });
+  const toggleBox = el('div', { class: 'ec-toggle-area' });
   resultsBox = el('div', { class: 'ec-results' });
-  nodes.main.append(inputBox, resultsBox);
+  nodes.main.append(inputBox, toggleBox, resultsBox);
+
+  const drawToggles = () =>
+    renderDisplayToggles(toggleBox, {
+      store,
+      onChange: (patch) => {
+        store.setPrefs(patch);
+        syncUrl(store.state, { instrument: store.effectiveInstrument });
+        drawToggles();
+        renderResultsOnly();
+      },
+    });
+  drawToggles();
 
   chordInput = renderChordInput(inputBox, {
     store,
