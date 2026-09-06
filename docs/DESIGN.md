@@ -389,8 +389,9 @@ half-implementation.
 **Re-entrant tunings matter.** The reference rejects any candidate whose
 sounding pitches are not strictly ascending (`fingering.js:filterCandidate`) —
 correct for guitar, but that rule makes standard ukulele (`G4 C4 E4 A4`) produce
-almost nothing. The new search derives the pitch-order constraint from the
-tuning's own open-string order, so re-entrant instruments work naturally.
+almost nothing. This app drops the ordering rule entirely rather than
+generalising it (§5.2), and derives the *bass* rule from whether the instrument
+has a bass register at all.
 
 ### 4.4 Chord notation: one parser, many dialects
 
@@ -581,18 +582,41 @@ Which tones *must* sound is a function of the instrument's heuristics:
 | Rule | Default | Effect |
 |---|---|---|
 | Root required | on | some string sounds the root pitch class |
-| Root in bass | on (Standard) | lowest sounding pitch is the root, or the slash bass |
+| Root in bass | on, **where the instrument has a bass register** | lowest sounding pitch is the root, or the slash bass |
 | 3rd required | on | (off for sus/power chords, which have none) |
 | 5th omittable | on | perfect 5th may be dropped; altered 5ths never are |
 | Rootless allowed | off (Standard), on (Jazz) | root may be dropped entirely |
 | Extensions required | on | a named extension must sound, else it is not that chord |
 | Doubling allowed | on | same pitch class on multiple strings |
-| Duplicate pitch allowed | off | the exact same pitch twice (reference forbids this) |
+| Duplicate pitch allowed | **on** | the exact same pitch twice (reference forbids this) |
 | Inner mutes allowed | off (Standard), on (Jazz) | muted string between two sounding ones |
 | Thumb-over allowed | off | `T` on the lowest string |
 
 For a slash chord the bass note is added as a required tone *and* constrained to
 be the lowest sounding pitch.
+
+**Two defaults were corrected while building this** (phase 3), both for the same
+underlying reason — a rule that is true of a guitar is not true of every fretted
+instrument:
+
+- **Duplicate pitches are allowed by default.** The reference forbids them, and
+  the draft of this document followed it. But a standard re-entrant ukulele
+  cannot play F major (`2010`) without sounding A4 on two strings, so the rule
+  rejects the most ordinary chord on the instrument. Sounding one pitch twice is
+  an aesthetic preference, not a playability constraint. It remains a toggle.
+- **"Root in bass" defaults on only where the instrument has a bass register**,
+  defined as a lowest open string below C3. It is a real constraint on a guitar
+  or a bass, and meaningless on a ukulele, whose standard F sounds C4 lowest and
+  whose re-entrant tuning means the lowest-pitched string is not even the first
+  one. This is precisely why heuristics belong to the instrument (§2.4), and
+  `configFor(instrument, preset)` reapplies the instrument's defaults on top of
+  any preset so that switching to "Jazz" cannot silently re-break a ukulele.
+
+There is also **no cross-string pitch ordering rule at all**. The reference
+required sounding pitches to ascend strictly, which is roughly right for a
+guitar and catastrophic for a re-entrant tuning. Playability is decided by
+whether a hand can physically make the shape (§5.3) and by the bass rule, which
+are the constraints that are genuinely real.
 
 ### 5.3 Finger assignment
 
