@@ -152,6 +152,27 @@ test.describe('choosing voicings', () => {
     expect(body.trim()).toBe('A | Cm | A | Cm');
   });
 
+  test('the voicings panel and the block are both alphabetical', async ({ page }) => {
+    await setBody(page, 'G | Am | C | D');
+    for (const symbol of ['G', 'Am', 'C', 'D']) {
+      await page.locator('.ec-measure-chord', { hasText: new RegExp(`^${symbol}$`) }).first().click();
+      await page.locator('.ec-dialog-choice').first().click();
+    }
+
+    // The block reads alphabetically, not in the order the chords appear.
+    const body = await page.locator('#sheet-body').inputValue();
+    const block = body
+      .slice(body.indexOf('# Voicings'))
+      .trim()
+      .split('\n')
+      .slice(1)
+      .map((line) => line.split(' =')[0]);
+    expect(block).toEqual(['Am', 'C', 'D', 'G']);
+
+    // And so does the panel.
+    await expect(page.locator('.ec-voicings .ec-card-chord')).toHaveText(['Am', 'C', 'D', 'G']);
+  });
+
   test('voicings typed by hand are read back', async ({ page }) => {
     // The text is the whole state, so writing it directly must work.
     await setBody(page, 'A | Cm | A | Cm[2]\n\n# Voicings\nCm = x35543\nCm[2] = 8-10-10-8-8-8');

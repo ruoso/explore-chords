@@ -205,3 +205,51 @@ describe('clearing a shared voicing', () => {
     expect(text.split('\n')[0]).toBe('A | Cm | A | Cm');
   });
 });
+
+describe('voicings are ordered for reading', () => {
+  const at = (song, symbol, nth = 0) =>
+    song.occurrences.filter((c) => c.symbol === symbol)[nth].start;
+
+  it('writes the block alphabetically, not in the order chords appear', () => {
+    let text = 'G | Am | C | D';
+    text = setVoicing(text, at(parseSong(text), 'G'), [3, 2, 0, 0, 0, 3]);
+    text = setVoicing(text, at(parseSong(text), 'Am'), ['x', 0, 2, 2, 1, 0]);
+    text = setVoicing(text, at(parseSong(text), 'C'), ['x', 3, 2, 0, 1, 0]);
+    text = setVoicing(text, at(parseSong(text), 'D'), ['x', 'x', 0, 2, 3, 2]);
+
+    const block = text.slice(text.indexOf('# Voicings')).trim().split('\n').slice(1);
+    expect(block.map((line) => line.split(' =')[0])).toEqual(['Am', 'C', 'D', 'G']);
+  });
+
+  it('keeps a chord and its footnotes together and in order', () => {
+    let text = 'Cm | A | Cm | A';
+    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
+    text = setVoicing(text, at(parseSong(text), 'Cm', 1), CM_HIGH);
+    text = setVoicing(text, at(parseSong(text), 'A', 0), A_OPEN);
+
+    const block = text.slice(text.indexOf('# Voicings')).trim().split('\n').slice(1);
+    expect(block.map((line) => line.split(' =')[0])).toEqual(['A', 'Cm', 'Cm[2]']);
+  });
+
+  it('orders the legend and the unvoiced list the same way', () => {
+    const text = 'G | Am | C\n\n# Voicings\nG = 320003\nAm = x02210\nC = x32010';
+    const song = parseSong(text);
+    expect(songLegend(song).map((e) => e.key)).toEqual(['Am', 'C', 'G']);
+
+    const partial = parseSong('G | Am | C\n\n# Voicings\nC = x32010');
+    expect(unvoicedKeys(partial)).toEqual(['Am', 'G']);
+  });
+
+  it('does not let the written order disturb footnote numbering', () => {
+    // The numbers come from first appearance in the chart. Writing the block
+    // alphabetically must not renumber anything.
+    let text = 'Cm | Cm';
+    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
+    text = setVoicing(text, at(parseSong(text), 'Cm', 1), CM_HIGH);
+
+    const song = parseSong(text);
+    expect(song.voicings.get('Cm')).toEqual(CM_OPEN);
+    expect(song.voicings.get('Cm[2]')).toEqual(CM_HIGH);
+    expect(text.split('\n')[0]).toBe('Cm | Cm[2]');
+  });
+});

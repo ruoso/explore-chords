@@ -127,6 +127,19 @@ export function parseSong(text, dialect) {
   return { sections, voicings, occurrences, symbols, unknown, voicingsRange, problems };
 }
 
+/**
+ * Order voicing entries for reading: alphabetically by chord symbol, with a
+ * chord's own footnotes kept together and in numeric order.
+ *
+ * A plain code-unit comparison rather than localeCompare, so the order is
+ * identical everywhere — the same song must not read differently on another
+ * machine, and the text is a stored artefact.
+ */
+export function compareVoicings(a, b) {
+  if (a.symbol !== b.symbol) return a.symbol < b.symbol ? -1 : 1;
+  return a.index - b.index;
+}
+
 /** The voicings-block key for a symbol and index. Index 1 is the bare form. */
 export function keyFor(symbol, index) {
   return index > 1 ? `${symbol}[${index}]` : symbol;
@@ -255,12 +268,18 @@ export function setVoicing(text, offset, frets, dialect) {
 function writeVoicingsBlock(text, bySymbol, dialect) {
   const parsed = parseSong(text, dialect);
 
-  const lines = [];
+  // Footnote numbers come from first appearance in the chart, so they are
+  // assigned before this point and never disturbed. Only the written order is
+  // alphabetical, which is how the block is read rather than how it was built.
+  const entries = [];
   for (const [symbol, patterns] of bySymbol) {
     patterns.forEach((pattern, i) => {
-      lines.push(`${keyFor(symbol, i + 1)} = ${shorthandOf(pattern)}`);
+      entries.push({ symbol, index: i + 1, pattern });
     });
   }
+  const lines = entries
+    .sort(compareVoicings)
+    .map((e) => `${keyFor(e.symbol, e.index)} = ${shorthandOf(e.pattern)}`);
 
   const block = lines.length > 0 ? `# ${VOICINGS_SECTION}\n${lines.join('\n')}\n` : '';
 
@@ -283,7 +302,12 @@ export function measureCount(parsed) {
   );
 }
 
-/** Each distinct voicing key used by the chart, with its pattern. */
+/**
+ * Each distinct voicing the chart uses, alphabetically.
+ *
+ * This is the legend, on screen and in print, so it is ordered for looking
+ * something up rather than by where it happened to appear.
+ */
 export function songLegend(parsed) {
   const seen = new Set();
   const out = [];
@@ -291,19 +315,21 @@ export function songLegend(parsed) {
     if (seen.has(chord.key)) continue;
     seen.add(chord.key);
     const frets = parsed.voicings.get(chord.key);
-    if (frets) out.push({ key: chord.key, symbol: chord.symbol, frets });
+    if (frets) {
+      out.push({ key: chord.key, symbol: chord.symbol, index: chord.index, frets });
+    }
   }
-  return out;
+  return out.sort(compareVoicings);
 }
 
-/** Chart chords with no voicing chosen, by key. */
+/** Chart chords with no voicing chosen, alphabetically. */
 export function unvoicedKeys(parsed) {
   const seen = new Set();
   const out = [];
   for (const chord of parsed.occurrences) {
     if (seen.has(chord.key) || parsed.voicings.has(chord.key) || !chord.valid) continue;
     seen.add(chord.key);
-    out.push(chord.key);
+    out.push({ key: chord.key, symbol: chord.symbol, index: chord.index });
   }
-  return out;
+  return out.sort(compareVoicings).map((e) => e.key);
 }
