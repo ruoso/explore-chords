@@ -16,6 +16,7 @@ import { renderViewAsBar } from './ui/view-as-bar.js';
 import { renderResults } from './ui/results.js';
 import { renderChordInput } from './ui/chord-input.js';
 import { renderDisplayToggles } from './ui/display-toggles.js';
+import { renderHeuristicsPanel } from './ui/heuristics-dialog.js';
 
 const store = createStore();
 const fromUrl = readUrl();
@@ -162,9 +163,33 @@ function renderExplorer() {
   const { chord, results } = store.state;
 
   const inputBox = el('div', { class: 'ec-input-area' });
+  const heuristicsBox = el('div', { class: 'ec-heuristics-area' });
   const toggleBox = el('div', { class: 'ec-toggle-area' });
   resultsBox = el('div', { class: 'ec-results' });
-  nodes.main.append(inputBox, toggleBox, resultsBox);
+  nodes.main.append(inputBox, heuristicsBox, toggleBox, resultsBox);
+
+  const drawHeuristics = () => {
+    const panel = renderHeuristicsPanel(heuristicsBox, {
+      store,
+      onChange: (config) => {
+        const target = store.state.viewAs?.instance ?? store.activeInstrument;
+        // Rules belong to the instrument, so this writes to the instance and is
+        // saved with it (§2.4).
+        if (store.state.viewAs) {
+          store.set({ viewAs: { ...store.state.viewAs, instance: { ...target, heuristics: config } } });
+        } else {
+          store.updateInstrument(target.id, { heuristics: config });
+        }
+        runSearch();
+        const wasOpen = heuristicsBox.querySelector('details')?.open;
+        drawHeuristics();
+        if (wasOpen) heuristicsBox.querySelector('details').open = true;
+        renderResultsOnly();
+      },
+    });
+    return panel;
+  };
+  drawHeuristics();
 
   const drawToggles = () =>
     renderDisplayToggles(toggleBox, {

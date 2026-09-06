@@ -590,7 +590,7 @@ Which tones *must* sound is a function of the instrument's heuristics:
 | Doubling allowed | on | same pitch class on multiple strings |
 | Duplicate pitch allowed | **on** | the exact same pitch twice (reference forbids this) |
 | Inner mutes allowed | off (Standard), on (Jazz) | muted string between two sounding ones |
-| Thumb-over allowed | off | `T` on the lowest string |
+| Thumb-over allowed | *not in v1* | `T` on the lowest string — see §11 |
 
 For a slash chord the bass note is added as a required tone *and* constrained to
 be the lowest sounding pitch.
@@ -628,8 +628,9 @@ New work — the reference only counts fingers roughly. We assign actual ones:
    a barre (partial barres allowed, spanning only the strings that need it).
 3. Assign fingers 2,3,4 in ascending fret order, respecting that a
    higher-numbered finger must not sit on a lower fret than a lower-numbered one.
-4. **Thumb-over** (`T`) optional, off by default — it unlocks common folk/rock
-   voicings.
+4. **Thumb-over** (`T`) is not implemented in v1 (§11). The `Hand` model has
+   room for it, but nothing emits it, so no toggle is offered for it either: a
+   control that does nothing is worse than an absent one.
 5. Reject if a finger reaching over a string would mute one that must sound.
    (A barre finger covering a string that should ring is fine; a fingertip
    crossing is not.)
@@ -1118,6 +1119,12 @@ later invalidates asset URLs and service worker scope together.
   synthesis (~30 lines of Web Audio, no samples, no dependency) is the option
   that fits an offline-first PWA; sampled instruments would add megabytes to a
   bundle that must precache entirely.
+- **Thumb-over fretting.** Not in v1. It unlocks common folk and rock voicings
+  (a thumb on the low E while the fingers take the rest), and the finger
+  assigner has room for it, but it needs its own playability rules — reachable
+  only on the lowest string or two, and only in low positions — and those want
+  checking against real hands rather than guessing. Deliberately not exposed as
+  a toggle until it does something.
 - **Do instrument instances need groups?** A teacher with eight set-up
   instruments may want the switcher grouped or searchable. Defer until the list
   is actually long.

@@ -40,7 +40,6 @@ export const DEFAULT_WEIGHTS = {
  * @property {boolean} allowDoubling
  * @property {boolean} allowDuplicatePitch
  * @property {boolean} allowInnerMutes
- * @property {boolean} allowThumb
  * @property {boolean} allowBarre
  * @property {number} minSoundingStrings
  * @property {number} maxResultsPerGroup
@@ -63,7 +62,6 @@ export const STANDARD = {
   // the instrument. It is an aesthetic preference, not a playability rule.
   allowDuplicatePitch: true,
   allowInnerMutes: false,
-  allowThumb: false,
   allowBarre: true,
   minSoundingStrings: 3,
   maxResultsPerGroup: 6,

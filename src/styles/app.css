@@ -515,3 +515,95 @@ body {
   background: color-mix(in srgb, var(--accent) 15%, transparent);
   font-weight: 600;
 }
+
+/* --- voicing rules panel ---------------------------------------------- */
+
+.ec-heuristics-area {
+  margin-top: 0.85rem;
+}
+
+.ec-heuristics {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--panel);
+}
+
+.ec-heuristics-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ec-heuristics-preset {
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.ec-heuristics-body {
+  padding: 0 0.75rem 0.85rem;
+}
+
+.ec-rules,
+.ec-limits,
+.ec-weights {
+  margin: 0.75rem 0 0;
+  padding: 0.5rem 0.7rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+}
+
+.ec-rules legend,
+.ec-limits legend,
+.ec-weights summary {
+  padding: 0 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ec-weights summary {
+  cursor: pointer;
+}
+
+.ec-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.ec-field-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.ec-field-inline label {
+  margin: 0;
+  font-weight: 400;
+  font-size: 0.82rem;
+}
+
+.ec-field-inline input {
+  width: 5rem;
+  flex: 0 0 auto;
+}
+
+.ec-weights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0 1.25rem;
+  margin-top: 0.5rem;
+}
