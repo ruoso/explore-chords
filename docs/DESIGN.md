@@ -126,7 +126,26 @@ the text:
 The chord is always interpreted for the active instrument — a chord entry field
 never asks which instrument it means.
 
-### 2.3 Result view
+### 2.3 Screens
+
+The chord explorer is a **tool, not a dashboard**: it holds the chord input, the
+display toggles and the results, and nothing else. Everything else is its own
+screen behind the navigation:
+
+| Screen | Holds |
+|---|---|
+| **Chords** | chord input, display toggles, ranked results |
+| **Instrument** | name, tuning, fret count, voicing rules, your instruments |
+| **Saved** | starred shapes for the active instrument |
+| **Songs** | the song list, and the editor for one song |
+
+Voicing rules live on the instrument screen rather than beside the chord input,
+because they are a property of the instrument, not of the search you happen to
+be running (§2.4). Naming lives there too: a user with three custom tunings
+needs to tell them apart in the switcher, and three entries all reading
+"Guitar · Custom" are useless.
+
+### 2.4 Result view
 
 Fingerings arrive **ranked by difficulty** and **grouped by neck position**,
 where position is defined as the **lowest fretted fret** — group `Open`, then
@@ -151,7 +170,7 @@ that must explain its own failure. Auto-relaxation is a v2 question (§11).
 Global display toggles: **vertical chord box ↔ horizontal neck**, and a
 **left-handed mirror**.
 
-### 2.4 Heuristics belong to the instrument
+### 2.5 Heuristics belong to the instrument
 
 Because the instrument is the app's identity, the voicing heuristics attach to
 the **instrument instance**, not to the app. A bass and a ukulele want
@@ -164,21 +183,45 @@ Each instrument instance carries a preset (`Beginner`, `Standard`, `Jazz`,
 exposes every rule as a toggle and every cost as a number. Changing anything
 switches the preset label to `Custom` for that instrument.
 
-### 2.5 Song sheets
+### 2.6 Song sheets
 
-An ordered list of **sections** (Intro, Verse, Chorus, …), each holding a
-progression of chord slots. Each slot references a chord *and one specific
-pinned fingering*. A sheet **belongs to an instrument instance** — the pinned
-fingerings are meaningless without it. The sheet renders as:
+A sheet **belongs to an instrument instance** — its voicings are meaningless
+without one — and is edited as **one block of text**:
 
-- a diagram legend at the top — each distinct chord+fingering once
-- per-section progressions written as chord symbols
+```
+# Verse
+A | Cm | A | Cm[2]
 
-Stored in localStorage; shared by encoding the whole sheet, compressed, into a
-URL fragment. Printable via a dedicated print stylesheet. Opening a sheet whose
-instrument is not the active one triggers the §2.1 "viewing as" bar.
+# Voicings
+A = x02220
+Cm = x35543
+Cm[2] = 8-10-10-8-8-8
+```
 
-### 2.6 Other v1 features
+A `#` line names a section. Every other line is a line of the chart: a vertical
+bar separates measures, spaces separate chords inside one. That is how a
+musician writes a chart out, and it is far quicker than a form for adding
+sections and chords one at a time.
+
+**Voicings live in the text, not beside it.** Clicking any chord in the chart
+opens a picker; the choice is written back as a footnote. The bare symbol is the
+chord's default voicing and `[2]`, `[3]` … are the others, defined under a
+`# Voicings` heading. This is what lets one song play `Cm` two ways, and it
+means the sheet has no hidden state: what you read is what you have, and a
+sheet can be written by hand as readily as by clicking.
+
+The text is **normalised, not patched**, on every change, which is what keeps it
+tidy over time: choosing a shape a chord already uses reuses that entry instead
+of adding a duplicate footnote, markers renumber from actual use so a chord that
+returns to one voicing loses its marker again, and entries nothing refers to are
+dropped.
+
+Stored in localStorage; shared by compressing the whole sheet into a URL
+fragment. Printable via a dedicated print stylesheet — legend of the voicings
+used, then the chart. Opening a sheet whose instrument is not the active one
+triggers the §2.1 "viewing as" bar.
+
+### 2.7 Other v1 features
 
 - **Shareable URLs** — chord, instrument, tuning, filters, heuristics.
 - **Favorites** — star a fingering; saved custom tunings; a library page,

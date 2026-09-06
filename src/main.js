@@ -16,9 +16,10 @@ import { renderViewAsBar } from './ui/view-as-bar.js';
 import { renderResults } from './ui/results.js';
 import { renderChordInput } from './ui/chord-input.js';
 import { renderDisplayToggles } from './ui/display-toggles.js';
-import { renderHeuristicsPanel } from './ui/heuristics-dialog.js';
 import { renderLibrary } from './ui/library.js';
-import { renderSheetEditor } from './ui/sheet-editor.js';
+import { renderNav } from './ui/nav.js';
+import { renderInstrumentSettings } from './ui/instrument-settings.js';
+import { renderSheetList, renderSheetEditor } from './ui/sheets-view.js';
 import { renderSheetPrint } from './ui/sheet-print.js';
 import { sheetForSharing, sheetFromSharing } from './state/sheets.js';
 import { encodeSheetLink, decodeSheetLink } from './state/codec.js';
@@ -33,6 +34,7 @@ const root = document.querySelector('#app');
 const nodes = {
   header: el('header', { class: 'ec-header' }),
   chip: el('div', { class: 'ec-header-chip' }),
+  nav: el('div', { class: 'ec-nav-slot' }),
   viewAs: el('div', { class: 'ec-viewas-slot', hidden: true }),
   main: el('main', { class: 'ec-main', id: 'main' }),
   live: el('div', {
@@ -49,12 +51,14 @@ function mount() {
     el('h1', { class: 'ec-title' }, 'Explore Chords'),
     nodes.chip
   );
-  root.append(nodes.header, nodes.viewAs, nodes.main, nodes.live, nodes.toast);
+  root.append(nodes.header, nodes.nav, nodes.viewAs, nodes.main, nodes.live, nodes.toast);
 }
 
 /** Apply anything the URL carried, once, at startup. */
 function applyUrlState() {
   const patch = {};
+  if (fromUrl.view) patch.view = fromUrl.view;
+  if (fromUrl.sheetId) patch.activeSheetId = fromUrl.sheetId;
   if (fromUrl.chordText) patch.chordText = fromUrl.chordText;
   if (fromUrl.dialect) patch.prefs = { ...store.state.prefs, dialect: fromUrl.dialect };
   if (fromUrl.orientation) {
@@ -105,28 +109,35 @@ function runSearch() {
   );
 }
 
-function showSetup({ firstRun }) {
-  clear(nodes.main);
-  nodes.chip.hidden = true;
-  renderInstrumentSetup(nodes.main, {
-    firstRun,
-    onDone: (instrument) => {
-      store.addInstrument(instrument);
-      nodes.chip.hidden = false;
-      render();
-      runSearch();
-    },
-    onCancel: firstRun
-      ? null
-      : () => {
-          render();
-        },
-  });
-}
+// --- the chord explorer ----------------------------------------------------
 
-/** The live chord-input controls, built once per explorer render. */
 let chordInput = null;
 let resultsBox = null;
+
+function renderResultsOnly() {
+  if (!resultsBox) return;
+  renderResults(resultsBox, {
+    store,
+    results: store.state.results,
+    chord: store.state.chord,
+    instrument: store.effectiveInstrument,
+    onShowMore: (position) => {
+      const expanded = { ...(store.state.expandedGroups ?? {}) };
+      expanded[position] = !expanded[position];
+      store.set({ expandedGroups: expanded });
+      renderResultsOnly();
+    },
+    onToggleFavorite: (fingering) => {
+      store.toggleFavorite({
+        instrumentId: store.effectiveInstrument.id,
+        chordText: store.state.chordText,
+        frets: fingering.frets,
+      });
+      renderResultsOnly();
+    },
+    onOpenRules: () => navigate('instrument'),
+  });
+}
 
 /**
  * Apply new chord text.
@@ -148,44 +159,61 @@ function applyChordText(text, { source } = {}) {
   renderResultsOnly();
 }
 
-let libraryBox = null;
-let sheetsBox = null;
+function renderExplorer() {
+  const inputBox = el('div', { class: 'ec-input-area' });
+  const toggleBox = el('div', { class: 'ec-toggle-area' });
+  resultsBox = el('div', { class: 'ec-results' });
+  nodes.main.append(inputBox, toggleBox, resultsBox);
 
-function renderSheetsOnly() {
-  if (!sheetsBox) return;
-  const wasOpen = sheetsBox.querySelector('details')?.open;
-  renderSheetEditor(sheetsBox, {
+  chordInput = renderChordInput(inputBox, {
     store,
-    onChange: () => renderSheetsOnly(),
-    onShare: () => shareSheet(),
-    onPrint: () => printSheet(),
+    onChange: (text, source) => applyChordText(text, { source }),
+    onReading: (kind, reading) => {
+      store.set({ readings: { ...(store.state.readings ?? {}), [kind]: reading } });
+      runSearch();
+      chordInput?.renderStatus();
+      renderResultsOnly();
+    },
   });
-  if (wasOpen) sheetsBox.querySelector('details').open = true;
+
+  const drawToggles = () =>
+    renderDisplayToggles(toggleBox, {
+      store,
+      onChange: (patch) => {
+        store.setPrefs(patch);
+        syncUrl(store.state, { instrument: store.effectiveInstrument });
+        drawToggles();
+        renderResultsOnly();
+      },
+    });
+  drawToggles();
   renderResultsOnly();
 }
+
+// --- song sheets -----------------------------------------------------------
 
 /** Put a share link for the open sheet on screen, ready to copy. */
 async function shareSheet() {
   const sheet = store.activeSheet;
   const instrument = store.effectiveInstrument;
   if (!sheet || !instrument) return;
+
   const fragment = await encodeSheetLink(sheetForSharing(sheet, instrument));
   const url = `${globalThis.location.origin}${globalThis.location.pathname}${fragment}`;
-  const box = document.querySelector('#sheet-share-out') ?? el('div', { id: 'sheet-share-out' });
+  const box = document.querySelector('#sheet-share-out');
+  if (!box) return;
   clear(box);
-  box.className = 'ec-share-out';
   const field = el('input', {
     type: 'text',
     readonly: true,
     value: url,
-    'aria-label': 'Share link for this sheet',
+    'aria-label': 'Share link for this song',
     class: 'ec-share-link',
   });
   box.append(
-    el('p', { class: 'ec-help' }, 'Anyone opening this link sees the sheet as written.'),
+    el('p', { class: 'ec-help' }, 'Anyone opening this link sees the song as written.'),
     field
   );
-  sheetsBox.querySelector('.ec-sheets-body')?.append(box);
   field.select();
 }
 
@@ -208,124 +236,81 @@ function printSheet() {
   }
 }
 
-function renderLibraryOnly() {
-  if (!libraryBox) return;
-  const wasOpen = libraryBox.querySelector('details')?.open;
-  renderLibrary(libraryBox, {
-    store,
-    onOpen: (entry) => {
-      applyChordText(entry.chordText, { source: 'library' });
-      chordInput?.setText(entry.chordText);
-    },
-    onRemove: (entry) => {
-      store.toggleFavorite(entry);
-      renderLibraryOnly();
-      renderResultsOnly();
-    },
-  });
-  if (wasOpen) libraryBox.querySelector('details').open = true;
-}
+function renderSheets() {
+  const sheet = store.activeSheet;
+  if (!sheet) {
+    renderSheetList(nodes.main, {
+      store,
+      onOpen: (id) => {
+        store.setActiveSheet(id);
+        navigate('sheets');
+      },
+      onChange: () => {
+        clear(nodes.main);
+        renderSheets();
+      },
+    });
+    return;
+  }
 
-function renderResultsOnly() {
-  if (!resultsBox) return;
-  renderResults(resultsBox, {
+  renderSheetEditor(nodes.main, {
     store,
-    results: store.state.results,
-    chord: store.state.chord,
-    instrument: store.effectiveInstrument,
-    onShowMore: (position) => {
-      const expanded = { ...(store.state.expandedGroups ?? {}) };
-      expanded[position] = !expanded[position];
-      store.set({ expandedGroups: expanded });
-      renderResultsOnly();
+    sheet,
+    onBack: () => {
+      store.setActiveSheet(null);
+      navigate('sheets');
     },
-    onAddToSheet: store.activeSheet
-      ? (fingering) => {
-          store.addSlot({
-            chordText: store.state.chordText,
-            frets: fingering.frets,
-          });
-          renderSheetsOnly();
+    onChange: ({ keepFocus } = {}) => {
+      // Editing the song rewrites the text, so the whole editor redraws. Focus
+      // is restored explicitly, since losing it mid-typing would be worse than
+      // the redraw itself.
+      const activeId = keepFocus ? document.activeElement?.id : null;
+      const caret =
+        activeId && document.activeElement && 'selectionStart' in document.activeElement
+          ? document.activeElement.selectionStart
+          : null;
+      clear(nodes.main);
+      renderSheets();
+      if (activeId) {
+        const restored = document.getElementById(activeId);
+        restored?.focus();
+        if (caret !== null && restored && 'setSelectionRange' in restored) {
+          restored.setSelectionRange(caret, caret);
         }
-      : null,
-    onToggleFavorite: (fingering) => {
-      store.toggleFavorite({
-        instrumentId: store.effectiveInstrument.id,
-        chordText: store.state.chordText,
-        frets: fingering.frets,
-      });
-      renderResultsOnly();
-      renderLibraryOnly();
+      }
     },
+    onShare: shareSheet,
+    onPrint: printSheet,
   });
 }
 
-function renderExplorer() {
+// --- setup and routing -----------------------------------------------------
+
+function navigate(view, extra = {}) {
+  store.set({ view, ...extra });
+  syncUrl(store.state, { instrument: store.effectiveInstrument });
+  render();
+}
+
+function showSetup({ firstRun }) {
   clear(nodes.main);
-
-  const instrument = store.effectiveInstrument;
-  const { chord, results } = store.state;
-
-  const inputBox = el('div', { class: 'ec-input-area' });
-  const heuristicsBox = el('div', { class: 'ec-heuristics-area' });
-  libraryBox = el('div', { class: 'ec-library-area' });
-  sheetsBox = el('div', { class: 'ec-sheets-area' });
-  const toggleBox = el('div', { class: 'ec-toggle-area' });
-  resultsBox = el('div', { class: 'ec-results' });
-  nodes.main.append(inputBox, heuristicsBox, libraryBox, sheetsBox, toggleBox, resultsBox);
-
-  const drawHeuristics = () => {
-    const panel = renderHeuristicsPanel(heuristicsBox, {
-      store,
-      onChange: (config) => {
-        const target = store.state.viewAs?.instance ?? store.activeInstrument;
-        // Rules belong to the instrument, so this writes to the instance and is
-        // saved with it (§2.4).
-        if (store.state.viewAs) {
-          store.set({ viewAs: { ...store.state.viewAs, instance: { ...target, heuristics: config } } });
-        } else {
-          store.updateInstrument(target.id, { heuristics: config });
-        }
-        runSearch();
-        const wasOpen = heuristicsBox.querySelector('details')?.open;
-        drawHeuristics();
-        if (wasOpen) heuristicsBox.querySelector('details').open = true;
-        renderResultsOnly();
-      },
-    });
-    return panel;
-  };
-  drawHeuristics();
-  renderLibraryOnly();
-  renderSheetsOnly();
-
-  const drawToggles = () =>
-    renderDisplayToggles(toggleBox, {
-      store,
-      onChange: (patch) => {
-        store.setPrefs(patch);
-        syncUrl(store.state, { instrument: store.effectiveInstrument });
-        drawToggles();
-        renderResultsOnly();
-      },
-    });
-  drawToggles();
-
-  chordInput = renderChordInput(inputBox, {
-    store,
-    onChange: (text, source) => applyChordText(text, { source }),
-    onReading: (kind, reading) => {
-      store.set({ readings: { ...(store.state.readings ?? {}), [kind]: reading } });
+  nodes.chip.hidden = true;
+  nodes.nav.hidden = true;
+  renderInstrumentSetup(nodes.main, {
+    firstRun,
+    onDone: (instrument) => {
+      store.addInstrument(instrument);
+      store.set({ addingInstrument: false });
       runSearch();
-      chordInput?.renderStatus();
-      renderResultsOnly();
+      render();
     },
+    onCancel: firstRun
+      ? null
+      : () => {
+          store.set({ addingInstrument: false });
+          render();
+        },
   });
-
-  void chord;
-  void results;
-  void instrument;
-  renderResultsOnly();
 }
 
 function render() {
@@ -333,18 +318,30 @@ function render() {
     showSetup({ firstRun: true });
     return;
   }
+  if (store.state.addingInstrument) {
+    showSetup({ firstRun: false });
+    return;
+  }
 
   nodes.chip.hidden = false;
+  nodes.nav.hidden = false;
+
   renderInstrumentChip(nodes.chip, {
     store,
     onSwitch: (id) => {
       store.setActive(id);
+      store.setActiveSheet(null);
       runSearch();
       syncUrl(store.state, { instrument: store.effectiveInstrument });
       render();
     },
-    onAdd: () => showSetup({ firstRun: false }),
+    onAdd: () => {
+      store.set({ addingInstrument: true });
+      render();
+    },
   });
+
+  renderNav(nodes.nav, { store, onNavigate: (view) => navigate(view) });
 
   renderViewAsBar(nodes.viewAs, {
     store,
@@ -360,8 +357,61 @@ function render() {
     },
   });
 
-  renderExplorer();
+  clear(nodes.main);
+  switch (store.state.view) {
+    case 'instrument':
+      renderInstrumentSettings(nodes.main, {
+        store,
+        onChange: (patch) => {
+          if (patch) {
+            const target = store.state.viewAs?.instance ?? store.activeInstrument;
+            if (store.state.viewAs) {
+              store.set({ viewAs: { ...store.state.viewAs, instance: { ...target, ...patch } } });
+            } else {
+              store.updateInstrument(target.id, patch);
+            }
+          }
+          runSearch();
+          render();
+        },
+        onAdd: () => {
+          store.set({ addingInstrument: true });
+          render();
+        },
+        onDelete: (instrument) => {
+          store.removeInstrument(instrument.id);
+          runSearch();
+          render();
+        },
+      });
+      break;
+
+    case 'library':
+      renderLibrary(nodes.main, {
+        store,
+        onOpen: (entry) => {
+          store.set({ chordText: entry.chordText });
+          runSearch();
+          navigate('explore');
+        },
+        onRemove: (entry) => {
+          store.toggleFavorite(entry);
+          render();
+        },
+      });
+      break;
+
+    case 'sheets':
+      renderSheets();
+      break;
+
+    default:
+      renderExplorer();
+      break;
+  }
 }
+
+
 
 /**
  * A shared sheet arrives in the fragment. It is shown as a preview first: it
@@ -398,13 +448,16 @@ async function applySharedSheet() {
 
   const sheet = sheetFromSharing(payload, instrument?.id ?? null);
   store.addSheet(sheet);
+  // Land on the song that was just imported, rather than leaving the user on
+  // the chord screen wondering whether the link worked.
+  store.set({ view: 'sheets' });
   try {
     globalThis.history.replaceState(null, '', globalThis.location.pathname);
   } catch {
     /* history may be unavailable */
   }
   render();
-  announce(nodes.live, `Imported the song sheet "${sheet.title}".`);
+  announce(nodes.live, `Imported the song "${sheet.title}".`);
 }
 
 mount();

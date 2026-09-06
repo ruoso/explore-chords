@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { freshVisit, completeSetup, searchChord } from './helpers.js';
+import { freshVisit, completeSetup, searchChord, goToView } from './helpers.js';
 
 /**
  * Accessibility (docs/DESIGN.md §6.1, §9.5).
@@ -37,6 +37,50 @@ test.describe('axe finds no violations', () => {
     await searchChord(page, 'C9');
     await page.locator('.ec-pickers-summary').click();
     await page.getByRole('button', { name: 'Neck view' }).click();
+    expect(await scan(page)).toEqual([]);
+  });
+
+  test('on the instrument settings screen', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await goToView(page, 'instrument');
+    await expect(page.locator('#instrument-name')).toBeVisible();
+    expect(await scan(page)).toEqual([]);
+  });
+
+  test('on the saved shapes screen', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await searchChord(page, 'C');
+    await page.locator('.ec-star').first().click();
+    await goToView(page, 'library');
+    expect(await scan(page)).toEqual([]);
+  });
+
+  test('on the song list and the song editor', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await goToView(page, 'sheets');
+    expect(await scan(page)).toEqual([]);
+
+    await page.fill('#new-sheet-title', 'Lesson');
+    await page.getByRole('button', { name: 'New song' }).click();
+    await page.fill('#sheet-body', '# Verse\nA | Cm | A | Cm');
+    await page.locator('#sheet-body').blur();
+    expect(await scan(page)).toEqual([]);
+  });
+
+  test('inside the voicing dialog', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await goToView(page, 'sheets');
+    await page.fill('#new-sheet-title', 'Lesson');
+    await page.getByRole('button', { name: 'New song' }).click();
+    await page.fill('#sheet-body', 'C | G');
+    await page.locator('#sheet-body').blur();
+
+    await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
+    await expect(page.locator('#voicing-dialog')).toBeVisible();
     expect(await scan(page)).toEqual([]);
   });
 
@@ -83,6 +127,59 @@ test.describe('every diagram describes itself', () => {
     for (const text of await badges.allTextContents()) {
       expect(['Easy', 'Medium', 'Hard']).toContain(text.trim());
     }
+  });
+});
+
+test.describe('the voicing dialog behaves like a modal', () => {
+  test('closes on Escape and returns nothing chosen', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await goToView(page, 'sheets');
+    await page.fill('#new-sheet-title', 'Lesson');
+    await page.getByRole('button', { name: 'New song' }).click();
+    await page.fill('#sheet-body', 'C | G');
+    await page.locator('#sheet-body').blur();
+
+    const before = await page.locator('#sheet-body').inputValue();
+    await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
+    await expect(page.locator('#voicing-dialog')).toBeVisible();
+
+    // A native <dialog> brings focus trapping and Escape for free, which are
+    // easy to get wrong by hand.
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#voicing-dialog')).toHaveCount(0);
+    expect(await page.locator('#sheet-body').inputValue()).toBe(before);
+  });
+
+  test('a chord can be voiced from the keyboard alone', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await goToView(page, 'sheets');
+    await page.fill('#new-sheet-title', 'Lesson');
+    await page.getByRole('button', { name: 'New song' }).click();
+    await page.fill('#sheet-body', 'C | G');
+    await page.locator('#sheet-body').blur();
+
+    await page.locator('.ec-measure-chord', { hasText: 'C' }).first().focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#voicing-dialog')).toBeVisible();
+
+    await page.locator('.ec-dialog-choice').first().focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#voicing-dialog')).toHaveCount(0);
+    expect(await page.locator('#sheet-body').inputValue()).toContain('# Voicings');
+  });
+});
+
+test.describe('navigation', () => {
+  test('marks the current screen for assistive technology', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await expect(page.locator('#nav-explore')).toHaveAttribute('aria-current', 'page');
+
+    await goToView(page, 'sheets');
+    await expect(page.locator('#nav-sheets')).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('#nav-explore')).not.toHaveAttribute('aria-current', 'page');
   });
 });
 

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshVisit, completeSetup, searchChord, appState } from './helpers.js';
+import { freshVisit, completeSetup, searchChord, appState, goToView } from './helpers.js';
 
 /**
  * Voicing rules belong to the instrument (docs/DESIGN.md §2.4), not to the app.
@@ -11,7 +11,7 @@ test.describe('presets', () => {
     await freshVisit(page);
     await completeSetup(page, { instrument: '6guitar' });
     await searchChord(page, 'F');
-    await page.locator('#heuristics-toggle').click();
+    await goToView(page, 'instrument');
   });
 
   test('switching preset re-runs the search and changes the results', async ({ page }) => {
@@ -19,28 +19,31 @@ test.describe('presets', () => {
     expect(before).toBeGreaterThan(0);
 
     await page.selectOption('#heuristics-preset', 'beginner');
-    await expect(page.locator('.ec-heuristics-preset')).toHaveText('Beginner');
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Beginner');
 
     const after = (await appState(page)).resultCount;
     expect(after).not.toBe(before);
+
     // A beginner preset forbids barres, so no barre shape may survive.
+    await goToView(page, 'explore');
     const labels = await page.locator('svg.ec-diagram').evaluateAll((nodes) =>
       nodes.map((n) => n.getAttribute('aria-label'))
     );
+    expect(labels.length).toBeGreaterThan(0);
     for (const label of labels) expect(label).not.toContain('barre');
   });
 
   test('editing one rule flips the preset to Custom', async ({ page }) => {
-    await expect(page.locator('.ec-heuristics-preset')).toHaveText('Standard');
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Standard');
     await page.locator('#rule-allowInnerMutes').check();
-    await expect(page.locator('.ec-heuristics-preset')).toHaveText('Custom');
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Custom');
   });
 
   test('a weight can be edited and takes effect', async ({ page }) => {
     await page.locator('.ec-weights summary').click();
     await page.fill('#weight-barre', '9');
     await page.locator('#weight-barre').blur();
-    await expect(page.locator('.ec-heuristics-preset')).toHaveText('Custom');
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Custom');
     await expect(page.locator('#weight-barre')).toHaveValue('9');
   });
 });
@@ -57,30 +60,31 @@ test.describe('rules follow the instrument', () => {
     await expect(page.locator('.ec-chip-label')).toContainText('Ukulele');
 
     // Give the ukulele a non-default preset.
-    await page.locator('#heuristics-toggle').click();
+    await goToView(page, 'instrument');
     await page.selectOption('#heuristics-preset', 'jazz');
-    await expect(page.locator('.ec-heuristics-preset')).toHaveText('Jazz');
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Jazz');
 
     // The guitar must be untouched.
     await page.locator('.ec-chip-summary').click();
-    await page.getByRole('button', { name: /Guitar/ }).click();
-    await expect(page.locator('.ec-heuristics-preset')).toHaveText('Standard');
+    await page.locator('.ec-chip-item', { hasText: 'Guitar' }).click();
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Standard');
 
     // And the ukulele must have kept its own.
     await page.locator('.ec-chip-summary').click();
-    await page.getByRole('button', { name: /Ukulele/ }).click();
-    await expect(page.locator('.ec-heuristics-preset')).toHaveText('Jazz');
+    await page.locator('.ec-chip-item', { hasText: 'Ukulele' }).click();
+    await goToView(page, 'instrument');
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Jazz');
   });
 
   test('a configuration survives a reload', async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page, { instrument: '6guitar' });
-    await page.locator('#heuristics-toggle').click();
+    await goToView(page, 'instrument');
     await page.selectOption('#heuristics-preset', 'jazz');
-    await expect(page.locator('.ec-heuristics-preset')).toHaveText('Jazz');
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Jazz');
 
     await page.reload();
-    await expect(page.locator('.ec-heuristics-preset')).toHaveText('Jazz');
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Jazz');
   });
 
   test('a preset never re-enables a rule the instrument cannot use', async ({ page }) => {
@@ -92,7 +96,7 @@ test.describe('rules follow the instrument', () => {
     const before = (await appState(page)).resultCount;
     expect(before).toBeGreaterThan(0);
 
-    await page.locator('#heuristics-toggle').click();
+    await goToView(page, 'instrument');
     await expect(page.locator('#rule-rootInBass')).not.toBeChecked();
     await page.selectOption('#heuristics-preset', 'jazz');
     await expect(page.locator('#rule-rootInBass')).not.toBeChecked();

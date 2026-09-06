@@ -25,7 +25,8 @@ import {
   loadActiveSheetId,
   saveActiveSheetId,
 } from './persist.js';
-import { loadSheets, saveSheets, newSheet, newSlot } from './sheets.js';
+import { loadSheets, saveSheets, newSheet } from './sheets.js';
+import { DEFAULT_VIEW, isView } from './views.js';
 
 /**
  * @typedef {object} AppState
@@ -60,7 +61,7 @@ export function createStore(initial = {}) {
     favorites: initial.favorites ?? loadFavorites(),
     sheets: initial.sheets ?? loadSheets(),
     activeSheetId: null,
-    activeSectionId: null,
+    view: initial.view ?? DEFAULT_VIEW,
     results: null,
     searching: false,
     ...initial.state,
@@ -70,10 +71,7 @@ export function createStore(initial = {}) {
   // the song they were working on.
   const storedSheet = initial.activeSheetId ?? loadActiveSheetId();
   const restored = state.sheets.find((s) => s.id === storedSheet);
-  if (restored) {
-    state.activeSheetId = restored.id;
-    state.activeSectionId = restored.sections[0]?.id ?? null;
-  }
+  if (restored) state.activeSheetId = restored.id;
 
   const subscribers = new Set();
 
@@ -214,11 +212,7 @@ export function createStore(initial = {}) {
       const sheets = [...state.sheets, sheet];
       saveSheets(sheets);
       saveActiveSheetId(sheet.id);
-      store.set({
-        sheets,
-        activeSheetId: sheet.id,
-        activeSectionId: sheet.sections[0]?.id ?? null,
-      });
+      store.set({ sheets, activeSheetId: sheet.id });
       return sheet;
     },
 
@@ -226,11 +220,7 @@ export function createStore(initial = {}) {
       const sheets = [...state.sheets, sheet];
       saveSheets(sheets);
       if (activate) saveActiveSheetId(sheet.id);
-      store.set({
-        sheets,
-        activeSheetId: activate ? sheet.id : state.activeSheetId,
-        activeSectionId: activate ? (sheet.sections[0]?.id ?? null) : state.activeSectionId,
-      });
+      store.set({ sheets, activeSheetId: activate ? sheet.id : state.activeSheetId });
       return sheet;
     },
 
@@ -255,42 +245,24 @@ export function createStore(initial = {}) {
     setActiveSheet(id) {
       const sheet = state.sheets.find((s) => s.id === id) ?? null;
       saveActiveSheetId(sheet?.id ?? null);
-      return store.set({
-        activeSheetId: sheet?.id ?? null,
-        activeSectionId: sheet?.sections[0]?.id ?? null,
+      return store.set({ activeSheetId: sheet?.id ?? null });
+    },
+
+    duplicateSheet(id) {
+      const original = state.sheets.find((s) => s.id === id);
+      if (!original) return null;
+      const copy = newSheet({
+        title: `${original.title} (copy)`,
+        instrumentId: original.instrumentId,
+        body: original.body,
       });
+      // Deliberately not activated: duplicating from the list should leave you
+      // looking at the list.
+      return store.addSheet(copy, { activate: false });
     },
 
-    setActiveSection(id) {
-      return store.set({ activeSectionId: id });
-    },
-
-    /** Pin a fingering into the current section of the current sheet. */
-    addSlot({ chordText, frets }) {
-      const sheet = store.activeSheet;
-      if (!sheet) return null;
-      const sectionId = state.activeSectionId ?? sheet.sections[0]?.id;
-      const slot = newSlot({ chordText, frets });
-      store.updateSheet(sheet.id, (s) => ({
-        ...s,
-        sections: s.sections.map((section) =>
-          section.id === sectionId ? { ...section, slots: [...section.slots, slot] } : section
-        ),
-      }));
-      return slot;
-    },
-
-    removeSlot(sectionId, slotId) {
-      const sheet = store.activeSheet;
-      if (!sheet) return null;
-      return store.updateSheet(sheet.id, (s) => ({
-        ...s,
-        sections: s.sections.map((section) =>
-          section.id === sectionId
-            ? { ...section, slots: section.slots.filter((slot) => slot.id !== slotId) }
-            : section
-        ),
-      }));
+    setView(id) {
+      return store.set({ view: isView(id) ? id : DEFAULT_VIEW });
     },
 
     setPrefs(patch) {

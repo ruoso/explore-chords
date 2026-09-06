@@ -10,7 +10,7 @@
 import { instrumentInstance, formatTuning } from '../core/instrument.js';
 import { DEFAULT_DIALECT } from '../core/notation/dialects.js';
 
-export const VERSION = 'v1';
+export const VERSION = 'v2';
 const KEY = (name) => `ec:${VERSION}:${name}`;
 
 export const KEYS = {

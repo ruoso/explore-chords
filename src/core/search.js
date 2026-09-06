@@ -12,6 +12,7 @@ import { midiAt, openMidis } from './instrument.js';
 import { assignFingers } from './fingers.js';
 import { scoreFingering, difficultyBucket } from './score.js';
 import { optionalRoles } from './heuristics.js';
+import { shorthandOf } from './fretstring.js';
 
 /** Nodes explored per fret window before that window gives up. */
 export const DEFAULT_WINDOW_BUDGET = 20000;
@@ -122,19 +123,6 @@ function generateForWindow(chord, instrument, config, lo, hi, req, out, budget) 
 
   walk(0, new Set());
   return exhausted;
-}
-
-/**
- * The compact fret string, as players write it: `x32010`.
- *
- * Once any fret reaches double digits the run-together form is ambiguous —
- * [8,10,10,0,8,0] would read as "81010080" — so those are hyphenated instead,
- * which is the usual convention.
- */
-export function shorthandOf(frets) {
-  const needsSeparator = frets.some((f) => typeof f === 'number' && f >= 10);
-  const parts = frets.map((f) => (f === 'x' ? 'x' : String(f)));
-  return needsSeparator ? parts.join('-') : parts.join('');
 }
 
 /** Reject candidates that break a rule no amount of finger skill can fix. */
@@ -350,4 +338,4 @@ export function shorthands(result) {
   return allFingerings(result).map((f) => f.shorthand);
 }
 
-export { openMidis };
+export { openMidis, shorthandOf };

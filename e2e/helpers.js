@@ -36,6 +36,11 @@ export async function searchChord(page, symbol) {
   await submitChord(page);
 }
 
+/** Move to one of the app's screens. */
+export async function goToView(page, view) {
+  await page.locator(`#nav-${view}`).click();
+}
+
 /** Read the app's own state, so tests can reason about more than pixels. */
 export function appState(page) {
   return page.evaluate(() => {
@@ -47,6 +52,9 @@ export function appState(page) {
       viewAs: s.state.viewAs ? s.state.viewAs.instance.label : null,
       chordText: s.state.chordText,
       resultCount: s.state.results?.count ?? 0,
+      view: s.state.view,
+      sheetCount: s.state.sheets.length,
+      body: s.activeSheet?.body ?? null,
     };
   });
 }

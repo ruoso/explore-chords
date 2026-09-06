@@ -14,11 +14,18 @@ import { instrumentInstance, catalogEntry } from '../core/instrument.js';
 import { formatTuning } from '../core/instrument.js';
 import { DIALECT_IDS } from '../core/notation/dialects.js';
 import { PRESET_IDS } from '../core/heuristics.js';
+import { isView } from './views.js';
 
 /** Read app state out of a URL's query string. */
 export function readUrl(search = globalThis.location?.search ?? '') {
   const params = new URLSearchParams(search);
   const out = {};
+
+  const view = params.get('v');
+  if (view && isView(view)) out.view = view;
+
+  const sheetId = params.get('sheet');
+  if (sheetId) out.sheetId = sheetId;
 
   const chordText = params.get('c');
   if (chordText) out.chordText = chordText;
@@ -54,8 +61,18 @@ export function readUrl(search = globalThis.location?.search ?? '') {
 }
 
 /** Build the query string for the current state. */
-export function writeUrl({ chordText, instrument, dialect, preset, orientation } = {}) {
+export function writeUrl({
+  chordText,
+  instrument,
+  dialect,
+  preset,
+  orientation,
+  view,
+  sheetId,
+} = {}) {
   const params = new URLSearchParams();
+  if (view && view !== 'explore') params.set('v', view);
+  if (sheetId) params.set('sheet', sheetId);
   if (chordText) params.set('c', chordText);
   if (instrument) {
     if (instrument.catalogId) params.set('i', instrument.catalogId);
@@ -75,6 +92,8 @@ export function writeUrl({ chordText, instrument, dialect, preset, orientation }
  */
 export function syncUrl(state, { instrument } = {}) {
   const query = writeUrl({
+    view: state.view,
+    sheetId: state.view === 'sheets' ? state.activeSheetId : null,
     chordText: state.chordText,
     instrument,
     dialect: state.prefs.dialect,

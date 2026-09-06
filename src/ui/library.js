@@ -1,12 +1,13 @@
 /**
- * The library of saved shapes (docs/DESIGN.md §2.6, §8.3).
+ * Saved shapes (docs/DESIGN.md §2.6, §8.3).
  *
- * Favourites are tagged by instrument and filtered to the active one by
- * default, because a guitar shape means nothing on a ukulele.
+ * Its own screen rather than a panel on the chord view, which was becoming a
+ * stack of drawers. Favourites are tagged by instrument and shown for the
+ * active one, because a guitar shape means nothing on a ukulele.
  *
  * A saved shape stores its chord and fret pattern, never a rendered snapshot:
- * the fingering is rebuilt on display, so a starred shape cannot drift out of
- * date when finger assignment or scoring changes.
+ * the fingering is rebuilt on display, so it cannot drift out of date when
+ * finger assignment or scoring changes.
  */
 
 import { el, clear } from './dom.js';
@@ -21,97 +22,92 @@ export function renderLibrary(container, { store, onOpen, onRemove }) {
   if (!instrument) return;
 
   const saved = store.favoritesFor(instrument.id);
-
-  const panel = el('details', { class: 'ec-library', id: 'library' });
-  panel.append(
-    el(
-      'summary',
-      { class: 'ec-library-summary', id: 'library-toggle' },
-      'Saved shapes',
-      el('span', { class: 'ec-library-count' }, String(saved.length))
-    )
-  );
-
-  const body = el('div', { class: 'ec-library-body' });
+  const page = el('div', { class: 'ec-page' });
+  page.append(el('h2', { class: 'ec-page-title' }, 'Saved shapes'));
 
   if (saved.length === 0) {
-    body.append(
+    page.append(
       el(
         'p',
-        { class: 'ec-help' },
-        `Nothing saved for ${instrument.label} yet. Star a shape to keep it here.`
+        { class: 'ec-empty' },
+        `Nothing saved for ${instrument.label} yet. Star a shape on the chords screen to keep it here.`
       )
     );
-  } else {
-    const list = el('ul', {
-      class: 'ec-grid',
-      tabindex: '0',
-      'aria-label': `Saved shapes for ${instrument.label}`,
-    });
-
-    for (const entry of saved) {
-      const parsed = parseChord(entry.chordText, store.state.prefs.dialect);
-      if (!parsed.chord) continue;
-      const fingering = fingeringFromFrets(entry.frets, parsed.chord, instrument);
-      if (!fingering) continue;
-
-      list.append(
-        el(
-          'li',
-          { class: 'ec-card' },
-          el('p', { class: 'ec-card-chord' }, entry.chordText),
-          el('div', {
-            class: 'ec-card-diagram',
-            html: renderDiagram(
-              fingering,
-              { chord: parsed.chord, dialect: store.state.prefs.dialect, instrument },
-              {
-                orientation: store.state.prefs.orientation,
-                handed: store.state.prefs.handed,
-              }
-            ),
-          }),
-          el(
-            'p',
-            { class: 'ec-caption' },
-            el('span', { class: 'ec-shorthand' }, fingering.shorthand),
-            el(
-              'span',
-              { class: `ec-badge ec-badge-${fingering.difficulty}` },
-              DIFFICULTY_LABELS[fingering.difficulty]
-            )
-          ),
-          el(
-            'div',
-            { class: 'ec-card-actions' },
-            el(
-              'button',
-              {
-                type: 'button',
-                class: 'ec-button ec-button-small',
-                onClick: () => onOpen(entry),
-              },
-              'Open'
-            ),
-            el(
-              'button',
-              {
-                type: 'button',
-                class: 'ec-button ec-button-small',
-                'aria-label': `Remove ${entry.chordText} ${fingering.shorthand} from your library`,
-                onClick: () => onRemove(entry),
-              },
-              'Remove'
-            )
-          )
-        )
-      );
-    }
-
-    body.append(list);
+    container.append(page);
+    return page;
   }
 
-  panel.append(body);
-  container.append(panel);
-  return panel;
+  page.append(
+    el('p', { class: 'ec-help' }, `${saved.length} saved for ${instrument.label}.`)
+  );
+
+  const list = el('ul', {
+    class: 'ec-grid',
+    tabindex: '0',
+    'aria-label': `Saved shapes for ${instrument.label}`,
+  });
+
+  for (const entry of saved) {
+    const chord = parseChord(entry.chordText, store.state.prefs.dialect).chord;
+    if (!chord) continue;
+    const fingering = fingeringFromFrets(entry.frets, chord, instrument);
+    if (!fingering) continue;
+
+    list.append(
+      el(
+        'li',
+        { class: 'ec-card' },
+        el('p', { class: 'ec-card-chord' }, entry.chordText),
+        el('div', {
+          class: 'ec-card-diagram',
+          html: renderDiagram(
+            fingering,
+            { chord, dialect: store.state.prefs.dialect, instrument },
+            {
+              orientation: store.state.prefs.orientation,
+              handed: store.state.prefs.handed,
+            }
+          ),
+        }),
+        el(
+          'p',
+          { class: 'ec-caption' },
+          el('span', { class: 'ec-shorthand' }, fingering.shorthand),
+          el(
+            'span',
+            { class: `ec-badge ec-badge-${fingering.difficulty}` },
+            DIFFICULTY_LABELS[fingering.difficulty]
+          )
+        ),
+        el(
+          'div',
+          { class: 'ec-card-actions' },
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'ec-button ec-button-small',
+              'aria-label': `Show ${entry.chordText} on the chords screen`,
+              onClick: () => onOpen(entry),
+            },
+            'Open'
+          ),
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'ec-button ec-button-small',
+              'aria-label': `Remove ${entry.chordText} ${fingering.shorthand} from your saved shapes`,
+              onClick: () => onRemove(entry),
+            },
+            'Remove'
+          )
+        )
+      )
+    );
+  }
+
+  page.append(list);
+  container.append(page);
+  return page;
 }

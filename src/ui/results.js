@@ -19,7 +19,7 @@ function positionLabel(position) {
 
 export function renderResults(
   container,
-  { store, results, chord, instrument, onShowMore, onToggleFavorite, onAddToSheet }
+  { store, results, chord, instrument, onShowMore, onToggleFavorite, onOpenRules }
 ) {
   clear(container);
 
@@ -48,7 +48,8 @@ export function renderResults(
           {
             type: 'button',
             class: 'ec-button ec-button-small',
-            onClick: () => document.querySelector('#heuristics-toggle')?.click(),
+            id: 'empty-open-rules',
+            onClick: () => onOpenRules?.(),
           },
           'Adjust voicing rules'
         )
@@ -126,19 +127,7 @@ export function renderResults(
           },
           el('span', { 'aria-hidden': 'true' }, starred ? '★' : '☆'),
           starred ? ' Saved' : ' Save'
-        ),
-        onAddToSheet
-          ? el(
-              'button',
-              {
-                type: 'button',
-                class: 'ec-tosheet',
-                'aria-label': `Add ${fingering.shorthand} to the song sheet`,
-                onClick: () => onAddToSheet(fingering),
-              },
-              '+ Sheet'
-            )
-          : null
+        )
       );
       list.append(card);
     }
