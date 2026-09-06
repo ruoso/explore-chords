@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import globals from 'globals';
 
 /**
  * The `core/` directory must stay pure and synchronous (docs/DESIGN.md §3.2).
@@ -42,6 +43,14 @@ export default [
     rules: {
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
+  },
+  {
+    // Everything outside core/ runs in the browser. core/ deliberately gets no
+    // browser globals: it must stay portable enough to run in a Web Worker or
+    // a bare Node test process (DESIGN.md 3.2).
+    files: ['src/**/*.js'],
+    ignores: ['src/core/**/*.js'],
+    languageOptions: { globals: globals.browser },
   },
   {
     files: ['src/core/**/*.js'],

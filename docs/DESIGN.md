@@ -873,21 +873,28 @@ runners; a wall-clock check runs locally only, as a warning.
 
 ### 9.7 CI and deployment
 
-Two GitHub Actions workflows, both pinned to the Node version in
-`.node-version` so local and CI runtimes cannot drift.
-
-**`ci.yml`** — on every push and pull request:
+A single `ci.yml`, pinned to the Node version in `.node-version` so local and
+CI runtimes cannot drift. It runs on every push and pull request:
 
 ```
-lint  →  unit + golden + render  →  build  →  e2e (Playwright)
+check (lint + unit + golden + render)
+  → build (+ assert the base path)
+  → e2e (Playwright)
+  → deploy   [main only]
 ```
 
 Staged deliberately. Lint and unit tests are milliseconds, so a broken core
 fails in seconds rather than after a multi-minute browser run. Playwright is the
-slowest job and runs last, with its browser downloads cached.
+slowest job and runs late, with its browser downloads cached.
 
-**`deploy.yml`** — on push to `main`, after `ci.yml` passes: build and publish
-to GitHub Pages via `actions/upload-pages-artifact` and `actions/deploy-pages`.
+Deployment is a conditional job in the same workflow rather than a separate
+`deploy.yml` triggered by `workflow_run`. That coupling reports status poorly on
+the commit and makes ordering implicit; a `needs:` edge guarantees the same
+thing and gives one status check to read.
+
+The build job asserts the base path appears in the built HTML. A wrong `base`
+fails silently in the browser rather than at build time, so it is worth one
+`grep` in CI.
 
 Deployment is wired up in **phase 1**, before there is anything worth looking
 at. That is deliberate: §3.1 notes the `base` path is painful to correct later
