@@ -11,13 +11,12 @@ and drawn with real finger numbers and barres rather than bare dots.
 Everything runs in the browser. No backend, no accounts, and no network access
 at runtime — once loaded, it works entirely offline.
 
-> **Status: in development, phase 1 of 11 complete.** The design is settled and
-> written up in **[docs/DESIGN.md](docs/DESIGN.md)**, which carries acceptance
-> criteria for every phase.
+> **Live at <https://ruoso.github.io/explore-chords/>** — installable, and it
+> keeps working with no network at all.
 >
-> Live at **<https://ruoso.github.io/explore-chords/>** — currently a
-> placeholder that renders correctly spelled chords, deployed from day one to
-> keep the base path honest.
+> All eleven phases of [docs/DESIGN.md](docs/DESIGN.md) are built, each against
+> the acceptance criteria written before it. 309 unit tests and 114 end-to-end
+> tests across desktop and mobile viewports.
 
 ## What it will do
 
@@ -61,20 +60,27 @@ Vanilla JavaScript ES modules, no framework. Vite for the build,
 Playwright for end-to-end journeys, offline behaviour and accessibility. Static
 output, deployed to GitHub Pages.
 
-## Roadmap
+## Testing
 
-Eleven phases, each with acceptance criteria in
-[§10 of the design doc](docs/DESIGN.md). Phases 1–4 carry the risk; everything
-after is additive.
+```sh
+npm test          # 309 unit tests over the pure core
+npm run test:e2e  # 114 Playwright tests, desktop and mobile
+```
 
-| | Phase |
-|---|---|
-| 1–2 | Pitch, chord model, notation parser and formatters |
-| 3 | Fingering search, finger assignment, difficulty scoring |
-| 4 | SVG diagram rendering (and accessibility, from here onward) |
-| 5–7 | Store, instrument setup and switching, chord input, result view |
-| 8–9 | Per-instrument heuristics, favourites and saved tunings |
-| 10–11 | Song sheets and printing, then PWA delivery |
+The dividing line: music theory is tested in unit tests, and the browser is
+tested for journeys, wiring, persistence and accessibility — never for whether
+`Cmaj7` has a major 7th. A wrong fingering is a unit-test failure; a correct one
+that fails to reach the screen is an end-to-end failure.
+
+Accessibility is checked, not merely intended: axe runs at WCAG 2.1 AA over
+four screens, and there are explicit assertions that every diagram carries a
+descriptive label, that the difficulty badge reads as a word rather than a
+colour, and that the horizontally scrolling result rows can be reached by
+keyboard.
+
+The offline test reloads with the network off and then computes a chord the
+session has never seen. Asserting the shell was cached would pass while a
+hidden network dependency lurked in the search.
 
 ## Development
 
