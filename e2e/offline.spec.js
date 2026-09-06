@@ -11,14 +11,20 @@ import { freshVisit, completeSetup, searchChord, appState } from './helpers.js';
 /**
  * Wait until the app is genuinely offline-capable.
  *
- * "Active and controlling the page" is not enough: a worker claims its client
- * before precaching has finished, so a check that stops there passes while the
- * cache is still empty and every offline request then fails for the wrong
- * reason. The honest signal is a populated precache.
+ * Two traps here, both of which made this pass while proving nothing:
+ *
+ * 1. `page.waitForFunction` does not await an async predicate — it sees the
+ *    returned Promise, which is truthy, and resolves immediately. This polls
+ *    with `page.evaluate`, which does await.
+ * 2. "Active and controlling the page" is not enough: a worker claims its
+ *    client before precaching finishes, so a check that stops there passes
+ *    while the cache is still empty and every offline request then fails for
+ *    the wrong reason. The honest signal is a populated precache.
  */
-async function serviceWorkerReady(page) {
-  await page.waitForFunction(
-    async () => {
+async function serviceWorkerReady(page, timeout = 30000) {
+  const deadline = Date.now() + timeout;
+  for (;;) {
+    const ready = await page.evaluate(async () => {
       const registration = await navigator.serviceWorker?.getRegistration();
       if (!registration?.active || !navigator.serviceWorker.controller) return false;
       const names = await caches.keys();
@@ -26,10 +32,13 @@ async function serviceWorkerReady(page) {
       if (!precache) return false;
       const entries = await (await caches.open(precache)).keys();
       return entries.length > 0;
-    },
-    null,
-    { timeout: 30000 }
-  );
+    });
+    if (ready) return;
+    if (Date.now() > deadline) {
+      throw new Error('the service worker never became offline-ready');
+    }
+    await page.waitForTimeout(200);
+  }
 }
 
 test.describe('the service worker', () => {
