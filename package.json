@@ -1,0 +1,23 @@
+{
+  "name": "explore-chords",
+  "version": "0.1.0",
+  "description": "Explore chord fingerings on fretted string instruments with arbitrary tunings",
+  "type": "module",
+  "license": "MIT",
+  "author": "Daniel Ruoso <daniel@ruoso.com>",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
+  }
+}

@@ -199,7 +199,8 @@ instrument is not the active one triggers the §2.1 "viewing as" bar.
 - Playwright for end-to-end journeys, offline behaviour and accessibility, with
   `@axe-core/playwright`. Dev dependencies only — nothing ships to the client.
 
-**Hosting: GitHub Pages on a project subpath**, `user.github.io/explore-chords/`.
+**Hosting: GitHub Pages on a project subpath**, `ruoso.github.io/explore-chords/`,
+published by GitHub Actions from `main` (§9.7).
 This has to be settled in phase 1 rather than at the end, because it fixes two
 things that are painful to change later:
 
@@ -870,12 +871,33 @@ gate. Beyond automated scanning, which catches perhaps half of what matters:
 **node-budget** count rather than wall-clock, so CI stays stable on noisy
 runners; a wall-clock check runs locally only, as a warning.
 
-### 9.7 CI
+### 9.7 CI and deployment
 
-Unit, golden and render tests run on every push — they are milliseconds and
-should never be skipped. Playwright runs on pull requests, with browsers cached.
-A build must pass unit + golden before e2e is attempted, so a broken core fails
-in seconds rather than minutes.
+Two GitHub Actions workflows, both pinned to the Node version in
+`.node-version` so local and CI runtimes cannot drift.
+
+**`ci.yml`** — on every push and pull request:
+
+```
+lint  →  unit + golden + render  →  build  →  e2e (Playwright)
+```
+
+Staged deliberately. Lint and unit tests are milliseconds, so a broken core
+fails in seconds rather than after a multi-minute browser run. Playwright is the
+slowest job and runs last, with its browser downloads cached.
+
+**`deploy.yml`** — on push to `main`, after `ci.yml` passes: build and publish
+to GitHub Pages via `actions/upload-pages-artifact` and `actions/deploy-pages`.
+
+Deployment is wired up in **phase 1**, before there is anything worth looking
+at. That is deliberate: §3.1 notes the `base` path is painful to correct later
+because it fixes asset URLs and service worker scope together, and the only way
+to know it is right is to serve the app from the real subpath. A one-line page
+deployed on day one verifies what a comment cannot.
+
+*One-time manual step:* the repository's **Settings → Pages → Source** must be
+set to **GitHub Actions**. Nothing in the workflow can do this for you, and the
+deploy job fails with a permissions error until it is done.
 
 ---
 
@@ -886,7 +908,8 @@ written to be falsifiable — a real chord shape, a real reload, a real
 assertion — rather than "works correctly".
 
 ### Phase 1 — Pitch and chord model
-**Ships:** `core/pitch.js`, `core/chord.js`, Vite scaffold with `base` set.
+**Ships:** `core/pitch.js`, `core/chord.js`, Vite scaffold with `base` set,
+ESLint config, and both CI workflows.
 **Done when:**
 - `Db` major spells `Db F Ab`; `#11` on C spells `F#`; `b5` on C spells `Gb`.
 - `Interval` is `{ letterSteps, semitones }`; `transposeNote('Bb', M3)` = `D`.
@@ -894,6 +917,10 @@ assertion — rather than "works correctly".
 - **No `async` anywhere in `core/`** — the reference's mistake, guarded by a lint
   rule rather than a convention.
 - `vite.config.js` has `base: '/explore-chords/'` (§3.1).
+- `npm run lint`, `npm test` and `npm run build` all pass locally.
+- **`ci.yml` is green on GitHub**, and **`deploy.yml` has published a page that
+  actually loads at `ruoso.github.io/explore-chords/`** — proving the base path
+  rather than assuming it (§9.7).
 **Tests:** Vitest unit, table-driven.
 
 ### Phase 2 — Notation
