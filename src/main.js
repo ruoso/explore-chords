@@ -114,20 +114,44 @@ function showSetup({ firstRun }) {
   });
 }
 
-/** Apply new chord text: search, sync the URL, redraw. */
-function applyChordText(text, { restoreFocus = true } = {}) {
+/** The live chord-input controls, built once per explorer render. */
+let chordInput = null;
+let resultsBox = null;
+
+/**
+ * Apply new chord text.
+ *
+ * The input area is updated in place rather than rebuilt, so whichever control
+ * the user is holding keeps focus. `source` says which half of the two-way sync
+ * initiated the change, so it is not written back over the user's own edit.
+ */
+function applyChordText(text, { source } = {}) {
   if (text === store.state.chordText) return;
   store.set({ chordText: text });
   runSearch();
   syncUrl(store.state, { instrument: store.effectiveInstrument });
-  const hadFocus = document.activeElement?.id === 'chord-input';
-  const caret = hadFocus ? document.activeElement.selectionStart : null;
-  renderExplorer();
-  if (hadFocus && restoreFocus) {
-    const input = document.querySelector('#chord-input');
-    input?.focus();
-    if (caret !== null) input?.setSelectionRange(caret, caret);
-  }
+
+  if (source === 'picker') chordInput?.setText(text);
+  else chordInput?.syncFromChord(store.state.chord);
+
+  chordInput?.renderStatus();
+  renderResultsOnly();
+}
+
+function renderResultsOnly() {
+  if (!resultsBox) return;
+  renderResults(resultsBox, {
+    store,
+    results: store.state.results,
+    chord: store.state.chord,
+    instrument: store.effectiveInstrument,
+    onShowMore: (position) => {
+      const expanded = { ...(store.state.expandedGroups ?? {}) };
+      expanded[position] = !expanded[position];
+      store.set({ expandedGroups: expanded });
+      renderResultsOnly();
+    },
+  });
 }
 
 function renderExplorer() {
@@ -137,16 +161,17 @@ function renderExplorer() {
   const { chord, results } = store.state;
 
   const inputBox = el('div', { class: 'ec-input-area' });
-  const resultsBox = el('div', { class: 'ec-results' });
+  resultsBox = el('div', { class: 'ec-results' });
   nodes.main.append(inputBox, resultsBox);
 
-  renderChordInput(inputBox, {
+  chordInput = renderChordInput(inputBox, {
     store,
-    onChange: (text) => applyChordText(text),
+    onChange: (text, source) => applyChordText(text, { source }),
     onReading: (kind, reading) => {
       store.set({ readings: { ...(store.state.readings ?? {}), [kind]: reading } });
       runSearch();
-      renderExplorer();
+      chordInput?.renderStatus();
+      renderResultsOnly();
     },
   });
 
@@ -159,7 +184,7 @@ function renderExplorer() {
       const expanded = { ...(store.state.expandedGroups ?? {}) };
       expanded[position] = !expanded[position];
       store.set({ expandedGroups: expanded });
-      renderExplorer();
+      renderResultsOnly();
     },
   });
 }

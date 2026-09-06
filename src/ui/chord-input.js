@@ -129,7 +129,7 @@ export function renderChordInput(container, { store, onChange, onReading }) {
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    onChange(input.value.trim());
+    onChange(input.value.trim(), 'text');
   });
 
   let timer = null;
@@ -137,7 +137,7 @@ export function renderChordInput(container, { store, onChange, onReading }) {
     clearTimeout(timer);
     // Debounced so every keystroke does not launch a search, but short enough
     // that the results feel live.
-    timer = setTimeout(() => onChange(input.value.trim()), 250);
+    timer = setTimeout(() => onChange(input.value.trim(), 'text'), 250);
   });
 
   container.append(form);
@@ -178,6 +178,45 @@ export function renderChordInput(container, { store, onChange, onReading }) {
 
   container.append(status);
 
+  /**
+   * Redraw only the status line.
+   *
+   * The input area is built once and then updated in place. Rebuilding it on
+   * every change would destroy whichever control the user is currently using —
+   * losing focus mid-interaction, which is a real accessibility problem (§6.1)
+   * and not merely untidy.
+   */
+  function renderStatus() {
+    clear(status);
+    const s = store.state;
+    if (s.errors.length > 0) {
+      status.append(el('p', { class: 'ec-error', role: 'alert' }, s.errors[0].message));
+    }
+    for (const ambiguity of s.ambiguities) {
+      const labels = READING_LABELS[ambiguity.kind] ?? {};
+      const alternative = ambiguity.alternatives[0];
+      status.append(
+        el(
+          'p',
+          { class: 'ec-ambiguity' },
+          el('span', { class: 'ec-ambiguity-icon', 'aria-hidden': 'true' }, 'ⓘ'),
+          ` Read “${ambiguity.text}” as ${labels[ambiguity.chosen] ?? ambiguity.chosen}. `,
+          alternative
+            ? el(
+                'button',
+                {
+                  type: 'button',
+                  class: 'ec-button ec-button-small ec-ambiguity-flip',
+                  onClick: () => onReading(ambiguity.kind, alternative),
+                },
+                `Use ${labels[alternative] ?? alternative}`
+              )
+            : null
+        )
+      );
+    }
+  }
+
   // --- structured pickers -------------------------------------------------
 
   const details = el('details', { class: 'ec-pickers', open: state.pickersOpen || null });
@@ -189,7 +228,7 @@ export function renderChordInput(container, { store, onChange, onReading }) {
     const next = readPickers();
     try {
       const chord = pickersToChord(next);
-      onChange(formatChord(chord, state.prefs.dialect));
+      onChange(formatChord(chord, store.state.prefs.dialect), 'picker');
     } catch {
       // A picker combination that cannot make a chord is simply ignored.
     }
@@ -254,8 +293,26 @@ export function renderChordInput(container, { store, onChange, onReading }) {
   }
 
   details.append(grid, chipGroup);
-  details.addEventListener('toggle', () => store.set({ pickersOpen: details.open }));
+  details.addEventListener('toggle', () => {
+    store.state.pickersOpen = details.open;
+  });
   container.append(details);
 
-  return { input, focus: () => input.focus() };
+  /** Move the pickers to match a chord that arrived from the text field. */
+  function syncFromChord(chord) {
+    const next = chordToPickers(chord);
+    if (document.activeElement === rootSelect) return; // do not fight the user
+    rootSelect.value = next.root;
+    qualitySelect.value = next.quality;
+    seventhSelect.value = next.seventh;
+    bassSelect.value = next.bass;
+    for (const box of chipBoxes) box.checked = next.extensions.includes(box.value);
+  }
+
+  /** Set the text field without firing the debounced input handler. */
+  function setText(text) {
+    if (input.value !== text) input.value = text;
+  }
+
+  return { input, focus: () => input.focus(), renderStatus, syncFromChord, setText };
 }
