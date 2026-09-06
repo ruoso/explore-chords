@@ -788,10 +788,15 @@ constraint on phase 4 rather than a phase of its own.
 
 ## 7. PWA and offline
 
-- **Mobile-first.** Single column on phone: instrument chip pinned to the header,
-  chord input, then result groups as horizontal scroll rows. On desktop it
-  becomes a filter sidebar plus a diagram grid, instrument chip still in the
-  header.
+- **Mobile-first, and full width at every size.** Single column on phone:
+  instrument chip pinned to the header, chord input, then result groups as
+  horizontal scroll rows. Nothing caps the page width — a chord grid is the main
+  thing on screen and gets more useful the more of it you can see at once — but
+  prose sets its own measure, since a help line stretched across a wide monitor
+  is unreadable.
+- Above 72rem the **song editor splits in two**: the text you write on the left,
+  the chart and voicings it produces on the right, rather than a phone-width
+  chart stranded in a very wide row.
 - **Precache everything.** No runtime data fetches; the service worker precaches
   the full build. No network is ever required after first load.
 - **Update flow.** New service worker installs in the background; an "update

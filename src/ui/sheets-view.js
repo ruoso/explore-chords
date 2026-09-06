@@ -167,7 +167,13 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       onChange({ keepFocus: true });
     },
   });
-  page.append(el('div', { class: 'ec-field' }, el('label', { for: 'sheet-title' }, 'Title'), title));
+  const layout = el('div', { class: 'ec-song-editor' });
+  const left = el('div', { class: 'ec-song-editor-main' });
+  const right = el('div', { class: 'ec-song-editor-side' });
+  layout.append(left, right);
+  page.append(layout);
+
+  left.append(el('div', { class: 'ec-field' }, el('label', { for: 'sheet-title' }, 'Title'), title));
 
   // --- the song, as text --------------------------------------------------
 
@@ -187,7 +193,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
     onChange({ keepFocus: true });
   });
 
-  page.append(
+  left.append(
     el(
       'div',
       { class: 'ec-field' },
@@ -204,12 +210,12 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
   );
 
   if (song.unknown.length > 0) {
-    page.append(
+    left.append(
       el('p', { class: 'ec-error', role: 'alert' }, `Not a chord: ${song.unknown.join(', ')}`)
     );
   }
   if (song.problems.length > 0) {
-    page.append(
+    left.append(
       el(
         'p',
         { class: 'ec-error', role: 'alert' },
@@ -280,7 +286,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       chart.append(block);
     }
   }
-  page.append(chart);
+  right.append(chart);
 
   // --- the voicings this song uses ----------------------------------------
 
@@ -345,9 +351,9 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       )
     );
   }
-  page.append(chordsPanel);
+  right.append(chordsPanel);
 
-  page.append(
+  right.append(
     el(
       'div',
       { class: 'ec-actions' },

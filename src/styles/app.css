@@ -59,10 +59,25 @@ body {
   font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+/* The app fills the window. A chord grid is the main thing on screen and it
+   gets more useful the more of it you can see at once, so nothing caps the
+   width. Prose inside still sets its own measure, since a help line stretched
+   across a wide monitor is unreadable. */
 .app {
-  max-width: 60rem;
-  margin: 0 auto;
   padding: 0 1rem 3rem;
+}
+
+@media (min-width: 60rem) {
+  .app {
+    padding: 0 1.5rem 3rem;
+  }
+}
+
+/* Readable measure for prose, independent of how wide the window is. */
+.ec-help,
+.ec-setup-lead,
+.ec-note {
+  max-width: 68ch;
 }
 
 :focus-visible {
@@ -986,7 +1001,19 @@ body {
 /* --- instrument form and destructive actions --------------------------- */
 
 .ec-instrument-form {
-  max-width: 32rem;
+  max-width: 34rem;
+}
+
+.ec-field {
+  max-width: 34rem;
+}
+
+/* The song text and its title are the exception: a chart wants room. */
+.ec-song-input,
+.ec-sheet-title,
+.ec-field:has(.ec-song-input),
+.ec-field:has(.ec-sheet-title) {
+  max-width: none;
 }
 
 .ec-instrument-name .ec-badge {
@@ -1015,4 +1042,32 @@ body {
   margin: 0;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+/* --- wide layouts ------------------------------------------------------ */
+
+/* On a wide screen the song editor puts the text beside what it produces,
+   rather than leaving a chart the width of a phone stranded in a 1900px row. */
+@media (min-width: 72rem) {
+  .ec-song-editor {
+    display: grid;
+    grid-template-columns: minmax(30rem, 1fr) minmax(30rem, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .ec-song-editor-side .ec-panel:first-child {
+    margin-top: 0;
+  }
+
+  .ec-song-input {
+    min-height: 28rem;
+  }
+}
+
+/* The instrument list has room for its rows to breathe. */
+@media (min-width: 72rem) {
+  .ec-instrument-row {
+    padding: 0.7rem 0.5rem;
+  }
 }
