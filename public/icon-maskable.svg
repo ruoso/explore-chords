@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-64 -64 640 640" role="img" aria-label="Explore Chords">
+  <rect x="-64" y="-64" width="640" height="640" rx="0" fill="#7a4b2a"/>
+  <g stroke="#fbfbf9" stroke-width="12" stroke-linecap="square">
+    <!-- nut -->
+    <line x1="128" y1="150" x2="384" y2="150" stroke-width="26"/>
+    <!-- frets -->
+    <line x1="128" y1="228" x2="384" y2="228"/>
+    <line x1="128" y1="306" x2="384" y2="306"/>
+    <line x1="128" y1="384" x2="384" y2="384"/>
+    <!-- strings -->
+    <line x1="128" y1="150" x2="128" y2="384"/>
+    <line x1="192" y1="150" x2="192" y2="384"/>
+    <line x1="256" y1="150" x2="256" y2="384"/>
+    <line x1="320" y1="150" x2="320" y2="384"/>
+    <line x1="384" y1="150" x2="384" y2="384"/>
+  </g>
+  <g fill="#fbfbf9">
+    <circle cx="192" cy="189" r="26"/>
+    <circle cx="320" cy="267" r="26"/>
+    <circle cx="256" cy="345" r="26"/>
+  </g>
+</svg>

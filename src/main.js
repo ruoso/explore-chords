@@ -23,6 +23,7 @@ import { renderSheetPrint } from './ui/sheet-print.js';
 import { sheetForSharing, sheetFromSharing } from './state/sheets.js';
 import { encodeSheetLink, decodeSheetLink } from './state/codec.js';
 import { instrumentInstance } from './core/instrument.js';
+import { setupUpdates } from './ui/update-toast.js';
 
 const store = createStore();
 const fromUrl = readUrl();
@@ -39,6 +40,7 @@ const nodes = {
     role: 'status',
     'aria-live': 'polite',
   }),
+  toast: el('div', { class: 'ec-toast-slot', hidden: true }),
 };
 
 function mount() {
@@ -47,7 +49,7 @@ function mount() {
     el('h1', { class: 'ec-title' }, 'Explore Chords'),
     nodes.chip
   );
-  root.append(nodes.header, nodes.viewAs, nodes.main, nodes.live);
+  root.append(nodes.header, nodes.viewAs, nodes.main, nodes.live, nodes.toast);
 }
 
 /** Apply anything the URL carried, once, at startup. */
@@ -412,7 +414,10 @@ render();
 
 // Exposed for the end-to-end tests, which need to reason about state rather
 // than only about pixels.
-globalThis.__ec = { store };
+globalThis.__ec = { store, updates: null };
+
+const updates = setupUpdates(nodes.toast);
+globalThis.__ec.updates = updates;
 
 applySharedSheet();
 

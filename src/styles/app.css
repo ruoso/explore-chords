@@ -848,3 +848,35 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.75rem;
 }
+
+/* --- update toast ----------------------------------------------------- */
+
+.ec-toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  max-width: 26rem;
+  margin: 0 auto;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+  font-size: 0.85rem;
+}
+
+.ec-toast-text {
+  margin: 0;
+}
+
+.ec-toast-actions {
+  display: flex;
+  gap: 0.4rem;
+}
