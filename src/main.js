@@ -18,6 +18,11 @@ import { renderChordInput } from './ui/chord-input.js';
 import { renderDisplayToggles } from './ui/display-toggles.js';
 import { renderHeuristicsPanel } from './ui/heuristics-dialog.js';
 import { renderLibrary } from './ui/library.js';
+import { renderSheetEditor } from './ui/sheet-editor.js';
+import { renderSheetPrint } from './ui/sheet-print.js';
+import { sheetForSharing, sheetFromSharing } from './state/sheets.js';
+import { encodeSheetLink, decodeSheetLink } from './state/codec.js';
+import { instrumentInstance } from './core/instrument.js';
 
 const store = createStore();
 const fromUrl = readUrl();
@@ -142,6 +147,64 @@ function applyChordText(text, { source } = {}) {
 }
 
 let libraryBox = null;
+let sheetsBox = null;
+
+function renderSheetsOnly() {
+  if (!sheetsBox) return;
+  const wasOpen = sheetsBox.querySelector('details')?.open;
+  renderSheetEditor(sheetsBox, {
+    store,
+    onChange: () => renderSheetsOnly(),
+    onShare: () => shareSheet(),
+    onPrint: () => printSheet(),
+  });
+  if (wasOpen) sheetsBox.querySelector('details').open = true;
+  renderResultsOnly();
+}
+
+/** Put a share link for the open sheet on screen, ready to copy. */
+async function shareSheet() {
+  const sheet = store.activeSheet;
+  const instrument = store.effectiveInstrument;
+  if (!sheet || !instrument) return;
+  const fragment = await encodeSheetLink(sheetForSharing(sheet, instrument));
+  const url = `${globalThis.location.origin}${globalThis.location.pathname}${fragment}`;
+  const box = document.querySelector('#sheet-share-out') ?? el('div', { id: 'sheet-share-out' });
+  clear(box);
+  box.className = 'ec-share-out';
+  const field = el('input', {
+    type: 'text',
+    readonly: true,
+    value: url,
+    'aria-label': 'Share link for this sheet',
+    class: 'ec-share-link',
+  });
+  box.append(
+    el('p', { class: 'ec-help' }, 'Anyone opening this link sees the sheet as written.'),
+    field
+  );
+  sheetsBox.querySelector('.ec-sheets-body')?.append(box);
+  field.select();
+}
+
+/** Render the sheet into the print container and ask the browser to print. */
+function printSheet() {
+  const sheet = store.activeSheet;
+  const instrument = store.effectiveInstrument;
+  if (!sheet || !instrument) return;
+  renderSheetPrint(document.querySelector('#print-root'), { store, sheet, instrument });
+  document.body.classList.add('ec-printing');
+  const done = () => {
+    document.body.classList.remove('ec-printing');
+    globalThis.removeEventListener('afterprint', done);
+  };
+  globalThis.addEventListener('afterprint', done);
+  try {
+    globalThis.print();
+  } catch {
+    done();
+  }
+}
 
 function renderLibraryOnly() {
   if (!libraryBox) return;
@@ -174,6 +237,15 @@ function renderResultsOnly() {
       store.set({ expandedGroups: expanded });
       renderResultsOnly();
     },
+    onAddToSheet: store.activeSheet
+      ? (fingering) => {
+          store.addSlot({
+            chordText: store.state.chordText,
+            frets: fingering.frets,
+          });
+          renderSheetsOnly();
+        }
+      : null,
     onToggleFavorite: (fingering) => {
       store.toggleFavorite({
         instrumentId: store.effectiveInstrument.id,
@@ -195,9 +267,10 @@ function renderExplorer() {
   const inputBox = el('div', { class: 'ec-input-area' });
   const heuristicsBox = el('div', { class: 'ec-heuristics-area' });
   libraryBox = el('div', { class: 'ec-library-area' });
+  sheetsBox = el('div', { class: 'ec-sheets-area' });
   const toggleBox = el('div', { class: 'ec-toggle-area' });
   resultsBox = el('div', { class: 'ec-results' });
-  nodes.main.append(inputBox, heuristicsBox, libraryBox, toggleBox, resultsBox);
+  nodes.main.append(inputBox, heuristicsBox, libraryBox, sheetsBox, toggleBox, resultsBox);
 
   const drawHeuristics = () => {
     const panel = renderHeuristicsPanel(heuristicsBox, {
@@ -222,6 +295,7 @@ function renderExplorer() {
   };
   drawHeuristics();
   renderLibraryOnly();
+  renderSheetsOnly();
 
   const drawToggles = () =>
     renderDisplayToggles(toggleBox, {
@@ -287,6 +361,50 @@ function render() {
   renderExplorer();
 }
 
+/**
+ * A shared sheet arrives in the fragment. It is shown as a preview first: it
+ * carries its own instrument, so importing it silently would change what the
+ * user is looking at (§2.1, §8.2).
+ */
+async function applySharedSheet() {
+  let payload;
+  try {
+    payload = await decodeSheetLink();
+  } catch (error) {
+    announce(nodes.live, error.message);
+    return;
+  }
+  if (!payload) return;
+
+  let instrument = store.activeInstrument;
+  if (payload.instrument?.strings) {
+    try {
+      const shared = instrumentInstance({
+        catalogId: payload.instrument.catalogId ?? null,
+        label: payload.instrument.label ?? 'Shared instrument',
+        strings: payload.instrument.strings,
+        fretCount: payload.instrument.fretCount,
+      });
+      if (!instrument || !sameTuning(instrument, shared)) {
+        store.setViewAs(shared, 'sheet');
+        instrument = shared;
+      }
+    } catch {
+      // A tuning that no longer parses should not block the import.
+    }
+  }
+
+  const sheet = sheetFromSharing(payload, instrument?.id ?? null);
+  store.addSheet(sheet);
+  try {
+    globalThis.history.replaceState(null, '', globalThis.location.pathname);
+  } catch {
+    /* history may be unavailable */
+  }
+  render();
+  announce(nodes.live, `Imported the song sheet "${sheet.title}".`);
+}
+
 mount();
 applyUrlState();
 if (!store.needsSetup) runSearch();
@@ -295,3 +413,11 @@ render();
 // Exposed for the end-to-end tests, which need to reason about state rather
 // than only about pixels.
 globalThis.__ec = { store };
+
+applySharedSheet();
+
+// A share link opened while the app is already loaded only changes the
+// fragment, so no navigation happens and the import would never run.
+globalThis.addEventListener('hashchange', () => {
+  applySharedSheet();
+});

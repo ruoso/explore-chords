@@ -19,7 +19,7 @@ function positionLabel(position) {
 
 export function renderResults(
   container,
-  { store, results, chord, instrument, onShowMore, onToggleFavorite }
+  { store, results, chord, instrument, onShowMore, onToggleFavorite, onAddToSheet }
 ) {
   clear(container);
 
@@ -126,7 +126,19 @@ export function renderResults(
           },
           el('span', { 'aria-hidden': 'true' }, starred ? '★' : '☆'),
           starred ? ' Saved' : ' Save'
-        )
+        ),
+        onAddToSheet
+          ? el(
+              'button',
+              {
+                type: 'button',
+                class: 'ec-tosheet',
+                'aria-label': `Add ${fingering.shorthand} to the song sheet`,
+                onClick: () => onAddToSheet(fingering),
+              },
+              '+ Sheet'
+            )
+          : null
       );
       list.append(card);
     }

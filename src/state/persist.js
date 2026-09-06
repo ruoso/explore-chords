@@ -19,6 +19,7 @@ export const KEYS = {
   prefs: KEY('prefs'),
   favorites: KEY('favorites'),
   sheets: KEY('sheets'),
+  activeSheet: KEY('activeSheet'),
 };
 
 function readRaw(key) {
@@ -144,6 +145,14 @@ export function loadFavorites() {
 
 export function saveFavorites(favorites) {
   return writeJson(KEYS.favorites, favorites);
+}
+
+export function loadActiveSheetId() {
+  return readRaw(KEYS.activeSheet);
+}
+
+export function saveActiveSheetId(id) {
+  return id ? writeRaw(KEYS.activeSheet, id) : removeKey(KEYS.activeSheet);
 }
 
 /** A stable identity for one starred shape. */

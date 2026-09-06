@@ -22,7 +22,10 @@ import {
   loadFavorites,
   saveFavorites,
   favoriteKey,
+  loadActiveSheetId,
+  saveActiveSheetId,
 } from './persist.js';
+import { loadSheets, saveSheets, newSheet, newSlot } from './sheets.js';
 
 /**
  * @typedef {object} AppState
@@ -55,10 +58,22 @@ export function createStore(initial = {}) {
     errors: [],
     prefs: initial.prefs ?? loadPrefs(),
     favorites: initial.favorites ?? loadFavorites(),
+    sheets: initial.sheets ?? loadSheets(),
+    activeSheetId: null,
+    activeSectionId: null,
     results: null,
     searching: false,
     ...initial.state,
   };
+
+  // Restore the sheet that was open, so a reload does not drop the user out of
+  // the song they were working on.
+  const storedSheet = initial.activeSheetId ?? loadActiveSheetId();
+  const restored = state.sheets.find((s) => s.id === storedSheet);
+  if (restored) {
+    state.activeSheetId = restored.id;
+    state.activeSectionId = restored.sections[0]?.id ?? null;
+  }
 
   const subscribers = new Set();
 
@@ -180,6 +195,102 @@ export function createStore(initial = {}) {
       return state.favorites
         .filter((f) => f.instrumentId === instrumentId)
         .sort((a, b) => (b.added ?? 0) - (a.added ?? 0));
+    },
+
+    // --- song sheets ------------------------------------------------------
+
+    get activeSheet() {
+      return state.sheets.find((s) => s.id === state.activeSheetId) ?? null;
+    },
+
+    /** Sheets written for one instrument. */
+    sheetsFor(instrumentId) {
+      return state.sheets.filter((s) => s.instrumentId === instrumentId);
+    },
+
+    createSheet(title) {
+      const instrument = store.effectiveInstrument;
+      const sheet = newSheet({ title, instrumentId: instrument?.id ?? null });
+      const sheets = [...state.sheets, sheet];
+      saveSheets(sheets);
+      saveActiveSheetId(sheet.id);
+      store.set({
+        sheets,
+        activeSheetId: sheet.id,
+        activeSectionId: sheet.sections[0]?.id ?? null,
+      });
+      return sheet;
+    },
+
+    addSheet(sheet, { activate = true } = {}) {
+      const sheets = [...state.sheets, sheet];
+      saveSheets(sheets);
+      if (activate) saveActiveSheetId(sheet.id);
+      store.set({
+        sheets,
+        activeSheetId: activate ? sheet.id : state.activeSheetId,
+        activeSectionId: activate ? (sheet.sections[0]?.id ?? null) : state.activeSectionId,
+      });
+      return sheet;
+    },
+
+    updateSheet(id, updater) {
+      const sheets = state.sheets.map((s) =>
+        s.id === id ? { ...(typeof updater === 'function' ? updater(s) : updater), updated: Date.now() } : s
+      );
+      saveSheets(sheets);
+      return store.set({ sheets });
+    },
+
+    deleteSheet(id) {
+      const sheets = state.sheets.filter((s) => s.id !== id);
+      saveSheets(sheets);
+      if (state.activeSheetId === id) saveActiveSheetId(null);
+      return store.set({
+        sheets,
+        activeSheetId: state.activeSheetId === id ? null : state.activeSheetId,
+      });
+    },
+
+    setActiveSheet(id) {
+      const sheet = state.sheets.find((s) => s.id === id) ?? null;
+      saveActiveSheetId(sheet?.id ?? null);
+      return store.set({
+        activeSheetId: sheet?.id ?? null,
+        activeSectionId: sheet?.sections[0]?.id ?? null,
+      });
+    },
+
+    setActiveSection(id) {
+      return store.set({ activeSectionId: id });
+    },
+
+    /** Pin a fingering into the current section of the current sheet. */
+    addSlot({ chordText, frets }) {
+      const sheet = store.activeSheet;
+      if (!sheet) return null;
+      const sectionId = state.activeSectionId ?? sheet.sections[0]?.id;
+      const slot = newSlot({ chordText, frets });
+      store.updateSheet(sheet.id, (s) => ({
+        ...s,
+        sections: s.sections.map((section) =>
+          section.id === sectionId ? { ...section, slots: [...section.slots, slot] } : section
+        ),
+      }));
+      return slot;
+    },
+
+    removeSlot(sectionId, slotId) {
+      const sheet = store.activeSheet;
+      if (!sheet) return null;
+      return store.updateSheet(sheet.id, (s) => ({
+        ...s,
+        sections: s.sections.map((section) =>
+          section.id === sectionId
+            ? { ...section, slots: section.slots.filter((slot) => slot.id !== slotId) }
+            : section
+        ),
+      }));
     },
 
     setPrefs(patch) {

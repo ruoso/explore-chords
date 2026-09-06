@@ -1,0 +1,81 @@
+/*
+ * Print layout for song sheets (docs/DESIGN.md §2.5).
+ *
+ * The print view lives in the app, hidden on screen, so it cannot silently rot
+ * the way a separate page would.
+ */
+
+.ec-print-root {
+  display: none;
+}
+
+.ec-print-title {
+  margin: 0 0 0.15rem;
+  font-size: 1.4rem;
+}
+
+.ec-print-instrument {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.ec-print-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin: 0 0 1.25rem;
+  padding: 0 0 1rem;
+  border-bottom: 1px solid var(--border);
+  list-style: none;
+}
+
+.ec-print-chord {
+  text-align: center;
+}
+
+.ec-print-chord-name {
+  margin: 0 0 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.ec-print-section {
+  break-inside: avoid;
+  margin-bottom: 0.9rem;
+}
+
+.ec-print-section-name {
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
+}
+
+.ec-print-progression {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+}
+
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  /* When a sheet is being printed, only the sheet is printed. */
+  body.ec-printing .app {
+    display: none;
+  }
+
+  body.ec-printing .ec-print-root {
+    display: block;
+  }
+
+  .ec-print-legend {
+    border-bottom-color: #000;
+  }
+}
