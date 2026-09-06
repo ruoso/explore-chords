@@ -1083,10 +1083,15 @@ later invalidates asset URLs and service worker scope together.
 
 ## 11. Open questions
 
-- **Fret count per instrument** — a ukulele search should not offer fret 20.
-  `fretCount` is in the model; the catalog needs real values per instrument.
-- **Difficulty buckets** need calibration against real shapes once the scorer
-  runs. The §5.4 thresholds are a starting guess.
+**Resolved during the build.** Real `fretCount` values are in the catalog, so a
+ukulele search stops at 15. Difficulty thresholds are calibrated against real
+shapes (§5.4). Two heuristic defaults were corrected, and the pitch-ordering
+rule dropped entirely, once re-entrant instruments were actually tested (§5.2).
+
+**Still open:**
+- **Difficulty weights beyond the defaults.** The thresholds now match real
+  shapes on a guitar, but the weights have not been checked against a beginner
+  actually finding things hard, nor tuned per instrument.
 - **Capo — deferred, and less cheap than it looks.** The search side is trivial
   (raise the open strings, offset the displayed frets). The hard part is that a
   capo changes *what a chord name means*: with a capo on 3, the shape a player
