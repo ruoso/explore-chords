@@ -78,3 +78,7 @@ The chord-generation approach grows out of
 reuses its ideas — depth-first search over string assignments, playability
 filtering, SVG chord boxes — while replacing the algorithm with a scored search
 and a real finger assigner, and fixing its handling of re-entrant tunings.
+
+## License
+
+[MIT](LICENSE) © Daniel Ruoso
