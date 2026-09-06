@@ -1,19 +1,19 @@
 /**
- * Instrument settings (docs/DESIGN.md §2.1, §2.4).
+ * The instrument screen (docs/DESIGN.md §2.1, §2.5).
  *
- * Everything about the active instrument lives here: what it is called, how it
- * is tuned, and how it should be voiced. The voicing rules belong on this
- * screen rather than beside the chord input, because they are a property of the
- * instrument, not of the search you happen to be running.
+ * A list of the instruments you have, each with use, edit and delete, plus add.
+ * Editing opens the same form used for adding, so the two are symmetrical, and
+ * it edits *that* instrument rather than whichever happens to be active.
  *
- * Naming matters more than it looks. A user with three custom tunings needs to
- * tell them apart in the switcher, and "Guitar (6-string) · Custom" three times
- * over is useless.
+ * Voicing rules sit inside the editor rather than on the list, because they
+ * belong to one instrument. A bass and a ukulele want permanently different
+ * rules, so editing them is part of editing the instrument.
  */
 
 import { el, clear } from './dom.js';
-import { parseTuning, formatTuning, configFor, CATALOG } from '../core/instrument.js';
+import { formatTuning, configFor, isReentrant } from '../core/instrument.js';
 import { PRESET_IDS, PRESET_LABELS, withOverrides } from '../core/heuristics.js';
+import { renderInstrumentForm } from './instrument-form.js';
 
 const RULES = [
   ['rootInBass', 'Root must be the lowest note'],
@@ -48,136 +48,133 @@ const WEIGHT_LABELS = {
   nonAdjacentStretch: 'Wide stretch',
 };
 
-export function renderInstrumentSettings(container, { store, onChange, onAdd, onDelete }) {
+/** The list of instruments. */
+export function renderInstrumentList(container, { store, onAdd, onEdit, onUse, onDelete }) {
   clear(container);
-  const instrument = store.effectiveInstrument;
-  if (!instrument) return;
-
-  const isBorrowed = Boolean(store.state.viewAs);
-  const config = instrument.heuristics;
-  const presetName =
-    config.preset === 'custom' ? 'Custom' : (PRESET_LABELS[config.preset] ?? 'Custom');
-
   const page = el('div', { class: 'ec-page' });
-  page.append(el('h2', { class: 'ec-page-title' }, 'Instrument'));
+  page.append(
+    el('h2', { class: 'ec-page-title' }, 'Instruments'),
+    el(
+      'p',
+      { class: 'ec-help' },
+      'Everything on screen is for the instrument in use. Each keeps its own tuning, voicing rules, saved shapes and songs.'
+    )
+  );
 
-  if (isBorrowed) {
-    page.append(
+  const list = el('ul', { class: 'ec-instrument-list' });
+  for (const instrument of store.state.instruments) {
+    const isActive = instrument.id === store.state.activeId;
+    list.append(
       el(
-        'p',
-        { class: 'ec-help' },
-        'This instrument came from a link or a song sheet. Keep it as your default to edit it permanently.'
+        'li',
+        { class: `ec-instrument-row${isActive ? ' is-active' : ''}` },
+        el(
+          'div',
+          { class: 'ec-instrument-info' },
+          el(
+            'p',
+            { class: 'ec-instrument-name' },
+            instrument.label,
+            isActive ? el('span', { class: 'ec-badge' }, 'In use') : null,
+            isReentrant(instrument) ? el('span', { class: 'ec-badge' }, 'Re-entrant') : null
+          ),
+          el(
+            'p',
+            { class: 'ec-instrument-tuning' },
+            `${formatTuning(instrument.strings)} · ${instrument.fretCount} frets`
+          )
+        ),
+        el(
+          'div',
+          { class: 'ec-instrument-actions' },
+          isActive
+            ? null
+            : el(
+                'button',
+                {
+                  type: 'button',
+                  class: 'ec-button ec-button-small',
+                  'aria-label': `Use ${instrument.label}`,
+                  onClick: () => onUse(instrument),
+                },
+                'Use'
+              ),
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'ec-button ec-button-small',
+              'aria-label': `Edit ${instrument.label}`,
+              onClick: () => onEdit(instrument),
+            },
+            'Edit'
+          ),
+          store.state.instruments.length > 1
+            ? el(
+                'button',
+                {
+                  type: 'button',
+                  class: 'ec-button ec-button-small',
+                  'aria-label': `Delete ${instrument.label}`,
+                  onClick: () => onDelete(instrument),
+                },
+                'Delete'
+              )
+            : null
+        )
       )
     );
   }
 
-  // --- identity -----------------------------------------------------------
-
-  const identity = el('section', { class: 'ec-panel', 'aria-labelledby': 'settings-identity' });
-  identity.append(el('h3', { class: 'ec-panel-title', id: 'settings-identity' }, 'Name and tuning'));
-
-  const nameInput = el('input', {
-    type: 'text',
-    id: 'instrument-name',
-    value: instrument.label,
-    maxlength: '60',
-    autocomplete: 'off',
-  });
-
-  const tuningInput = el('input', {
-    type: 'text',
-    id: 'instrument-tuning',
-    value: formatTuning(instrument.strings),
-    autocomplete: 'off',
-    spellcheck: 'false',
-    'aria-describedby': 'instrument-tuning-help',
-  });
-
-  const fretsInput = el('input', {
-    type: 'number',
-    id: 'instrument-frets',
-    min: '5',
-    max: '30',
-    step: '1',
-    value: instrument.fretCount,
-  });
-
-  const error = el('p', { class: 'ec-error', id: 'instrument-error', role: 'alert', hidden: true });
-
-  identity.append(
-    el(
-      'div',
-      { class: 'ec-field' },
-      el('label', { for: 'instrument-name' }, 'Name'),
-      nameInput,
-      el(
-        'p',
-        { class: 'ec-help' },
-        'Shown in the switcher. Give custom tunings names you will recognise.'
-      )
-    ),
-    el(
-      'div',
-      { class: 'ec-field' },
-      el('label', { for: 'instrument-tuning' }, 'Tuning'),
-      tuningInput,
-      el(
-        'p',
-        { class: 'ec-help', id: 'instrument-tuning-help' },
-        'Lowest string first. Any comma-separated pitch list works, including re-entrant tunings.'
-      )
-    ),
-    el(
-      'div',
-      { class: 'ec-field ec-field-inline' },
-      el('label', { for: 'instrument-frets' }, 'Frets'),
-      fretsInput
-    ),
-    error,
+  page.append(
+    list,
     el(
       'div',
       { class: 'ec-actions' },
       el(
         'button',
-        {
-          type: 'button',
-          class: 'ec-button ec-button-primary',
-          id: 'instrument-save',
-          onClick: () => {
-            error.hidden = true;
-            const name = nameInput.value.trim();
-            if (!name) {
-              error.textContent = 'Give the instrument a name.';
-              error.hidden = false;
-              nameInput.focus();
-              return;
-            }
-            let strings;
-            try {
-              strings = parseTuning(tuningInput.value);
-            } catch (e) {
-              error.textContent = `That tuning does not read: ${e.message}`;
-              error.hidden = false;
-              tuningInput.focus();
-              return;
-            }
-            const frets = Number(fretsInput.value);
-            onChange({
-              label: name,
-              strings,
-              fretCount: Number.isFinite(frets) ? frets : instrument.fretCount,
-            });
-          },
-        },
-        'Save'
+        { type: 'button', class: 'ec-button ec-button-primary', id: 'instrument-add', onClick: onAdd },
+        'Add instrument'
       )
     )
   );
-  page.append(identity);
+
+  container.append(page);
+  return page;
+}
+
+/** The editor for one instrument: the shared form, plus its voicing rules. */
+export function renderInstrumentEditor(
+  container,
+  { instrument, onSave, onCancel, onDelete, onRules }
+) {
+  clear(container);
+  if (!instrument) return;
+
+  const page = el('div', { class: 'ec-page' });
+  page.append(
+    el(
+      'button',
+      { type: 'button', class: 'ec-button ec-button-small ec-back', id: 'instrument-back', onClick: onCancel },
+      '← All instruments'
+    )
+  );
+
+  const formBox = el('div', {});
+  renderInstrumentForm(formBox, {
+    mode: 'edit',
+    instrument,
+    onSubmit: onSave,
+    onCancel,
+  });
+  page.append(formBox);
 
   // --- voicing rules ------------------------------------------------------
 
-  const apply = (patch) => onChange({ heuristics: withOverrides(config, patch) });
+  const config = instrument.heuristics;
+  const presetName =
+    config.preset === 'custom' ? 'Custom' : (PRESET_LABELS[config.preset] ?? 'Custom');
+  const apply = (patch) => onRules(withOverrides(config, patch));
 
   const rulesPanel = el('section', { class: 'ec-panel', 'aria-labelledby': 'settings-rules' });
   rulesPanel.append(
@@ -187,16 +184,12 @@ export function renderInstrumentSettings(container, { store, onChange, onAdd, on
       'Voicing rules',
       el('span', { class: 'ec-panel-tag' }, presetName)
     ),
-    el(
-      'p',
-      { class: 'ec-help' },
-      'How chords are voiced on this instrument. Each instrument keeps its own rules.'
-    )
+    el('p', { class: 'ec-help' }, `How chords are voiced on ${instrument.label}.`)
   );
 
   const presetSelect = el('select', {
     id: 'heuristics-preset',
-    onChange: () => onChange({ heuristics: configFor(instrument, presetSelect.value) }),
+    onChange: () => onRules(configFor(instrument, presetSelect.value)),
   });
   for (const id of PRESET_IDS) {
     presetSelect.append(
@@ -290,94 +283,24 @@ export function renderInstrumentSettings(container, { store, onChange, onAdd, on
   rulesPanel.append(advanced);
   page.append(rulesPanel);
 
-  // --- your instruments ---------------------------------------------------
-
-  const list = el('section', { class: 'ec-panel', 'aria-labelledby': 'settings-list' });
-  list.append(el('h3', { class: 'ec-panel-title', id: 'settings-list' }, 'Your instruments'));
-
-  const ul = el('ul', { class: 'ec-instrument-list' });
-  for (const item of store.state.instruments) {
-    const isActive = item.id === store.state.activeId;
-    ul.append(
+  if (onDelete) {
+    page.append(
       el(
-        'li',
-        { class: `ec-instrument-row${isActive ? ' is-active' : ''}` },
+        'div',
+        { class: 'ec-actions ec-danger' },
         el(
-          'div',
-          { class: 'ec-instrument-info' },
-          el('p', { class: 'ec-instrument-name' }, item.label),
-          el('p', { class: 'ec-instrument-tuning' }, formatTuning(item.strings))
-        ),
-        el(
-          'div',
-          { class: 'ec-instrument-actions' },
-          isActive
-            ? el('span', { class: 'ec-badge' }, 'Active')
-            : el(
-                'button',
-                {
-                  type: 'button',
-                  class: 'ec-button ec-button-small',
-                  onClick: () => {
-                    store.setActive(item.id);
-                    onChange(null);
-                  },
-                },
-                'Use'
-              ),
-          store.state.instruments.length > 1
-            ? el(
-                'button',
-                {
-                  type: 'button',
-                  class: 'ec-button ec-button-small',
-                  'aria-label': `Delete ${item.label}`,
-                  onClick: () => onDelete(item),
-                },
-                'Delete'
-              )
-            : null
+          'button',
+          {
+            type: 'button',
+            class: 'ec-button ec-button-small',
+            id: 'instrument-delete',
+            onClick: () => onDelete(instrument),
+          },
+          'Delete this instrument'
         )
       )
     );
   }
-  list.append(
-    ul,
-    el(
-      'div',
-      { class: 'ec-actions' },
-      el(
-        'button',
-        { type: 'button', class: 'ec-button', id: 'instrument-add', onClick: onAdd },
-        'Add instrument'
-      )
-    )
-  );
-  page.append(list);
-
-  // Reference, so someone writing a custom tuning has something to copy.
-  const reference = el('details', { class: 'ec-panel ec-reference' });
-  reference.append(el('summary', {}, 'Standard tunings for reference'));
-  const table = el('table', { class: 'ec-reference-table' });
-  table.append(
-    el('thead', {}, el('tr', {}, el('th', {}, 'Instrument'), el('th', {}, 'Tuning')))
-  );
-  const tbody = el('tbody', {});
-  for (const entry of CATALOG) {
-    for (const tuning of entry.tunings) {
-      tbody.append(
-        el(
-          'tr',
-          {},
-          el('td', {}, `${entry.name} · ${tuning.name}`),
-          el('td', { class: 'ec-reference-tuning' }, tuning.strings)
-        )
-      );
-    }
-  }
-  table.append(tbody);
-  reference.append(table);
-  page.append(reference);
 
   container.append(page);
   return page;

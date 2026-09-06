@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshVisit, completeSetup, searchChord, appState } from './helpers.js';
+import { freshVisit, completeSetup, searchChord, appState, addInstrument } from './helpers.js';
 
 /**
  * The instrument is the app's identity (docs/DESIGN.md §2.1): switching is
@@ -15,10 +15,7 @@ test.describe('switching instruments', () => {
     const onGuitar = await appState(page);
     expect(onGuitar.resultCount).toBeGreaterThan(0);
 
-    await page.locator('.ec-chip-summary').click();
-    await page.getByRole('button', { name: '+ Add instrument' }).click();
-    await page.selectOption('#setup-instrument', 'ukulele');
-    await page.getByRole('button', { name: 'Add instrument' }).click();
+    await addInstrument(page, { instrument: 'ukulele' });
 
     await expect(page.locator('.ec-chip-label')).toContainText('Ukulele');
     const onUke = await appState(page);
@@ -37,10 +34,7 @@ test.describe('switching instruments', () => {
   test('the active instrument persists across a reload', async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page, { instrument: '6guitar' });
-    await page.locator('.ec-chip-summary').click();
-    await page.getByRole('button', { name: '+ Add instrument' }).click();
-    await page.selectOption('#setup-instrument', 'cavaquinho');
-    await page.getByRole('button', { name: 'Add instrument' }).click();
+    await addInstrument(page, { instrument: 'cavaquinho' });
     await expect(page.locator('.ec-chip-label')).toContainText('Cavaquinho');
 
     await page.reload();

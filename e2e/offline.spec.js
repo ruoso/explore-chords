@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshVisit, completeSetup, searchChord, appState } from './helpers.js';
+import { freshVisit, completeSetup, searchChord, appState, addInstrument } from './helpers.js';
 
 /**
  * Offline behaviour (docs/DESIGN.md §7, §9.4).
@@ -104,10 +104,7 @@ test.describe('offline', () => {
     expect(state.resultCount).toBeGreaterThan(0);
 
     // And switching instrument offline still re-derives everything.
-    await page.locator('.ec-chip-summary').click();
-    await page.getByRole('button', { name: '+ Add instrument' }).click();
-    await page.selectOption('#setup-instrument', 'ukulele');
-    await page.getByRole('button', { name: 'Add instrument' }).click();
+    await addInstrument(page, { instrument: 'ukulele' });
     await expect(page.locator('.ec-chip-label')).toContainText('Ukulele');
 
     await context.setOffline(false);

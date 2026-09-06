@@ -217,7 +217,7 @@ test.describe('sharing a song', () => {
     const context = await page.context().browser().newContext();
     const other = await context.newPage();
     await other.goto('./');
-    await other.selectOption('#setup-instrument', 'ukulele');
+    await other.selectOption('#instrument-catalog', 'ukulele');
     await other.getByRole('button', { name: 'Start playing' }).click();
     await other.goto(link);
 

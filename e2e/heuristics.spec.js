@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshVisit, completeSetup, searchChord, appState, goToView } from './helpers.js';
+import { freshVisit, completeSetup, searchChord, appState, goToView, addInstrument, editActiveInstrument } from './helpers.js';
 
 /**
  * Voicing rules belong to the instrument (docs/DESIGN.md §2.4), not to the app.
@@ -11,7 +11,7 @@ test.describe('presets', () => {
     await freshVisit(page);
     await completeSetup(page, { instrument: '6guitar' });
     await searchChord(page, 'F');
-    await goToView(page, 'instrument');
+    await editActiveInstrument(page);
   });
 
   test('switching preset re-runs the search and changes the results', async ({ page }) => {
@@ -53,37 +53,40 @@ test.describe('rules follow the instrument', () => {
     await freshVisit(page);
     await completeSetup(page, { instrument: '6guitar' });
 
-    await page.locator('.ec-chip-summary').click();
-    await page.getByRole('button', { name: '+ Add instrument' }).click();
-    await page.selectOption('#setup-instrument', 'ukulele');
-    await page.getByRole('button', { name: 'Add instrument' }).click();
+    await addInstrument(page, { instrument: 'ukulele' });
     await expect(page.locator('.ec-chip-label')).toContainText('Ukulele');
 
     // Give the ukulele a non-default preset.
-    await goToView(page, 'instrument');
+    await editActiveInstrument(page);
     await page.selectOption('#heuristics-preset', 'jazz');
     await expect(page.locator('.ec-panel-tag')).toHaveText('Jazz');
 
     // The guitar must be untouched.
+    await goToView(page, 'explore');
     await page.locator('.ec-chip-summary').click();
     await page.locator('.ec-chip-item', { hasText: 'Guitar' }).click();
+    await editActiveInstrument(page);
     await expect(page.locator('.ec-panel-tag')).toHaveText('Standard');
 
     // And the ukulele must have kept its own.
+    await goToView(page, 'explore');
     await page.locator('.ec-chip-summary').click();
     await page.locator('.ec-chip-item', { hasText: 'Ukulele' }).click();
-    await goToView(page, 'instrument');
+    await editActiveInstrument(page);
     await expect(page.locator('.ec-panel-tag')).toHaveText('Jazz');
   });
 
   test('a configuration survives a reload', async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page, { instrument: '6guitar' });
-    await goToView(page, 'instrument');
+    await editActiveInstrument(page);
     await page.selectOption('#heuristics-preset', 'jazz');
     await expect(page.locator('.ec-panel-tag')).toHaveText('Jazz');
 
+    // A reload returns to the instrument list rather than into a half-finished
+    // edit, so the editor is reopened to check the saved rules.
     await page.reload();
+    await editActiveInstrument(page);
     await expect(page.locator('.ec-panel-tag')).toHaveText('Jazz');
   });
 
@@ -96,7 +99,7 @@ test.describe('rules follow the instrument', () => {
     const before = (await appState(page)).resultCount;
     expect(before).toBeGreaterThan(0);
 
-    await goToView(page, 'instrument');
+    await editActiveInstrument(page);
     await expect(page.locator('#rule-rootInBass')).not.toBeChecked();
     await page.selectOption('#heuristics-preset', 'jazz');
     await expect(page.locator('#rule-rootInBass')).not.toBeChecked();

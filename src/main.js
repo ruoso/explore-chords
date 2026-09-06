@@ -10,7 +10,7 @@ import { searchFingerings } from './core/search.js';
 import { createStore, sameTuning } from './state/store.js';
 import { readUrl, syncUrl } from './state/url.js';
 import { el, clear, announce } from './ui/dom.js';
-import { renderInstrumentSetup } from './ui/instrument-setup.js';
+import { renderInstrumentForm } from './ui/instrument-form.js';
 import { renderInstrumentChip } from './ui/instrument-chip.js';
 import { renderViewAsBar } from './ui/view-as-bar.js';
 import { renderResults } from './ui/results.js';
@@ -18,7 +18,11 @@ import { renderChordInput } from './ui/chord-input.js';
 import { renderDisplayToggles } from './ui/display-toggles.js';
 import { renderLibrary } from './ui/library.js';
 import { renderNav } from './ui/nav.js';
-import { renderInstrumentSettings } from './ui/instrument-settings.js';
+import {
+  renderInstrumentList,
+  renderInstrumentEditor,
+} from './ui/instrument-settings.js';
+import { confirmDialog } from './ui/confirm-dialog.js';
 import { renderSheetList, renderSheetEditor } from './ui/sheets-view.js';
 import { renderSheetPrint } from './ui/sheet-print.js';
 import { sheetForSharing, sheetFromSharing } from './state/sheets.js';
@@ -284,42 +288,120 @@ function renderSheets() {
   });
 }
 
+// --- instruments -----------------------------------------------------------
+
+function renderInstruments() {
+  const editing = store.state.instrumentForm?.mode === 'edit'
+    ? store.state.instruments.find((i) => i.id === store.state.instrumentForm.id)
+    : null;
+
+  if (!editing) {
+    renderInstrumentList(nodes.main, {
+      store,
+      onAdd: () => {
+        store.set({ instrumentForm: { mode: 'create' } });
+        render();
+      },
+      onEdit: (instrument) => {
+        store.set({ instrumentForm: { mode: 'edit', id: instrument.id } });
+        render();
+      },
+      onUse: (instrument) => {
+        store.setActive(instrument.id);
+        store.setActiveSheet(null);
+        runSearch();
+        render();
+      },
+      onDelete: confirmDeleteInstrument,
+    });
+    return;
+  }
+
+  renderInstrumentEditor(nodes.main, {
+    instrument: editing,
+    onSave: (values) => {
+      store.updateInstrument(editing.id, values);
+      store.set({ instrumentForm: null });
+      runSearch();
+      render();
+    },
+    onCancel: () => {
+      store.set({ instrumentForm: null });
+      render();
+    },
+    onRules: (heuristics) => {
+      store.updateInstrument(editing.id, { heuristics });
+      runSearch();
+      render();
+    },
+    onDelete: store.state.instruments.length > 1 ? confirmDeleteInstrument : null,
+  });
+}
+
 // --- setup and routing -----------------------------------------------------
 
 function navigate(view, extra = {}) {
-  store.set({ view, ...extra });
+  // Moving between screens abandons a half-finished instrument form, so you
+  // never come back to an editor for something you are no longer looking at.
+  store.set({ view, instrumentForm: null, ...extra });
   syncUrl(store.state, { instrument: store.effectiveInstrument });
   render();
 }
 
-function showSetup({ firstRun }) {
+/** Creating an instrument, first run or later, uses the same form as editing. */
+function showCreate({ firstRun }) {
   clear(nodes.main);
-  nodes.chip.hidden = true;
-  nodes.nav.hidden = true;
-  renderInstrumentSetup(nodes.main, {
+  nodes.chip.hidden = firstRun;
+  nodes.nav.hidden = firstRun;
+  renderInstrumentForm(nodes.main, {
+    mode: 'create',
     firstRun,
-    onDone: (instrument) => {
-      store.addInstrument(instrument);
-      store.set({ addingInstrument: false });
+    onSubmit: (values) => {
+      store.addInstrument(instrumentInstance(values));
+      store.set({ instrumentForm: null });
       runSearch();
       render();
     },
     onCancel: firstRun
       ? null
       : () => {
-          store.set({ addingInstrument: false });
+          store.set({ instrumentForm: null });
           render();
         },
   });
 }
 
+/** Deleting takes a song's or a shape's home with it, so it asks first. */
+function confirmDeleteInstrument(instrument) {
+  const shapes = store.favoritesFor(instrument.id).length;
+  const songs = store.sheetsFor(instrument.id).length;
+  const belongings = [
+    shapes > 0 ? `${shapes} saved shape${shapes === 1 ? '' : 's'}` : null,
+    songs > 0 ? `${songs} song${songs === 1 ? '' : 's'}` : null,
+  ].filter(Boolean);
+
+  confirmDialog({
+    title: `Delete ${instrument.label}?`,
+    message: belongings.length
+      ? `Its ${belongings.join(' and ')} will go with it. This cannot be undone.`
+      : 'This cannot be undone.',
+    confirmLabel: 'Delete instrument',
+    onConfirm: () => {
+      store.removeInstrument(instrument.id);
+      store.set({ instrumentForm: null });
+      runSearch();
+      render();
+    },
+  });
+}
+
 function render() {
   if (store.needsSetup) {
-    showSetup({ firstRun: true });
+    showCreate({ firstRun: true });
     return;
   }
-  if (store.state.addingInstrument) {
-    showSetup({ firstRun: false });
+  if (store.state.instrumentForm?.mode === 'create') {
+    showCreate({ firstRun: false });
     return;
   }
 
@@ -331,12 +413,13 @@ function render() {
     onSwitch: (id) => {
       store.setActive(id);
       store.setActiveSheet(null);
+      store.set({ instrumentForm: null });
       runSearch();
       syncUrl(store.state, { instrument: store.effectiveInstrument });
       render();
     },
     onAdd: () => {
-      store.set({ addingInstrument: true });
+      store.set({ instrumentForm: { mode: 'create' } });
       render();
     },
   });
@@ -360,30 +443,7 @@ function render() {
   clear(nodes.main);
   switch (store.state.view) {
     case 'instrument':
-      renderInstrumentSettings(nodes.main, {
-        store,
-        onChange: (patch) => {
-          if (patch) {
-            const target = store.state.viewAs?.instance ?? store.activeInstrument;
-            if (store.state.viewAs) {
-              store.set({ viewAs: { ...store.state.viewAs, instance: { ...target, ...patch } } });
-            } else {
-              store.updateInstrument(target.id, patch);
-            }
-          }
-          runSearch();
-          render();
-        },
-        onAdd: () => {
-          store.set({ addingInstrument: true });
-          render();
-        },
-        onDelete: (instrument) => {
-          store.removeInstrument(instrument.id);
-          runSearch();
-          render();
-        },
-      });
+      renderInstruments();
       break;
 
     case 'library':

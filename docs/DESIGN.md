@@ -135,15 +135,28 @@ screen behind the navigation:
 | Screen | Holds |
 |---|---|
 | **Chords** | chord input, display toggles, ranked results |
-| **Instrument** | name, tuning, fret count, voicing rules, your instruments |
+| **Instrument** | the list of your instruments; editing one opens its form and rules |
 | **Saved** | starred shapes for the active instrument |
 | **Songs** | the song list, and the editor for one song |
 
 Voicing rules live on the instrument screen rather than beside the chord input,
 because they are a property of the instrument, not of the search you happen to
-be running (§2.4). Naming lives there too: a user with three custom tunings
+be running (§2.5). Naming lives there too: a user with three custom tunings
 needs to tell them apart in the switcher, and three entries all reading
 "Guitar · Custom" are useless.
+
+**Creating and editing an instrument use one form**, with the same fields in
+both: instrument type, tuning preset, the strings themselves, a name, and the
+fret count. The tuning text is the source of truth and a preset merely fills it
+in, so an arbitrary tuning is never second-class (§4.3); the name follows the
+pickers until the user writes their own, after which nothing overwrites it.
+
+Editing acts on the instrument whose row was clicked, not on whichever happens
+to be active, and its voicing rules are edited in the same place — they belong
+to that instrument, so configuring them is part of configuring it. Deleting asks
+first and names what goes too: an instrument's saved shapes and songs are tagged
+to it and go with it. The last instrument cannot be deleted, since the app has
+no meaning without one.
 
 ### 2.4 Result view
 

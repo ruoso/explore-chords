@@ -1,6 +1,13 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { freshVisit, completeSetup, searchChord, goToView } from './helpers.js';
+import {
+  freshVisit,
+  completeSetup,
+  searchChord,
+  goToView,
+  addInstrument,
+  editActiveInstrument,
+} from './helpers.js';
 
 /**
  * Accessibility (docs/DESIGN.md §6.1, §9.5).
@@ -40,11 +47,30 @@ test.describe('axe finds no violations', () => {
     expect(await scan(page)).toEqual([]);
   });
 
-  test('on the instrument settings screen', async ({ page }) => {
+  test('on the instrument list', async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page);
     await goToView(page, 'instrument');
+    await expect(page.locator('.ec-instrument-row')).toHaveCount(1);
+    expect(await scan(page)).toEqual([]);
+  });
+
+  test('on the instrument editor, rules and all', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await editActiveInstrument(page);
     await expect(page.locator('#instrument-name')).toBeVisible();
+    await page.locator('.ec-weights summary').click();
+    expect(await scan(page)).toEqual([]);
+  });
+
+  test('on the delete confirmation', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await addInstrument(page, { instrument: 'ukulele' });
+    await goToView(page, 'instrument');
+    await page.getByRole('button', { name: /^Delete/ }).first().click();
+    await expect(page.locator('#confirm-dialog')).toBeVisible();
     expect(await scan(page)).toEqual([]);
   });
 

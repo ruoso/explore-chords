@@ -12,13 +12,25 @@ export async function freshVisit(page, query = '') {
   await page.goto(`./${query}`);
 }
 
-/** Complete first-run setup with a named instrument and tuning. */
-export async function completeSetup(page, { instrument = '6guitar', tuning } = {}) {
+/** Complete first-run setup with an instrument and tuning. */
+export async function completeSetup(page, { instrument = '6guitar', tuning, name } = {}) {
   await expect(page.getByRole('heading', { name: 'Choose your instrument' })).toBeVisible();
-  await page.selectOption('#setup-instrument', instrument);
-  if (tuning) await page.selectOption('#setup-tuning', tuning);
+  await page.selectOption('#instrument-catalog', instrument);
+  if (tuning) await page.selectOption('#instrument-tuning-preset', tuning);
+  if (name) await page.fill('#instrument-name', name);
   await page.getByRole('button', { name: 'Start playing' }).click();
   await expect(page.locator('#chord-input')).toBeVisible();
+}
+
+/** Add another instrument through the header switcher. */
+export async function addInstrument(page, { instrument, tuning, strings, name } = {}) {
+  await page.locator('.ec-chip-summary').click();
+  await page.getByRole('button', { name: '+ Add instrument' }).click();
+  if (instrument) await page.selectOption('#instrument-catalog', instrument);
+  if (tuning) await page.selectOption('#instrument-tuning-preset', tuning);
+  if (strings) await page.fill('#instrument-tuning', strings);
+  if (name) await page.fill('#instrument-name', name);
+  await page.getByRole('button', { name: 'Add instrument', exact: true }).click();
 }
 
 /**
@@ -34,6 +46,13 @@ export async function submitChord(page) {
 export async function searchChord(page, symbol) {
   await page.fill('#chord-input', symbol);
   await submitChord(page);
+}
+
+/** Open the editor for the instrument currently in use. */
+export async function editActiveInstrument(page) {
+  await page.locator('#nav-instrument').click();
+  await page.locator('.ec-instrument-row.is-active').getByRole('button', { name: /^Edit/ }).click();
+  await expect(page.locator('#heuristics-preset')).toBeVisible();
 }
 
 /** Move to one of the app's screens. */

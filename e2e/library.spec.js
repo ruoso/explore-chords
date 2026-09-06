@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshVisit, completeSetup, searchChord, goToView } from './helpers.js';
+import { freshVisit, completeSetup, searchChord, goToView, addInstrument } from './helpers.js';
 
 /**
  * Saved shapes (docs/DESIGN.md §2.6, §8.3).
@@ -70,10 +70,7 @@ test.describe('the library follows the instrument', () => {
     await goToView(page, 'library');
     await expect(page.locator('.ec-card')).toHaveCount(1);
 
-    await page.locator('.ec-chip-summary').click();
-    await page.getByRole('button', { name: '+ Add instrument' }).click();
-    await page.selectOption('#setup-instrument', 'ukulele');
-    await page.getByRole('button', { name: 'Add instrument' }).click();
+    await addInstrument(page, { instrument: 'ukulele' });
     await expect(page.locator('.ec-chip-label')).toContainText('Ukulele');
 
     // A guitar shape is meaningless here, so the ukulele's library is its own.
@@ -92,18 +89,13 @@ test.describe('custom tunings', () => {
     await freshVisit(page);
     await completeSetup(page, { instrument: '6guitar' });
 
-    await page.locator('.ec-chip-summary').click();
-    await page.getByRole('button', { name: '+ Add instrument' }).click();
-    await page.selectOption('#setup-instrument', '6guitar');
-    await page.fill('#setup-custom', 'D2, A2, D3, G3, A3, D4');
-    await page.getByRole('button', { name: 'Add instrument' }).click();
-    await expect(page.locator('.ec-chip-label')).toContainText('Custom');
-
     // Naming it is the point: three custom tunings all called "Custom" would
-    // be useless in the switcher.
-    await goToView(page, 'instrument');
-    await page.fill('#instrument-name', 'DADGAD');
-    await page.locator('#instrument-save').click();
+    // be useless in the switcher. The add form can name it directly.
+    await addInstrument(page, {
+      instrument: '6guitar',
+      strings: 'D2, A2, D3, G3, A3, D4',
+      name: 'DADGAD',
+    });
     await expect(page.locator('.ec-chip-label')).toContainText('DADGAD');
 
     await page.reload();
