@@ -11,8 +11,13 @@ and drawn with real finger numbers and barres rather than bare dots.
 Everything runs in the browser. No backend, no accounts, and no network access
 at runtime — once loaded, it works entirely offline.
 
-> **Status: design phase.** There is no implementation yet. The design is
-> settled and written up in **[docs/DESIGN.md](docs/DESIGN.md)**.
+> **Status: in development, phase 1 of 11 complete.** The design is settled and
+> written up in **[docs/DESIGN.md](docs/DESIGN.md)**, which carries acceptance
+> criteria for every phase.
+>
+> Live at **<https://ruoso.github.io/explore-chords/>** — currently a
+> placeholder that renders correctly spelled chords, deployed from day one to
+> keep the base path honest.
 
 ## What it will do
 
@@ -70,6 +75,21 @@ after is additive.
 | 5–7 | Store, instrument setup and switching, chord input, result view |
 | 8–9 | Per-instrument heuristics, favourites and saved tunings |
 | 10–11 | Song sheets and printing, then PWA delivery |
+
+## Development
+
+Requires the Node version in `.node-version` (24.20.0).
+
+```sh
+npm install
+npm run dev      # dev server
+npm test         # unit tests
+npm run lint     # eslint
+npm run build    # production build to dist/
+```
+
+Every push runs lint, tests and a build in CI; pushes to `main` that pass also
+deploy to GitHub Pages.
 
 ## Prior art
 
