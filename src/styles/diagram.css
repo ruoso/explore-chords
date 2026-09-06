@@ -1,0 +1,92 @@
+/*
+ * Diagram styling (docs/DESIGN.md §6, §6.1).
+ *
+ * All colour comes from tokens, so light, dark and print run off one set. No
+ * information is carried by colour alone: the muted marker is an X and the open
+ * marker is an O, distinct glyphs rather than a red dot and a green one.
+ */
+
+:root {
+  --diagram-line: #6c6a63;
+  --diagram-nut: #2a2926;
+  --diagram-dot: #2a2926;
+  --diagram-dot-text: #ffffff;
+  --diagram-marker: #4a4844;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --diagram-line: #7d7b74;
+    --diagram-nut: #d9d7d0;
+    --diagram-dot: #e4e2db;
+    --diagram-dot-text: #17171a;
+    --diagram-marker: #bab8b1;
+  }
+}
+
+:root[data-theme='dark'] {
+  --diagram-line: #7d7b74;
+  --diagram-nut: #d9d7d0;
+  --diagram-dot: #e4e2db;
+  --diagram-dot-text: #17171a;
+  --diagram-marker: #bab8b1;
+}
+
+.ec-diagram {
+  display: block;
+  overflow: visible;
+}
+
+.ec-string,
+.ec-fret {
+  stroke: var(--diagram-line);
+  stroke-width: 1;
+}
+
+.ec-nut {
+  stroke: var(--diagram-nut);
+  stroke-width: 3;
+  stroke-linecap: square;
+}
+
+.ec-dot,
+.ec-barre {
+  fill: var(--diagram-dot);
+}
+
+.ec-finger {
+  fill: var(--diagram-dot-text);
+  font: 600 9px/1 system-ui, sans-serif;
+}
+
+.ec-fretnum {
+  fill: var(--diagram-marker);
+  font: 500 9px/1 system-ui, sans-serif;
+}
+
+.ec-open {
+  fill: none;
+  stroke: var(--diagram-marker);
+  stroke-width: 1.3;
+}
+
+.ec-muted {
+  stroke: var(--diagram-marker);
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  fill: none;
+}
+
+@media print {
+  :root {
+    --diagram-line: #000000;
+    --diagram-nut: #000000;
+    --diagram-dot: #000000;
+    --diagram-dot-text: #ffffff;
+    --diagram-marker: #000000;
+  }
+
+  .ec-diagram {
+    break-inside: avoid;
+  }
+}

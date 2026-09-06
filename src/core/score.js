@@ -49,7 +49,10 @@ export function scoreFingering({
 
   parts.open = w.openString * frets.filter((f) => f === 0).length;
 
-  parts.stretch = w.nonAdjacentStretch * countNonAdjacentStretches(hand);
+  parts.muted = (w.mutedString ?? 0) * frets.filter((f) => f === 'x').length;
+
+  // A four-fret reach is materially harder than a compact shape.
+  parts.stretch = hand.span >= 4 ? w.nonAdjacentStretch : 0;
 
   const total = Object.values(parts).reduce((a, b) => a + b, 0);
   return { total, parts };
@@ -67,20 +70,18 @@ export function countInnerMutes(frets) {
   return count;
 }
 
-/** Fingers reaching across a gap, which is harder than adjacent frets. */
-function countNonAdjacentStretches(hand) {
-  const frets = [...new Set(hand.fingers.map((f, i) => (f === null ? null : i)))];
-  void frets;
-  return hand.span >= 4 ? 1 : 0;
-}
-
 /**
  * Bucketed difficulty. A word, so the badge never depends on colour alone.
+ *
+ * Thresholds calibrated against real shapes on a standard guitar (§11): open E
+ * and G land around 0.5, A minor 1.6, open C 2.6, open D 2.8, and the F barre
+ * 5.5. A beginner's first chords should not read as "medium".
+ *
  * @returns {'easy'|'medium'|'hard'}
  */
 export function difficultyBucket(total) {
-  if (total <= 1.5) return 'easy';
-  if (total <= 4) return 'medium';
+  if (total <= 3.0) return 'easy';
+  if (total <= 5.0) return 'medium';
   return 'hard';
 }
 

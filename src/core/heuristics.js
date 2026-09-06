@@ -14,10 +14,14 @@ export const DEFAULT_WEIGHTS = {
   spanPerFret: 1.0, // per fret of stretch beyond the first
   barre: 1.5,
   fullBarre: 1.0, // additional, when the barre spans every string
-  perFinger: 0.4,
+  perFinger: 0.3,
   innerMute: 3.0, // a muted string between two sounding ones
+  // Every string not sounding is a thinner chord. Without this the search
+  // prefers three-string fragments to the full open shapes, because fewer
+  // fingers and fewer strings always score better.
+  mutedString: 0.6,
   positionPerFret: 0.1,
-  omittedFifth: 0.3, // musical completeness, not difficulty
+  omittedFifth: 0.8, // musical completeness, not difficulty
   rootless: 0.6,
   nonRootBass: 0.8, // an inversion when none was asked for
   openString: -0.5, // a bonus: open strings make a shape easier

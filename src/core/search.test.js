@@ -6,7 +6,7 @@ import {
   isReentrant,
   configFor,
 } from './instrument.js';
-import { searchFingerings, allFingerings } from './search.js';
+import { searchFingerings, allFingerings, shorthandOf } from './search.js';
 import { handProblem } from './fingers.js';
 import { pitchClass } from './pitch.js';
 import { bassNote } from './chord.js';
@@ -42,7 +42,7 @@ describe('standard guitar shapes', () => {
     const result = search('C', guitar());
     expect(shapes(result)).toContain('x32010');
 
-    const open = result.groups.find((g) => g.position === 1);
+    const open = result.groups.find((g) => g.position === 0);
     expect(open.fingerings.map((f) => f.shorthand)).toContain('x32010');
     expect(rankOf(result, 'x32010')).toBeLessThan(2);
   });
@@ -276,5 +276,18 @@ describe('performance', () => {
     );
     expect(tight.nodesExhausted).toBe(true);
     expect(shapes(tight)).toContain('x32010');
+  });
+});
+
+describe('shorthand stays readable', () => {
+  it('runs single-digit frets together, as players write them', () => {
+    expect(shorthandOf(['x', 3, 2, 0, 1, 0])).toBe('x32010');
+    expect(shorthandOf([1, 3, 3, 2, 1, 1])).toBe('133211');
+  });
+
+  it('hyphenates once any fret reaches double digits', () => {
+    // [8,10,10,0,8,0] run together would read as "81010080".
+    expect(shorthandOf([8, 10, 10, 0, 8, 0])).toBe('8-10-10-0-8-0');
+    expect(shorthandOf(['x', 12, 14, 14, 'x', 'x'])).toBe('x-12-14-14-x-x');
   });
 });

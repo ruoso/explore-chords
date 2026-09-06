@@ -124,6 +124,19 @@ function generateForWindow(chord, instrument, config, lo, hi, req, out, budget) 
   return exhausted;
 }
 
+/**
+ * The compact fret string, as players write it: `x32010`.
+ *
+ * Once any fret reaches double digits the run-together form is ambiguous —
+ * [8,10,10,0,8,0] would read as "81010080" — so those are hyphenated instead,
+ * which is the usual convention.
+ */
+export function shorthandOf(frets) {
+  const needsSeparator = frets.some((f) => typeof f === 'number' && f >= 10);
+  const parts = frets.map((f) => (f === 'x' ? 'x' : String(f)));
+  return needsSeparator ? parts.join('-') : parts.join('');
+}
+
 /** Reject candidates that break a rule no amount of finger skill can fix. */
 function candidateProblem(frets, instrument, chord, config, req) {
   const sounding = [];
@@ -239,10 +252,14 @@ export function searchFingerings(chord, instrument, config, options = {}) {
         barre: hand.barre,
         midis,
         omittedRoles,
-        position: hand.lowestFret,
+        // A shape that uses open strings is in open position, whatever fret its
+        // fretted notes sit at: x32010 and 320003 are both "open" to a player,
+        // while 133211 is a barre at fret 1. Grouping on the lowest fretted
+        // fret alone would file the first two under fret 1 and fret 3.
+        position: frets.includes(0) ? 0 : hand.lowestFret,
         score,
         difficulty: difficultyBucket(score.total),
-        shorthand: frets.map((f) => (f === 'x' ? 'x' : f)).join(''),
+        shorthand: shorthandOf(frets),
       });
     }
   }
