@@ -132,7 +132,7 @@ function stackFor(top) {
  * @param {string} [dialectId]
  * @returns {ParseResult}
  */
-export function parseChord(text, dialectId = DEFAULT_DIALECT) {
+export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
   const errors = [];
   const ambiguities = [];
   const fail = (message) => ({ chord: null, ambiguities, errors: [...errors, { message }] });
@@ -147,6 +147,11 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT) {
   } catch {
     return fail(`Unknown notation dialect: ${dialectId}`);
   }
+
+  // The UI can override a reading for one parse, so the disambiguation chip
+  // (§2.2) can flip `C9` between its two meanings without changing the user's
+  // dialect. The ambiguity is still reported either way.
+  const readings = { ...dialect.readings, ...(options.readings ?? {}) };
 
   const trimmed = text.trim();
   const rootMatch = /^([A-Ga-g](?:bb|##|[b#])?)/.exec(trimmed);
@@ -354,7 +359,7 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT) {
             // The documented ambiguity. A literally sharpened 7th would be an
             // octave, so Brazilian reuses `7+` for the major 7th; American
             // reads the `+` as raising the chord's 5th.
-            const reading = dialect.readings.sevenPlus;
+            const reading = readings.sevenPlus;
             ambiguities.push({
               kind: 'sevenPlus',
               text: `7+`,
@@ -397,7 +402,7 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT) {
           } else {
             let addSeventh = true;
             if (degree === 9 && !majorSeventh && !sawSeventh) {
-              const reading = dialect.readings.bareNine;
+              const reading = readings.bareNine;
               ambiguities.push({
                 kind: 'bareNine',
                 text: `${degree}`,

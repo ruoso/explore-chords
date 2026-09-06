@@ -14,6 +14,7 @@ import { renderInstrumentSetup } from './ui/instrument-setup.js';
 import { renderInstrumentChip } from './ui/instrument-chip.js';
 import { renderViewAsBar } from './ui/view-as-bar.js';
 import { renderResults } from './ui/results.js';
+import { renderChordInput } from './ui/chord-input.js';
 
 const store = createStore();
 const fromUrl = readUrl();
@@ -63,16 +64,17 @@ function applyUrlState() {
 }
 
 function runSearch() {
-  const { chordText, prefs } = store.state;
+  const { chordText, prefs, readings } = store.state;
   const instrument = store.effectiveInstrument;
   if (!instrument || !chordText) {
     store.set({ chord: null, results: null, ambiguities: [], errors: [] });
     return;
   }
 
-  const parsed = parseChord(chordText, prefs.dialect);
+  const parsed = parseChord(chordText, prefs.dialect, { readings });
   if (!parsed.chord) {
-    // Parse errors are non-blocking: the last valid chord stays on screen.
+    // Parse errors are non-blocking: the last valid chord and its results stay
+    // on screen while the user keeps typing (§2.2).
     store.set({ ambiguities: parsed.ambiguities, errors: parsed.errors });
     return;
   }
@@ -112,47 +114,41 @@ function showSetup({ firstRun }) {
   });
 }
 
+/** Apply new chord text: search, sync the URL, redraw. */
+function applyChordText(text, { restoreFocus = true } = {}) {
+  if (text === store.state.chordText) return;
+  store.set({ chordText: text });
+  runSearch();
+  syncUrl(store.state, { instrument: store.effectiveInstrument });
+  const hadFocus = document.activeElement?.id === 'chord-input';
+  const caret = hadFocus ? document.activeElement.selectionStart : null;
+  renderExplorer();
+  if (hadFocus && restoreFocus) {
+    const input = document.querySelector('#chord-input');
+    input?.focus();
+    if (caret !== null) input?.setSelectionRange(caret, caret);
+  }
+}
+
 function renderExplorer() {
   clear(nodes.main);
 
   const instrument = store.effectiveInstrument;
-  const { chordText, chord, results, errors } = store.state;
+  const { chord, results } = store.state;
 
-  const form = el('form', { class: 'ec-chordform', novalidate: true });
-  const input = el('input', {
-    id: 'chord-input',
-    name: 'chord',
-    type: 'text',
-    class: 'ec-chord-input',
-    value: chordText,
-    placeholder: 'C7M, Am7, F#m7b5…',
-    autocomplete: 'off',
-    autocapitalize: 'off',
-    spellcheck: 'false',
-    'aria-describedby': 'chord-error',
-  });
-  form.append(
-    el('label', { for: 'chord-input', class: 'ec-visually-hidden' }, 'Chord'),
-    input,
-    el('button', { type: 'submit', class: 'ec-button ec-button-primary' }, 'Show')
-  );
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    store.set({ chordText: input.value.trim() });
-    runSearch();
-    syncUrl(store.state, { instrument: store.effectiveInstrument });
-    renderExplorer();
-  });
-
-  const errorBox = el(
-    'p',
-    { class: 'ec-error', id: 'chord-error', role: 'alert', hidden: errors.length === 0 },
-    errors[0]?.message ?? ''
-  );
-
+  const inputBox = el('div', { class: 'ec-input-area' });
   const resultsBox = el('div', { class: 'ec-results' });
+  nodes.main.append(inputBox, resultsBox);
 
-  nodes.main.append(form, errorBox, resultsBox);
+  renderChordInput(inputBox, {
+    store,
+    onChange: (text) => applyChordText(text),
+    onReading: (kind, reading) => {
+      store.set({ readings: { ...(store.state.readings ?? {}), [kind]: reading } });
+      runSearch();
+      renderExplorer();
+    },
+  });
 
   renderResults(resultsBox, {
     store,

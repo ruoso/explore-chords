@@ -265,3 +265,24 @@ describe('cross-dialect reading', () => {
     expect(formatChord(readBack, 'american')).toBe('Cmaj7');
   });
 });
+
+describe('reading overrides', () => {
+  it('lets a caller flip one reading without changing dialect', () => {
+    // This is what the disambiguation chip does: the user sees which reading
+    // was taken and switches it, without their notation preference moving.
+    expect(tones('C9', 'brazilian')).toBe('C E G D');
+    const flipped = parseChord('C9', 'brazilian', { readings: { bareNine: 'dominant' } });
+    expect(describeChordTones(flipped.chord)).toBe('C E G Bb D');
+    // Still reported, so the chip stays visible and can be flipped back.
+    expect(flipped.ambiguities[0].chosen).toBe('dominant');
+    expect(flipped.ambiguities[0].alternatives).toEqual(['add']);
+  });
+
+  it('flips C7+ the same way', () => {
+    expect(tones('C7+', 'brazilian')).toBe('C E G B');
+    const flipped = parseChord('C7+', 'brazilian', {
+      readings: { sevenPlus: 'dominantSharpFive' },
+    });
+    expect(describeChordTones(flipped.chord)).toBe('C E G# Bb');
+  });
+});

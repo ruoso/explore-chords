@@ -407,3 +407,83 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- chord input, pickers and ambiguity ------------------------------- */
+
+.ec-chord-status:empty {
+  display: none;
+}
+
+.ec-ambiguity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--panel);
+  font-size: 0.85rem;
+}
+
+.ec-ambiguity-icon {
+  color: var(--accent);
+}
+
+.ec-pickers {
+  margin-top: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--panel);
+}
+
+.ec-pickers-summary {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ec-pickers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  padding: 0 0.75rem;
+}
+
+.ec-chips {
+  margin: 0.25rem 0.75rem 0.85rem;
+  padding: 0.5rem 0.6rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+}
+
+.ec-chips legend {
+  padding: 0 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ec-chip-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.15rem 0.3rem 0.15rem 0;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.ec-chip-toggle:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  font-weight: 600;
+}
+
+.ec-chip-toggle:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}

@@ -21,9 +21,19 @@ export async function completeSetup(page, { instrument = '6guitar', tuning } = {
   await expect(page.locator('#chord-input')).toBeVisible();
 }
 
+/**
+ * Submit the chord form.
+ *
+ * `exact` matters: the result groups also carry "Show all 34" buttons, so a
+ * substring match on "Show" is ambiguous.
+ */
+export async function submitChord(page) {
+  await page.getByRole('button', { name: 'Show', exact: true }).click();
+}
+
 export async function searchChord(page, symbol) {
   await page.fill('#chord-input', symbol);
-  await page.getByRole('button', { name: 'Show' }).click();
+  await submitChord(page);
 }
 
 /** Read the app's own state, so tests can reason about more than pixels. */
