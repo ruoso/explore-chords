@@ -253,3 +253,31 @@ describe('voicings are ordered for reading', () => {
     expect(text.split('\n')[0]).toBe('Cm | Cm[2]');
   });
 });
+
+describe('the display sorts even when the text does not', () => {
+  const at = (song, symbol, nth = 0) =>
+    song.occurrences.filter((c) => c.symbol === symbol)[nth].start;
+
+  it('reads a hand-written block in any order and shows it sorted', () => {
+    const text = 'G | Am | C | D\n\n# Voicings\nG = 320003\nD = xx0232\nAm = x02210';
+    const song = parseSong(text);
+
+    // The text is however the author left it...
+    expect(text).toContain('G = 320003\nD = xx0232\nAm = x02210');
+    // ...but the legend is ordered for looking things up.
+    expect(songLegend(song).map((e) => e.key)).toEqual(['Am', 'D', 'G']);
+    expect(unvoicedKeys(song)).toEqual(['C']);
+  });
+
+  it('leaves the text alone until something actually changes it', () => {
+    // Reordering someone's text merely because they opened the song would be
+    // rude; the block normalises the next time a voicing is chosen.
+    const text = 'G | Am\n\n# Voicings\nG = 320003\nAm = x02210';
+    const song = parseSong(text);
+    expect(songLegend(song).map((e) => e.key)).toEqual(['Am', 'G']);
+
+    const after = setVoicing(text, at(song, 'Am'), ['x', 0, 2, 2, 1, 0]);
+    const block = after.slice(after.indexOf('# Voicings')).trim().split('\n').slice(1);
+    expect(block.map((line) => line.split(' =')[0])).toEqual(['Am', 'G']);
+  });
+});

@@ -181,6 +181,18 @@ test.describe('choosing voicings', () => {
     await expect(page.locator('.ec-voicings .ec-shorthand').first()).toHaveText('x35543');
   });
 
+  test('a hand-written block in any order still displays sorted', async ({ page }) => {
+    await setBody(page, 'G | Am | C\n\n# Voicings\nG = 320003\nC = x32010\nAm = x02210');
+
+    // The panel is ordered for reading...
+    await expect(page.locator('.ec-voicings .ec-card-chord')).toHaveText(['Am', 'C', 'G']);
+    // ...while the text is left exactly as it was written. Reordering someone's
+    // text merely because they opened the song would be rude.
+    expect(await page.locator('#sheet-body').inputValue()).toContain(
+      'G = 320003\nC = x32010\nAm = x02210'
+    );
+  });
+
   test('the picker groups and orders shapes exactly as the explorer does', async ({ page }) => {
     // A shape someone has already found on the chords screen should be in the
     // same place here: same groups, same order, same headings.
