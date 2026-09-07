@@ -10,6 +10,9 @@ import {
   voicingsFor,
   songTunings,
   migrateSong,
+  chartKey,
+  canMergeSongs,
+  mergeSongs,
 } from './song.js';
 import { shorthandOf, parseShorthand } from './fretstring.js';
 
@@ -355,5 +358,50 @@ describe('converting the earlier form', () => {
   it('lets a labelled block outrank a bare one for the same tuning', () => {
     const old = `# Tuning\n${GUITAR}\n\nC\n\n# Voicings\nC = x32010\n\n# Voicings: ${GUITAR}\nC = x35553`;
     expect(block(migrateSong(old, UKE), GUITAR).get('C')).toEqual(['x', 3, 5, 5, 5, 3]);
+  });
+});
+
+describe('merging copies of one song', () => {
+  const guitar = `# Verse\nC | G\n\n---\n\n# Voicings: ${GUITAR}\nC = x32010\n`;
+  const uke = `# Verse\nC | G\n\n---\n\n# Voicings: ${UKE}\nC = 0003\n`;
+
+  it('keys a chart by its structure, ignoring layout and voicings', () => {
+    expect(chartKey(guitar)).toBe(chartKey(uke));
+    expect(chartKey('# Verse\nC   |   G')).toBe(chartKey('# Verse\nC | G'));
+    // Markers are part of the arrangement, so they count.
+    expect(chartKey('C | C')).not.toBe(chartKey('C | C[2]'));
+    expect(chartKey('# Verse\nC | G')).not.toBe(chartKey('# Chorus\nC | G'));
+  });
+
+  it('merges two copies voiced for different tunings into one song', () => {
+    expect(canMergeSongs([guitar, uke])).toBe(true);
+    const merged = mergeSongs([guitar, uke]);
+    expect(block(merged, GUITAR).get('C')).toEqual(['x', 3, 2, 0, 1, 0]);
+    expect(block(merged, UKE).get('C')).toEqual([0, 0, 0, 3]);
+    expect(merged.match(/^# Voicings:/gm)).toHaveLength(2);
+    expect(merged.match(/^---$/gm)).toHaveLength(1);
+  });
+
+  it('refuses when the charts have diverged', () => {
+    const changed = `# Verse\nC | G | Am\n\n---\n\n# Voicings: ${UKE}\nC = 0003\n`;
+    expect(canMergeSongs([guitar, changed])).toBe(false);
+  });
+
+  it('refuses when one tuning is voiced in both, since that is a real conflict', () => {
+    const other = `# Verse\nC | G\n\n---\n\n# Voicings: ${GUITAR}\nC = x35553\n`;
+    expect(canMergeSongs([guitar, other])).toBe(false);
+  });
+
+  it('absorbs a copy that never had anything chosen', () => {
+    // The old "bring to this instrument" made a copy with its voicings cleared;
+    // if nothing was ever chosen on it, it has nothing to contribute.
+    const empty = '# Verse\nC | G';
+    expect(canMergeSongs([guitar, empty])).toBe(true);
+    expect(mergeSongs([guitar, empty])).toBe(guitar);
+  });
+
+  it('does not merge two songs that have nothing voiced at all', () => {
+    // Two fresh songs from the same template are not the same song yet.
+    expect(canMergeSongs(['# Verse\nC | G', '# Verse\nC | G'])).toBe(false);
   });
 });

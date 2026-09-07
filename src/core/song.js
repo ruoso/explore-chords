@@ -531,6 +531,62 @@ function writeBlocks(text, blocks, dialect) {
   return `${out}\n\n${RULE_LINE}\n\n${rendered.join('\n')}`;
 }
 
+// --- merging -----------------------------------------------------------------
+
+/**
+ * The chart alone, as a comparable string: section names and chord tokens,
+ * with layout and voicings stripped. Two songs with equal keys are the same
+ * arrangement written for possibly different instruments.
+ */
+export function chartKey(text, dialect) {
+  return parseSong(text, dialect)
+    .sections.map(
+      (section) =>
+        `${section.name}:` +
+        section.lines
+          .map((line) => line.measures.map((m) => m.chords.map((c) => c.raw).join(' ')).join('|'))
+          .join('/')
+    )
+    .join('\n');
+}
+
+/**
+ * Whether songs can be merged without losing anything: they must share a chart
+ * and have no tuning voiced in more than one of them. Two guitar blocks for one
+ * song is a conflict nobody can resolve automatically, so it is left alone.
+ */
+export function canMergeSongs(texts, dialect) {
+  if (texts.length < 2) return false;
+  const key = chartKey(texts[0], dialect);
+  const seen = new Set();
+  let anyBlocks = false;
+  for (const text of texts) {
+    if (chartKey(text, dialect) !== key) return false;
+    for (const block of parseSong(text, dialect).blocks) {
+      if (!block.id || block.voicings.size === 0) continue;
+      if (seen.has(block.id)) return false;
+      seen.add(block.id);
+      anyBlocks = true;
+    }
+  }
+  return anyBlocks;
+}
+
+/**
+ * Fold the voicing blocks of several copies of one song into the first.
+ * Only meaningful when canMergeSongs holds; the first text's chart is kept.
+ */
+export function mergeSongs(texts, dialect) {
+  const blocks = new Map();
+  for (const text of texts) {
+    for (const b of parseSong(text, dialect).blocks) {
+      if (!b.id || b.voicings.size === 0 || blocks.has(b.id)) continue;
+      blocks.set(b.id, { tuning: b.tuning, voicings: new Map(b.voicings) });
+    }
+  }
+  return writeBlocks(texts[0], blocks, dialect);
+}
+
 // --- transition --------------------------------------------------------------
 
 /**

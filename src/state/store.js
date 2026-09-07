@@ -26,7 +26,7 @@ import {
   saveActiveSheetId,
 } from './persist.js';
 import { loadSheets, saveSheets, newSheet } from './sheets.js';
-import { migrateSong } from '../core/song.js';
+import { migrateSong, chartKey, canMergeSongs, mergeSongs } from '../core/song.js';
 import { formatTuning } from '../core/instrument.js';
 import { DEFAULT_VIEW, isView } from './views.js';
 
@@ -89,6 +89,36 @@ export function createStore(initial = {}) {
       return { ...sheet, body };
     });
     if (changed) saveSheets(state.sheets);
+  }
+
+  // The earlier "bring to this instrument" made a separate copy of a song per
+  // instrument. Now that one song holds every instrument's voicings, copies
+  // that are the same song — same title, identical chart, no tuning voiced
+  // twice — fold into one. Anything that has diverged is left alone.
+  {
+    const groups = new Map();
+    for (const sheet of state.sheets) {
+      const key = `${sheet.title}\u0000${chartKey(sheet.body, state.prefs.dialect)}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(sheet);
+    }
+    const dropped = new Set();
+    let merged = false;
+    for (const group of groups.values()) {
+      if (group.length < 2) continue;
+      const ordered = [...group].sort((a, b) => (a.updated ?? 0) - (b.updated ?? 0));
+      const bodies = ordered.map((s) => s.body);
+      if (!canMergeSongs(bodies, state.prefs.dialect)) continue;
+      ordered[0].body = mergeSongs(bodies, state.prefs.dialect);
+      ordered[0].updated = Date.now();
+      for (const extra of ordered.slice(1)) dropped.add(extra.id);
+      merged = true;
+    }
+    if (merged) {
+      state.sheets = state.sheets.filter((s) => !dropped.has(s.id));
+      if (dropped.has(state.activeSheetId)) state.activeSheetId = null;
+      saveSheets(state.sheets);
+    }
   }
 
   const subscribers = new Set();

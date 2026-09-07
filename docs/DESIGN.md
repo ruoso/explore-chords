@@ -244,6 +244,15 @@ Songs written in the earlier form — a `# Tuning` line and an unlabelled
 tuning the block was for, and a bare block with no `# Tuning` is taken to be for
 the instrument in use, since that is where it was written.
 
+The earlier form also produced a *separate copy* of a song per instrument, via
+"bring to this instrument". On load, copies that are plainly the same song fold
+into one — same title, identical chart, and no tuning voiced in more than one of
+them, which is exactly the signature that flow left behind. Anything that has
+since diverged, or that voices one tuning twice, is a real conflict nobody can
+resolve automatically and is left alone. Two fresh songs that merely share a
+title and the starter template are not merged: nothing is voiced, so they are
+not the same song yet.
+
 A `#` line names a section. Every other line is a line of the chart: a vertical
 bar separates measures, spaces separate chords inside one. That is how a
 musician writes a chart out, and it is far quicker than a form for adding
