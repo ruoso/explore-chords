@@ -383,6 +383,7 @@ export default {
     showTutorial: 'Ver el tutorial',
     letsGo: 'Vamos',
     close: 'Cerrar',
+    sinceLast: 'Qué cambió desde tu última visita',
   },
 
   announcements: {

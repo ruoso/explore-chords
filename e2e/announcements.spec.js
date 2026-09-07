@@ -100,11 +100,28 @@ test.describe('what changed', () => {
     await page.reload();
     await expect(dialog(page)).toBeVisible();
     await expect(dialog(page)).toHaveAttribute('data-announcement', LATEST);
+    // Two releases missed: both in the one dialog, newest first, each under its own title.
+    await expect(dialog(page)).toContainText('What changed since your last visit');
+    const releases = dialog(page).locator('.ec-announcement-release');
+    await expect(releases).toHaveCount(2);
+    await expect(releases.nth(0)).toContainText('0.3');
+    await expect(releases.nth(1)).toContainText('0.2');
     await page.locator('#announcement-close').click();
 
     await page.reload();
     await expect(page.locator('#chord-input')).toBeVisible();
     await expect(dialog(page)).toHaveCount(0);
+  });
+
+  test('one missed release is shown on its own, under its own title', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await setSeen(page, ['welcome', '0.2.0']);
+    await page.reload();
+    await expect(dialog(page)).toHaveAttribute('data-announcement', LATEST);
+    await expect(dialog(page)).toContainText('What changed in 0.3');
+    await expect(dialog(page)).not.toContainText('since your last visit');
+    await expect(dialog(page).locator('.ec-announcement-release')).toHaveCount(0);
   });
 
   test('is not shown while setup is still to do', async ({ page }) => {

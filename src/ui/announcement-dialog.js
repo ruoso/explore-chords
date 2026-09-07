@@ -22,19 +22,23 @@ import {
 /**
  * @param {object} options
  * @param {object} options.announcement
+ * @param {object[]} [options.releases]   several release notes to show as one,
+ *   newest first; the first is `announcement`
  * @param {object|null} options.alternate   the other one to offer a link to
  * @param {() => void} options.onClose
  * @param {(other: object) => void} options.onSwitch
  */
-export function openAnnouncement({ announcement: entry, alternate, onClose, onSwitch }) {
+export function openAnnouncement({ announcement: entry, releases = [], alternate, onClose, onSwitch }) {
   document.querySelector('#announcement-dialog')?.remove();
   // Text is looked up at open time, so it follows the current language.
   const announcement = withContent(entry);
+  const combined = releases.length > 1 ? releases.map(withContent) : null;
 
   const dialog = el('dialog', {
     class: 'ec-dialog ec-announcement',
     id: 'announcement-dialog',
     'data-announcement': announcement.id,
+    'data-releases': combined ? combined.map((r) => r.id).join(' ') : null,
     'aria-labelledby': 'announcement-title',
   });
 
@@ -48,16 +52,29 @@ export function openAnnouncement({ announcement: entry, alternate, onClose, onSw
   };
 
   const body = el('div', { class: 'ec-announcement-body' });
-  for (const section of announcement.sections) {
-    body.append(
-      el(
-        'section',
-        { class: 'ec-announcement-section' },
-        el('h3', { class: 'ec-announcement-heading' }, section.heading),
-        el('p', { class: 'ec-announcement-text' }, section.text)
-      )
-    );
+  const renderSections = (sections, level) => {
+    for (const section of sections) {
+      body.append(
+        el(
+          'section',
+          { class: 'ec-announcement-section' },
+          el(level, { class: 'ec-announcement-heading' }, section.heading),
+          el('p', { class: 'ec-announcement-text' }, section.text)
+        )
+      );
+    }
+  };
+  if (combined) {
+    // Several releases missed: each keeps its own title over its sections,
+    // one level down, so the dialog reads as one page rather than a stack.
+    for (const release of combined) {
+      body.append(el('h3', { class: 'ec-announcement-release' }, release.title));
+      renderSections(release.sections, 'h4');
+    }
+  } else {
+    renderSections(announcement.sections, 'h3');
   }
+  const title = combined ? t('announce.sinceLast') : announcement.title;
 
   const isTutorial = announcement.kind === 'tutorial';
   const actions = el('div', { class: 'ec-dialog-actions ec-announcement-actions' });
@@ -94,7 +111,7 @@ export function openAnnouncement({ announcement: entry, alternate, onClose, onSw
   );
 
   dialog.append(
-    el('h2', { class: 'ec-dialog-title', id: 'announcement-title' }, announcement.title),
+    el('h2', { class: 'ec-dialog-title', id: 'announcement-title' }, title),
     body,
     actions
   );
@@ -130,11 +147,12 @@ export function setupAnnouncements({ store }) {
     store.setPrefs({ seenAnnouncements: [...new Set([...seen(), ...ids])] });
   };
 
-  function show(announcement, { toMark = [] } = {}) {
+  function show(announcement, { toMark = [], releases = [] } = {}) {
     const alternate =
       announcement.kind === 'tutorial' ? latestReleaseOf() : tutorialOf();
     openAnnouncement({
       announcement,
+      releases,
       alternate: alternate && alternate.id !== announcement.id ? alternate : null,
       onClose: () => markSeen(toMark),
       // Moving on to the other page is engagement enough: what the app opened
@@ -151,7 +169,9 @@ export function setupAnnouncements({ store }) {
       if (shownThisLoad) return;
       shownThisLoad = true;
       const pending = pendingAnnouncement(seen());
-      if (pending) show(pending.announcement, { toMark: pending.markSeen });
+      if (pending) {
+        show(pending.announcement, { toMark: pending.markSeen, releases: pending.releases });
+      }
     },
     open(id) {
       const announcement = byId(id);

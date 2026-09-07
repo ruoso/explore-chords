@@ -20,13 +20,14 @@ describe('what to show on open', () => {
   it('shows the newest unseen release note after that', () => {
     const p = pendingAnnouncement(['welcome', '0.1.0'], list);
     expect(p.announcement.id).toBe('0.2.0');
+    expect(p.releases.map((a) => a.id)).toEqual(['0.2.0']);
     expect(p.markSeen).toEqual(['0.2.0']);
   });
 
-  it('shows only the newest when several releases were missed, and counts the rest as seen', () => {
+  it('folds several missed releases into one, newest first, all counted as seen', () => {
     const p = pendingAnnouncement(['welcome'], list);
     expect(p.announcement.id).toBe('0.2.0');
-    // Otherwise the older one would come up on the next open, out of order.
+    expect(p.releases.map((a) => a.id)).toEqual(['0.2.0', '0.1.0']);
     expect(p.markSeen).toEqual(['0.1.0', '0.2.0']);
   });
 

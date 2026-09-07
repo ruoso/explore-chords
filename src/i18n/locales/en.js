@@ -381,6 +381,7 @@ export default {
     showTutorial: 'Show the tutorial',
     letsGo: "Let's go",
     close: 'Close',
+    sinceLast: 'What changed since your last visit',
   },
 
   announcements: {

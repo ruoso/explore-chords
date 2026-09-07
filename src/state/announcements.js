@@ -4,10 +4,10 @@
  * The rule is small enough to state whole. On a first open — nothing seen yet
  * — show the tutorial, and count everything current as seen, so a newcomer is
  * not then told what changed in versions they never used. Otherwise show the
- * newest release note not yet seen, and count every older one as seen with it:
- * someone who missed two releases is told about the latest, not walked back
- * through each. Opening something by hand, from the Help link, changes none
- * of this.
+ * release notes not yet seen — all of them, folded into one dialog with the
+ * newest first, so someone who missed two releases reads both at once rather
+ * than one per open. Opening something by hand, from the Help link, changes
+ * none of this.
  */
 
 import { ANNOUNCEMENTS } from '../data/announcements.js';
@@ -31,20 +31,27 @@ export function allIds(list = ANNOUNCEMENTS) {
 
 /**
  * @param {string[]} seen   ids already shown
- * @returns {{ announcement: object, markSeen: string[] } | null}
- *   what to show, and which ids to record as seen once it is closed
+ * @returns {{ announcement: object, releases: object[], markSeen: string[] } | null}
+ *   what to show — `releases` being every unseen release note, newest first,
+ *   when that is what it is — and which ids to record as seen once closed
  */
 export function pendingAnnouncement(seen = [], list = ANNOUNCEMENTS) {
   const seenSet = new Set(seen);
 
   if (seenSet.size === 0) {
     const tutorial = tutorialOf(list);
-    if (tutorial) return { announcement: tutorial, markSeen: allIds(list) };
+    if (tutorial) return { announcement: tutorial, releases: [], markSeen: allIds(list) };
   }
 
   const unseen = list.filter((a) => a.kind === 'release' && !seenSet.has(a.id));
   const newest = unseen[unseen.length - 1];
-  if (newest) return { announcement: newest, markSeen: unseen.map((a) => a.id) };
+  if (newest) {
+    return {
+      announcement: newest,
+      releases: [...unseen].reverse(),
+      markSeen: unseen.map((a) => a.id),
+    };
+  }
 
   return null;
 }

@@ -333,7 +333,10 @@ the whole release process.
 On open, the rule is small enough to state whole. Nothing seen yet means a
 first open: show the tutorial, and count every current entry as seen, so a
 newcomer is not then told what changed in versions they never used. Otherwise
-show the newest release note not yet seen. Both are available at any time from
+show the release notes not yet seen — all of them, folded into one dialog with
+the newest first under a "since your last visit" title, each release keeping its
+own heading over its sections, so someone who missed two releases reads both
+at once rather than one per open. Both are available at any time from
 **Help** in the header, and opening one that way changes nothing about what is
 counted as seen — only an announcement the app opened by itself is marked seen
 when closed.

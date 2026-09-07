@@ -1220,6 +1220,17 @@ body {
   margin-top: 0.9rem;
 }
 
+.ec-announcement-release {
+  margin: 1.25rem 0 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  font-size: 1rem;
+}
+.ec-announcement-release:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
 .ec-announcement-heading {
   margin: 0 0 0.2rem;
   font-size: 0.95rem;
