@@ -124,6 +124,41 @@ describe('voicing blocks are per tuning', () => {
     }
   });
 
+  it('takes any heading that names a tuning as a voicings block, whatever the word', () => {
+    for (const heading of [
+      `# Posições: ${GUITAR}`,
+      `# Formas (${GUITAR})`,
+      `# Digitações - ${GUITAR}`,
+      `# Acordes – ${GUITAR}`,
+    ]) {
+      const song = parseSong(`C\n\n---\n\n${heading}\nC = x32010`);
+      expect(song.blocks, heading).toHaveLength(1);
+      expect(song.blocks[0].tuning, heading).toBe(GUITAR);
+      expect(song.blocks[0].voicings.get('C'), heading).toEqual(['x', 3, 2, 0, 1, 0]);
+      expect(song.symbols, heading).toEqual(['C']);
+    }
+  });
+
+  it('does not mistake a chart heading with a colon for a voicings block', () => {
+    for (const heading of ['# Intro: C, G', '# Verse 2 - slow', '# Chorus (x2)', '# Bridge: E4']) {
+      const song = parseSong(`${heading}\nC | G`);
+      expect(song.blocks, heading).toHaveLength(0);
+      expect(song.sections[0].name, heading).toBe(heading.slice(2));
+      expect(song.symbols, heading).toEqual(['C', 'G']);
+    }
+  });
+
+  it('keeps the word a song used for its block when writing it back', () => {
+    const text = `A | Cm\n\n---\n\n# Posições: ${GUITAR}\nCm = x35543\n`;
+    const after = setVoicing(text, parseSong(text).occurrences[0].start, ['x', 0, 2, 2, 2, 0], { tuning: GUITAR });
+    expect(after).toContain(`# Posições: ${GUITAR}`);
+    expect(after).not.toContain('# Voicings');
+    // A block for another tuning, new to the song, gets the canonical word.
+    const both = setVoicing(after, parseSong(after).occurrences[0].start, [2, 1, 0, 0], { tuning: UKE });
+    expect(both).toContain(`# Posições: ${GUITAR}`);
+    expect(both).toContain(`# Voicings: ${UKE}`);
+  });
+
   it('rejects a malformed voicing line rather than guessing', () => {
     const song = parseSong('C\n\n# Voicings: X\nC = not-a-shape\nnonsense');
     expect(song.blocks[0].voicings.size).toBe(0);

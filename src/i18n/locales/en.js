@@ -308,7 +308,8 @@ export default {
     help:
       'A line beginning with # names a section. A vertical bar starts a new measure; ' +
       'spaces separate chords inside one. Voicings sit after a --- rule, one block per ' +
-      'tuning, so the same chart serves every instrument. Where a chord is played more ' +
+      'tuning under a heading that names it, so the same chart serves every instrument. ' +
+      'Where a chord is played more ' +
       'than one way, the extra voicings are footnoted — Cm[2]. A chord you have saved a ' +
       'shape for gets that shape when it first appears in the song.',
     notAChord: 'Not a chord: {list}',

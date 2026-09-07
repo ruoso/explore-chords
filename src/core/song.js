@@ -40,16 +40,51 @@
 
 import { parseChord } from './notation/parse.js';
 import { shorthandOf, parseShorthand } from './fretstring.js';
+import { parseTuning } from './instrument.js';
 
 const HEADING = /^(\s*)(#+)\s*(.*?)\s*$/;
 const RULE = /^\s*-{3,}\s*$/;
 const VOICINGS_HEADING = /^voicings?\b\s*(?:for\b)?\s*[:\-–(]?\s*(.*?)\)?\s*$/i;
+const LABELLED_HEADING = /^(.*?)\s*[:\-–(]\s*(.*?)\)?\s*$/;
 const TUNING_HEADING = /^tuning$/i;
 const VOICING_LINE = /^\s*([^\s=[\]]+)(?:\[(\d+)\])?\s*=\s*(\S+)\s*$/;
 const CHORD_TOKEN = /^(.*?)(?:\[(\d+)\])?$/;
 
 export const VOICINGS_SECTION = 'Voicings';
 export const RULE_LINE = '---';
+
+/**
+ * Is this heading a voicings block, and for which tuning?
+ *
+ * The word does not matter: what makes a heading a voicings block is that it
+ * names a tuning — `# Voicings: E2, A2, D3, G3, B3, E4`, but equally
+ * `# Posições: …` or `# Formas (G4, C4, E4, A4)`, since the person writing
+ * the song writes it in their own language. The English word alone still
+ * counts, so an unlabelled `# Voicings` from the earlier format is found and
+ * a placeholder tuning is tolerated after it.
+ *
+ * @returns {{ label: string|null, tuning: string|null } | null}
+ *   the label as written, to be kept when the block is rewritten; null label
+ *   means the canonical one
+ */
+export function voicingsHeading(name) {
+  const english = VOICINGS_HEADING.exec(name);
+  if (english) return { label: null, tuning: english[1].trim() || null };
+
+  const labelled = LABELLED_HEADING.exec(name);
+  if (!labelled || !labelled[1] || !isTuning(labelled[2])) return null;
+  return { label: labelled[1].trim(), tuning: labelled[2].trim() };
+}
+
+function isTuning(text) {
+  if (!/[,\s]/.test(text.trim())) return false; // one pitch is not a tuning
+  try {
+    parseTuning(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * @typedef {object} ChordRef
@@ -75,6 +110,13 @@ export const RULE_LINE = '---';
  * @property {string[]} unknown   symbols that do not parse
  * @property {string[]} problems  malformed voicing lines
  * @property {string|null} legacyTuning   a `# Tuning` line, if present
+ *
+ * @typedef {object} VoicingsBlock
+ * @property {string|null} tuning   as written; null for an unlabelled legacy block
+ * @property {string|null} id       the tuning normalised for comparison
+ * @property {string|null} label    the heading's word as written, if not the canonical one
+ * @property {Map<string,(number|'x')[]>} voicings   key -> frets
+ * @property {{start:number,end:number}} range
  * @property {{start:number,end:number}|null} legacyTuningRange
  */
 
@@ -144,14 +186,15 @@ export function parseSong(text, dialect) {
       const name = heading[3];
       closeBlock(lineStart);
 
-      const voicings = VOICINGS_HEADING.exec(name);
+      const voicings = voicingsHeading(name);
       if (voicings) {
         flush();
         current = { name: '', lines: [] };
-        const tuning = voicings[1].trim() || null;
+        const { tuning, label } = voicings;
         block = {
           tuning,
           id: tuning ? normaliseTuning(tuning) : null,
+          label,
           voicings: new Map(),
           range: { start: lineStart, end: source.length },
         };
@@ -385,7 +428,7 @@ function applyEdit(text, edit, tuning, dialect) {
   const blocks = new Map();
   for (const b of parsed.blocks) {
     if (!b.id) continue;
-    if (!blocks.has(b.id)) blocks.set(b.id, { tuning: b.tuning, voicings: new Map() });
+    if (!blocks.has(b.id)) blocks.set(b.id, { tuning: b.tuning, label: b.label, voicings: new Map() });
     for (const [k, v] of b.voicings) blocks.get(b.id).voicings.set(k, v);
   }
   if (!blocks.has(id)) blocks.set(id, { tuning: String(tuning).trim(), voicings: new Map() });
@@ -524,7 +567,9 @@ function writeBlocks(text, blocks, dialect) {
     const lines = entries
       .sort(compareVoicings)
       .map((e) => `${keyFor(e.symbol, e.index)} = ${shorthandOf(e.frets)}`);
-    rendered.push(`# ${VOICINGS_SECTION}: ${b.tuning}\n${lines.join('\n')}\n`);
+    // The heading keeps the word the song used, so a block written in
+    // Portuguese stays in Portuguese; only a new block gets the canonical one.
+    rendered.push(`# ${b.label || VOICINGS_SECTION}: ${b.tuning}\n${lines.join('\n')}\n`);
   }
 
   if (rendered.length === 0) return out ? `${out}\n` : out;
@@ -581,7 +626,7 @@ export function mergeSongs(texts, dialect) {
   for (const text of texts) {
     for (const b of parseSong(text, dialect).blocks) {
       if (!b.id || b.voicings.size === 0 || blocks.has(b.id)) continue;
-      blocks.set(b.id, { tuning: b.tuning, voicings: new Map(b.voicings) });
+      blocks.set(b.id, { tuning: b.tuning, label: b.label, voicings: new Map(b.voicings) });
     }
   }
   return writeBlocks(texts[0], blocks, dialect);
@@ -615,7 +660,7 @@ export function migrateSong(text, currentTuning, dialect) {
   for (const b of parsed.blocks) {
     const key = b.id ?? id;
     const tuning = b.tuning ?? String(target).trim();
-    if (!blocks.has(key)) blocks.set(key, { tuning, voicings: new Map() });
+    if (!blocks.has(key)) blocks.set(key, { tuning, label: b.label, voicings: new Map() });
     for (const [k, v] of b.voicings) {
       // A labelled block outranks an unlabelled one for the same key.
       if (b.id || !blocks.get(key).voicings.has(k)) blocks.get(key).voicings.set(k, v);

@@ -310,7 +310,8 @@ export default {
     help:
       'Una línea que empieza con # nombra una sección. Una barra vertical inicia un compás; ' +
       'los espacios separan los acordes dentro de él. Los voicings van después de una línea ---, ' +
-      'un bloque por afinación, para que el mismo cifrado sirva en todos los instrumentos. Cuando ' +
+      'un bloque por afinación bajo un título que la nombra (la palabra es libre: "# Posiciones: ' +
+      'E2, A2, …" sirve), para que el mismo cifrado sirva en todos los instrumentos. Cuando ' +
       'un acorde se toca de más de una manera, los voicings extra llevan una nota — Cm[2]. Un ' +
       'acorde para el que guardaste una forma recibe esa forma la primera vez que aparece.',
     notAChord: 'No es un acorde: {list}',

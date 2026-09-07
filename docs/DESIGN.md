@@ -227,7 +227,13 @@ Cm = 0333
 **The chart is the song, and it is the same on every instrument.** What differs
 per instrument is how each chord is fingered, so voicings are kept in blocks
 headed by the tuning they are for, after a `---` rule that marks where the chart
-ends. A song therefore fits every instrument: one with no block yet simply shows
+ends. The word before the tuning is free: what makes a heading a voicings block
+is that it *names a tuning* — `# Voicings: E2, A2, D3, G3, B3, E4`, but equally
+`# Posições: …` or `# Formas (G4, C4, E4, A4)`, since the person writing the
+song writes it in their own language (§2.9). The word a song used is kept when
+its block is rewritten; only a new block gets the canonical `Voicings`. A
+chart heading with a colon, such as `# Intro: C, G`, is not mistaken for one,
+because `C, G` is not a tuning. A song therefore fits every instrument: one with no block yet simply shows
 defaults until something is chosen, and choosing writes a new block rather than
 touching another instrument's. There is no such thing as a song that belongs to
 one instrument, so nothing needs "bringing across".
