@@ -206,31 +206,43 @@ switches the preset label to `Custom` for that instrument.
 
 ### 2.6 Song sheets
 
-A song is **one block of text**, and that text says which instrument it is for:
+A song is **one block of text**: the chart, then a rule, then how it is played
+on each instrument.
 
 ```
-# Tuning
-E2, A2, D3, G3, B3, E4
-
 # Verse
 A | Cm | A | Cm[2]
 
-# Voicings
+---
+
+# Voicings: E2, A2, D3, G3, B3, E4
 A = x02220
 Cm = x35543
 Cm[2] = 8-10-10-8-8-8
+
+# Voicings: G4, C4, E4, A4
+Cm = 0333
 ```
 
-**The tuning is part of the song**, not a stored instrument id, because the
-voicings are fret patterns and mean nothing without it — a six-string shape on a
-ukulele is not a different chord, it is not a chord at all. Matching on the
-tuning cannot disagree with what the voicings actually fit, and two instruments
-tuned alike can both play the song, which is true.
+**The chart is the song, and it is the same on every instrument.** What differs
+per instrument is how each chord is fingered, so voicings are kept in blocks
+headed by the tuning they are for, after a `---` rule that marks where the chart
+ends. A song therefore fits every instrument: one with no block yet simply shows
+defaults until something is chosen, and choosing writes a new block rather than
+touching another instrument's. There is no such thing as a song that belongs to
+one instrument, so nothing needs "bringing across".
 
-A song written for another tuning is listed separately under **"songs for other
-instruments"**, with a *bring to this instrument* action that copies the chart,
-clears the voicings and rewrites the tuning. The original is left alone: a
-guitar arrangement should not vanish because someone wanted a ukulele one.
+The footnote markers live in the shared chart, which makes them an *arrangement*
+decision — "this bar uses the second Cm" — that each tuning's block then gives a
+shape to. That has a consequence for tidying: markers can only be merged or
+renumbered in ways every block agrees with. Picking a shape a chord already has
+still reuses the slot, *unless another tuning tells the two slots apart*, in
+which case merging would silently destroy that instrument's arrangement.
+
+Songs written in the earlier form — a `# Tuning` line and an unlabelled
+`# Voicings` block — are converted on load and on save: a `# Tuning` names the
+tuning the block was for, and a bare block with no `# Tuning` is taken to be for
+the instrument in use, since that is where it was written.
 
 A `#` line names a section. Every other line is a line of the chart: a vertical
 bar separates measures, spaces separate chords inside one. That is how a

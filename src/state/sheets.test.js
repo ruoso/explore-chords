@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { newSheet, sheetForSharing, sheetFromSharing } from './sheets.js';
 import { encodePayload, decodePayload } from './codec.js';
-import { parseSong, setVoicing } from '../core/song.js';
+import { parseSong, setVoicing, voicingsFor } from '../core/song.js';
 import { fromCatalog } from '../core/instrument.js';
 
 describe('the share codec', () => {
@@ -32,8 +32,8 @@ describe('sharing a song', () => {
   it('carries the instrument and the whole song text', async () => {
     const guitar = fromCatalog('6guitar');
     let body = '# Verse\nA | Cm | A | Cm';
-    body = setVoicing(body, parseSong(body).occurrences[1].start, ['x', 3, 5, 5, 4, 3]);
-    body = setVoicing(body, parseSong(body).occurrences[3].start, [8, 10, 10, 8, 8, 8]);
+    body = setVoicing(body, parseSong(body).occurrences[1].start, ['x', 3, 5, 5, 4, 3], { tuning: 'E2, A2, D3, G3, B3, E4' });
+    body = setVoicing(body, parseSong(body).occurrences[3].start, [8, 10, 10, 8, 8, 8], { tuning: 'E2, A2, D3, G3, B3, E4' });
 
     const sheet = newSheet({ title: 'Blackbird', body });
     const payload = sheetForSharing(sheet, guitar);
@@ -46,8 +46,9 @@ describe('sharing a song', () => {
     // separate map that could be dropped on the way.
     const song = parseSong(restored.body);
     expect(song.occurrences.map((c) => c.key)).toEqual(['A', 'Cm', 'A', 'Cm[2]']);
-    expect(song.voicings.get('Cm')).toEqual(['x', 3, 5, 5, 4, 3]);
-    expect(song.voicings.get('Cm[2]')).toEqual([8, 10, 10, 8, 8, 8]);
+    const chosen = voicingsFor(song, 'E2, A2, D3, G3, B3, E4');
+    expect(chosen.get('Cm')).toEqual(['x', 3, 5, 5, 4, 3]);
+    expect(chosen.get('Cm[2]')).toEqual([8, 10, 10, 8, 8, 8]);
   });
 
   it('refuses a payload that is not a song', () => {

@@ -26,7 +26,7 @@ import {
   saveActiveSheetId,
 } from './persist.js';
 import { loadSheets, saveSheets, newSheet } from './sheets.js';
-import { parseSong, songFitsTuning, setSongTuning, clearAllVoicings } from '../core/song.js';
+import { migrateSong } from '../core/song.js';
 import { formatTuning } from '../core/instrument.js';
 import { DEFAULT_VIEW, isView } from './views.js';
 
@@ -74,6 +74,22 @@ export function createStore(initial = {}) {
   const storedSheet = initial.activeSheetId ?? loadActiveSheetId();
   const restored = state.sheets.find((s) => s.id === storedSheet);
   if (restored) state.activeSheetId = restored.id;
+
+  // Songs written in the earlier form — a `# Tuning` line, or an unlabelled
+  // `# Voicings` block — are converted as they are loaded. An unlabelled block
+  // is taken to be for the instrument in use, since that is where it was made.
+  const active = state.instruments.find((i) => i.id === state.activeId) ?? null;
+  if (active) {
+    const tuning = formatTuning(active.strings);
+    let changed = false;
+    state.sheets = state.sheets.map((sheet) => {
+      const body = migrateSong(sheet.body, tuning, state.prefs.dialect);
+      if (body === sheet.body) return sheet;
+      changed = true;
+      return { ...sheet, body };
+    });
+    if (changed) saveSheets(state.sheets);
+  }
 
   const subscribers = new Set();
 
@@ -209,31 +225,28 @@ export function createStore(initial = {}) {
     },
 
     /**
-     * Songs split by whether they were written for this instrument's tuning.
-     *
-     * The tuning lives in the song text, so this cannot disagree with what a
-     * song's voicings actually fit — which a stored instrument id could.
+     * Every song. The chart is the same on every instrument; only the voicings
+     * differ, and those live per tuning inside the text — so there is no such
+     * thing as a song that belongs to one instrument.
      */
-    sheetsFor(instrument) {
-      const tuning = instrument ? formatTuning(instrument.strings) : '';
-      const mine = [];
-      const others = [];
-      for (const sheet of state.sheets) {
-        const parsed = parseSong(sheet.body);
-        if (songFitsTuning(parsed, tuning)) mine.push(sheet);
-        else others.push({ sheet, tuning: parsed.tuning });
-      }
-      return { mine, others };
+    sheetsFor() {
+      return state.sheets;
+    },
+
+    /**
+     * Bring a body up to the current form, assuming the instrument in use for
+     * anything written without a tuning. Applied to what the user types, so a
+     * song pasted in the earlier form converts as soon as it is saved.
+     */
+    normaliseBody(body) {
+      const instrument = store.effectiveInstrument;
+      return instrument
+        ? migrateSong(body, formatTuning(instrument.strings), state.prefs.dialect)
+        : body;
     },
 
     createSheet(title, body = '') {
-      const instrument = store.effectiveInstrument;
-      // The tuning goes into the text from the start, so a song always says
-      // what it was written for.
-      const sheet = newSheet({
-        title,
-        body: instrument ? setSongTuning(body, formatTuning(instrument.strings)) : body,
-      });
+      const sheet = newSheet({ title, body });
       const sheets = [...state.sheets, sheet];
       saveSheets(sheets);
       saveActiveSheetId(sheet.id);
@@ -271,26 +284,6 @@ export function createStore(initial = {}) {
       const sheet = state.sheets.find((s) => s.id === id) ?? null;
       saveActiveSheetId(sheet?.id ?? null);
       return store.set({ activeSheetId: sheet?.id ?? null });
-    },
-
-    /**
-     * Copy a song across to the instrument in use.
-     *
-     * The chart still means something on another instrument; the voicings do
-     * not, so they are cleared and the tuning rewritten. The original is left
-     * alone — a guitar arrangement should not vanish because someone wanted a
-     * ukulele one.
-     */
-    bringSheetHere(id) {
-      const original = state.sheets.find((s) => s.id === id);
-      const instrument = store.effectiveInstrument;
-      if (!original || !instrument) return null;
-
-      const body = setSongTuning(
-        clearAllVoicings(original.body),
-        formatTuning(instrument.strings)
-      );
-      return store.addSheet(newSheet({ title: original.title, body }));
     },
 
     duplicateSheet(id) {

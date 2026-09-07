@@ -48,7 +48,7 @@ describe('resolving a song', () => {
 
   it('prefers a chosen voicing over the default', () => {
     let text = 'C | G';
-    text = setVoicing(text, parseSong(text).occurrences[0].start, ['x', 3, 5, 5, 5, 3]);
+    text = setVoicing(text, parseSong(text).occurrences[0].start, ['x', 3, 5, 5, 5, 3], { tuning: 'E2, A2, D3, G3, B3, E4' });
     const resolved = resolveSongVoicings(parseSong(text), guitar);
     expect(resolved.get('C')).toMatchObject({ source: 'chosen' });
     expect(resolved.get('C').fingering.shorthand).toBe('x35553');
@@ -60,7 +60,7 @@ describe('resolving a song', () => {
     // bare entry, and every unmarked occurrence of the symbol resolves to it.
     // A footnote only appears once two *different* shapes are chosen.
     let text = 'C | C';
-    text = setVoicing(text, parseSong(text).occurrences[1].start, ['x', 3, 5, 5, 5, 3]);
+    text = setVoicing(text, parseSong(text).occurrences[1].start, ['x', 3, 5, 5, 5, 3], { tuning: 'E2, A2, D3, G3, B3, E4' });
     const song = parseSong(text);
     expect(song.occurrences.map((c) => c.key)).toEqual(['C', 'C']);
     expect(resolveSongVoicings(song, guitar).get('C').source).toBe('chosen');
@@ -69,8 +69,8 @@ describe('resolving a song', () => {
   it('keeps the default for the bare key once a second shape is footnoted', () => {
     let text = 'C | C | C';
     // Two different explicit choices for the last two; the first is untouched.
-    text = setVoicing(text, parseSong(text).occurrences[1].start, ['x', 3, 5, 5, 5, 3]);
-    text = setVoicing(text, parseSong(text).occurrences[2].start, [8, 10, 10, 9, 8, 8]);
+    text = setVoicing(text, parseSong(text).occurrences[1].start, ['x', 3, 5, 5, 5, 3], { tuning: 'E2, A2, D3, G3, B3, E4' });
+    text = setVoicing(text, parseSong(text).occurrences[2].start, [8, 10, 10, 9, 8, 8], { tuning: 'E2, A2, D3, G3, B3, E4' });
     const song = parseSong(text);
     // The first occurrence shares the bare key, so it too is now "chosen" —
     // this is the shared-entry semantics, not a default.
@@ -82,8 +82,8 @@ describe('resolving a song', () => {
 
   it('reverts to the default when a choice is cleared', () => {
     let text = 'C | G';
-    text = setVoicing(text, parseSong(text).occurrences[0].start, ['x', 3, 5, 5, 5, 3]);
-    text = setVoicing(text, parseSong(text).occurrences[0].start, null);
+    text = setVoicing(text, parseSong(text).occurrences[0].start, ['x', 3, 5, 5, 5, 3], { tuning: 'E2, A2, D3, G3, B3, E4' });
+    text = setVoicing(text, parseSong(text).occurrences[0].start, null, { tuning: 'E2, A2, D3, G3, B3, E4' });
     expect(resolveSongVoicings(parseSong(text), guitar).get('C').source).toBe('default');
   });
 

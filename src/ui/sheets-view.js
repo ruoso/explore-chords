@@ -17,6 +17,10 @@
  * A chord nobody has chosen a voicing for still gets one: the shape the
  * explorer would show first. So only the non-obvious chords need choosing, and
  * the text carries only those choices.
+ *
+ * The chart is the same on every instrument; voicings are kept per tuning in
+ * the text. So every song is listed for every instrument, and one with no
+ * block for this tuning yet simply shows defaults until something is chosen.
  */
 
 import { el, clear } from './dom.js';
@@ -28,7 +32,11 @@ import {
   unvoicedKeys,
   measureCount,
   compareVoicings,
+  voicingsFor,
+  songTunings,
+  normaliseTuning,
 } from '../core/song.js';
+import { formatTuning } from '../core/instrument.js';
 import { resolveSongVoicings, unvoiceableKeys } from '../core/voicings.js';
 import { parseChord } from '../core/notation/parse.js';
 import { renderDiagram } from '../render/index.js';
@@ -36,12 +44,20 @@ import { EXAMPLE_BODY } from '../state/sheets.js';
 import { openVoicingDialog } from './voicing-dialog.js';
 
 /** The list of sheets for the active instrument, with create and delete. */
-export function renderSheetList(container, { store, onOpen, onChange, onBring }) {
+/** The name of whichever of the user's instruments has this tuning, else the tuning. */
+function labelForTuning(store, tuning) {
+  const id = normaliseTuning(tuning);
+  const match = store.state.instruments.find((i) => normaliseTuning(formatTuning(i.strings)) === id);
+  return match ? match.label : tuning;
+}
+
+export function renderSheetList(container, { store, onOpen, onChange }) {
   clear(container);
   const instrument = store.effectiveInstrument;
   if (!instrument) return;
 
-  const { mine, others } = store.sheetsFor(instrument);
+  const sheets = store.sheetsFor(instrument);
+  const tuning = formatTuning(instrument.strings);
   const dialect = store.state.prefs.dialect;
 
   const page = el('div', { class: 'ec-page' });
@@ -76,14 +92,15 @@ export function renderSheetList(container, { store, onOpen, onChange, onBring })
   });
   page.append(form);
 
-  if (mine.length === 0) {
-    page.append(el('p', { class: 'ec-empty' }, `No songs for ${instrument.label} yet.`));
+  if (sheets.length === 0) {
+    page.append(el('p', { class: 'ec-empty' }, 'No songs yet.'));
   } else {
     const list = el('ul', { class: 'ec-sheet-list' });
-    for (const sheet of mine) {
+    for (const sheet of sheets) {
       const song = parseSong(sheet.body, dialect);
-      const chosen = song.symbols.length - unvoicedKeys(song).length;
+      const chosen = song.symbols.length - unvoicedKeys(song, tuning).length;
       const bars = measureCount(song);
+      const voicedFor = songTunings(song).map((t) => labelForTuning(store, t));
 
       list.append(
         el(
@@ -99,8 +116,11 @@ export function renderSheetList(container, { store, onOpen, onChange, onBring })
               `${bars} measure${bars === 1 ? '' : 's'} · ${song.symbols.length} chord${
                 song.symbols.length === 1 ? '' : 's'
               }`,
-              chosen > 0 ? ` · ${chosen} voicing${chosen === 1 ? '' : 's'} chosen` : ''
-            )
+              chosen > 0 ? ` · ${chosen} voicing${chosen === 1 ? '' : 's'} chosen here` : ''
+            ),
+            voicedFor.length > 0
+              ? el('p', { class: 'ec-sheet-meta ec-sheet-voiced' }, `Voiced for ${voicedFor.join(', ')}`)
+              : null
           ),
           el(
             'div',
@@ -148,67 +168,6 @@ export function renderSheetList(container, { store, onOpen, onChange, onBring })
     page.append(list);
   }
 
-  // --- songs written for something else -----------------------------------
-
-  if (others.length > 0) {
-    const section = el('section', { class: 'ec-other-songs', 'aria-labelledby': 'other-songs' });
-    section.append(
-      el('h3', { class: 'ec-panel-title', id: 'other-songs' }, 'Songs for other instruments'),
-      el(
-        'p',
-        { class: 'ec-help' },
-        'Their voicings are fret patterns for a different tuning, so they cannot be ' +
-          'shown here. Bringing one across copies the chart and leaves its voicings ' +
-          'to be chosen again.'
-      )
-    );
-
-    const list = el('ul', { class: 'ec-sheet-list' });
-    for (const { sheet, tuning } of others) {
-      list.append(
-        el(
-          'li',
-          { class: 'ec-sheet-row is-other' },
-          el(
-            'div',
-            { class: 'ec-sheet-info' },
-            el('p', { class: 'ec-sheet-name' }, sheet.title),
-            el('p', { class: 'ec-sheet-meta ec-instrument-tuning' }, tuning ?? 'unknown tuning')
-          ),
-          el(
-            'div',
-            { class: 'ec-sheet-actions' },
-            el(
-              'button',
-              {
-                type: 'button',
-                class: 'ec-button ec-button-small',
-                'aria-label': `Bring ${sheet.title} to ${instrument.label}`,
-                onClick: () => onBring(sheet),
-              },
-              'Bring to this instrument'
-            ),
-            el(
-              'button',
-              {
-                type: 'button',
-                class: 'ec-button ec-button-small',
-                'aria-label': `Delete ${sheet.title}`,
-                onClick: () => {
-                  store.deleteSheet(sheet.id);
-                  onChange();
-                },
-              },
-              'Delete'
-            )
-          )
-        )
-      );
-    }
-    section.append(list);
-    page.append(section);
-  }
-
   container.append(page);
   return page;
 }
@@ -220,7 +179,9 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
   if (!sheet || !instrument) return;
 
   const dialect = store.state.prefs.dialect;
+  const tuning = formatTuning(instrument.strings);
   const song = parseSong(sheet.body, dialect);
+  const chosenHere = voicingsFor(song, tuning);
   const resolved = resolveSongVoicings(song, instrument, dialect);
   const page = el('div', { class: 'ec-page' });
 
@@ -270,7 +231,10 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
   body.value = sheet.body;
   body.placeholder = '# Verse\nA | Cm | A | Cm';
   body.addEventListener('change', (event) => {
-    store.updateSheet(sheet.id, (s) => ({ ...s, body: event.target.value }));
+    // Normalised on the way in, so a song pasted in the earlier form converts
+    // the moment it is saved rather than lingering half-understood.
+    const next = store.normaliseBody(event.target.value);
+    store.updateSheet(sheet.id, (s) => ({ ...s, body: next }));
     onChange({ keepFocus: true });
   });
 
@@ -284,8 +248,9 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
         'p',
         { class: 'ec-help', id: 'song-help' },
         'A line beginning with # names a section. A vertical bar starts a new measure; ' +
-          'spaces separate chords inside one. Where a chord is played more than one way, ' +
-          'the extra voicings are footnoted — Cm[2] — and defined under # Voicings.'
+          'spaces separate chords inside one. Voicings sit after a --- rule, one block per ' +
+          'tuning, so the same chart serves every instrument. Where a chord is played more ' +
+          'than one way, the extra voicings are footnoted — Cm[2].'
       )
     )
   );
@@ -312,10 +277,10 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       store,
       chordText: chord.symbol,
       instrument,
-      chosen: song.voicings.get(chord.key) ?? null,
+      chosen: chosenHere.get(chord.key) ?? null,
       current: resolved.get(chord.key)?.fingering.frets ?? null,
       onChoose: (frets) => {
-        const next = setVoicing(sheet.body, chord.start, frets, dialect);
+        const next = setVoicing(sheet.body, chord.start, frets, { tuning, dialect });
         store.updateSheet(sheet.id, (s) => ({ ...s, body: next }));
         onChange();
       },
@@ -442,7 +407,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
                   scope: 'all',
                   usedIn,
                   onChoose: (frets) => {
-                    const next = setVoicingForKey(sheet.body, entry.key, frets, dialect);
+                    const next = setVoicingForKey(sheet.body, entry.key, frets, { tuning, dialect });
                     store.updateSheet(sheet.id, (s) => ({ ...s, body: next }));
                     onChange();
                   },

@@ -30,7 +30,7 @@ test.describe('the song list', () => {
 
   test('creates, duplicates and deletes songs', async ({ page }) => {
     await goToView(page, 'sheets');
-    await expect(page.locator('.ec-empty')).toContainText('No songs for');
+    await expect(page.locator('.ec-empty')).toContainText('No songs');
 
     await page.fill('#new-sheet-title', 'Blackbird');
     await page.getByRole('button', { name: 'New song' }).click();
@@ -182,7 +182,10 @@ test.describe('choosing voicings', () => {
   });
 
   test('a hand-written block in any order still displays sorted', async ({ page }) => {
-    await setBody(page, 'G | Am | C\n\n# Voicings\nG = 320003\nC = x32010\nAm = x02210');
+    await setBody(
+      page,
+      'G | Am | C\n\n---\n\n# Voicings: E2, A2, D3, G3, B3, E4\nG = 320003\nC = x32010\nAm = x02210'
+    );
 
     // The panel is ordered for reading...
     await expect(page.locator('.ec-voicings .ec-card-chord')).toHaveText(['Am', 'C', 'G']);
@@ -467,85 +470,94 @@ test.describe('sharing a song', () => {
   });
 });
 
-test.describe('songs and instruments', () => {
+test.describe('one song, every instrument', () => {
+  const GUITAR = 'E2, A2, D3, G3, B3, E4';
+  const UKE = 'G4, C4, E4, A4';
+
   test.beforeEach(async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page, { instrument: '6guitar' });
   });
 
-  test('a song records the tuning it was written for', async ({ page }) => {
+  test('a new song carries no tuning until a voicing is chosen', async ({ page }) => {
     await newSong(page, 'Guitar song');
+    expect(await page.locator('#sheet-body').inputValue()).not.toContain('# Voicings');
+
+    await page.locator('.ec-measure-chord', { hasText: /^C$/ }).first().click();
+    await page.locator('.ec-dialog-choice').nth(1).click();
+
+    // The voicings sit after a rule, in a block labelled with the tuning.
     const body = await page.locator('#sheet-body').inputValue();
-    expect(body).toContain('# Tuning');
-    expect(body).toContain('E2, A2, D3, G3, B3, E4');
+    expect(body).toMatch(/\n---\n/);
+    expect(body).toContain(`# Voicings: ${GUITAR}`);
+    expect(body.indexOf('---')).toBeLessThan(body.indexOf('# Voicings'));
   });
 
-  test('switching instrument moves the song aside instead of breaking', async ({ page }) => {
-    await newSong(page, 'Guitar song');
-    await setBody(page, '# Tuning\nE2, A2, D3, G3, B3, E4\n\n# Verse\nC | G');
-    await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
-    await page.locator('.ec-dialog-choice').first().click();
-    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(1);
+  test('the same song serves every instrument, each with its own voicings', async ({ page }) => {
+    await newSong(page, 'Shared song');
+    await setBody(page, '# Verse\nC | G');
+    await page.locator('.ec-measure-chord', { hasText: /^C$/ }).first().click();
+    await page.locator('.ec-dialog-choice').nth(1).click();
+    // Back to the list first: an open song stays open across an instrument
+    // switch (the next test checks exactly that), and here the list is wanted.
+    await page.locator('#sheet-back').click();
 
-    await addInstrument(page, { instrument: 'ukulele' });
+    await addInstrument(page, { instrument: 'ukulele', name: 'Uke' });
     await goToView(page, 'sheets');
 
-    // The guitar song is not shown as playable here — its voicings are shapes
-    // for six strings — but it is not lost either.
-    await expect(page.locator('.ec-empty')).toContainText('No songs for');
-    const others = page.locator('.ec-sheet-row.is-other');
-    await expect(others).toHaveCount(1);
-    await expect(others).toContainText('Guitar song');
-    await expect(others).toContainText('E2, A2, D3, G3, B3, E4');
-  });
-
-  test('bringing a song across keeps the chart and clears the voicings', async ({ page }) => {
-    await newSong(page, 'Guitar song');
-    await setBody(page, '# Tuning\nE2, A2, D3, G3, B3, E4\n\n# Verse\nC | G | C');
-    for (const symbol of ['C', 'G']) {
-      await page.locator('.ec-measure-chord', { hasText: new RegExp(`^${symbol}$`) }).first().click();
-      await page.locator('.ec-dialog-choice').first().click();
-    }
-
-    await addInstrument(page, { instrument: 'ukulele' });
-    await goToView(page, 'sheets');
-    await page.getByRole('button', { name: /Bring Guitar song to/ }).click();
-
-    // It opens straight into the copy, since the next thing to do is choose
-    // voicings for it. Same chart, ukulele tuning, nothing voiced yet.
-    await expect(page.locator('#sheet-body')).toBeVisible();
-    const body = await page.locator('#sheet-body').inputValue();
-    expect(body).toContain('G4, C4, E4, A4');
-    expect(body).toContain('C | G | C');
-    expect(body).not.toContain('# Voicings');
-    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(0);
-    // The chart is not blank, though: every chord fell back to a default.
+    // Listed here too — it is the same song — and, having no ukulele block
+    // yet, it opens with every chord on its default.
+    await expect(page.locator('.ec-sheet-row')).toHaveCount(1);
+    await expect(page.locator('.ec-sheet-voiced')).toContainText('Guitar');
+    await page.getByRole('button', { name: 'Open Shared song' }).click();
     await expect(page.locator('.ec-voicings .ec-card.is-default')).toHaveCount(2);
 
-    // And voicing it now works, on this instrument's strings.
-    await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
-    await page.locator('.ec-dialog-choice').first().click();
-    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(1);
+    // Choosing here writes a second block, leaving the guitar one alone.
+    await page.locator('.ec-measure-chord', { hasText: /^C$/ }).first().click();
+    await page.locator('.ec-dialog-choice').nth(1).click();
+    const body = await page.locator('#sheet-body').inputValue();
+    expect(body).toContain(`# Voicings: ${GUITAR}`);
+    expect(body).toContain(`# Voicings: ${UKE}`);
+    expect(body.match(/^C = /gm)).toHaveLength(2);
 
-    // The guitar original survives.
     await page.locator('#sheet-back').click();
-    await page.locator('.ec-chip-summary').click();
-    await page.locator('.ec-chip-item', { hasText: 'Guitar' }).click();
-    await goToView(page, 'sheets');
-    await expect(page.locator('.ec-sheet-row:not(.is-other)')).toHaveCount(1);
-    await expect(page.locator('.ec-sheet-row.is-other')).toHaveCount(1);
+    await expect(page.locator('.ec-sheet-voiced')).toContainText('Uke');
   });
 
-  test('a song open from another instrument falls back to the list', async ({ page }) => {
-    await newSong(page, 'Guitar song');
-    await setBody(page, '# Tuning\nE2, A2, D3, G3, B3, E4\n\n# Verse\nC | G');
-    await expect(page.locator('#sheet-body')).toBeVisible();
+  test('a song stays open across an instrument switch and renders on the new one', async ({
+    page,
+  }) => {
+    await newSong(page, 'Open song');
+    await setBody(page, 'C | G | Am');
+    await page.locator('.ec-measure-chord', { hasText: /^C$/ }).first().click();
+    await page.locator('.ec-dialog-choice').nth(1).click();
 
-    // Switching while a song is open must not render six-string shapes on four
-    // strings — that used to throw and blank the screen.
+    // Six-string shapes must not be drawn on four strings; the chart simply
+    // shows ukulele defaults instead.
     await addInstrument(page, { instrument: 'ukulele' });
     await goToView(page, 'sheets');
-    await expect(page.locator('#sheet-body')).toHaveCount(0);
-    await expect(page.locator('.ec-sheet-row.is-other')).toHaveCount(1);
+    await expect(page.locator('#sheet-body')).toBeVisible();
+    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(3);
+    await expect(page.locator('.ec-voicings .ec-card.is-default')).toHaveCount(3);
+  });
+
+  test('a song pasted in the earlier form is converted when saved', async ({ page }) => {
+    await newSong(page, 'Old song');
+    await setBody(page, `# Tuning\n${GUITAR}\n\n# Verse\nC | G\n\n# Voicings\nC = x32010`);
+
+    const body = await page.locator('#sheet-body').inputValue();
+    expect(body).not.toContain('# Tuning');
+    expect(body).toContain('---');
+    expect(body).toContain(`# Voicings: ${GUITAR}`);
+    expect(body).toContain('C = x32010');
+    // And it is understood: C is a choice, not a default.
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(1);
+    await expect(page.locator('.ec-song-section-name')).toHaveText('Verse');
+  });
+
+  test('an unlabelled block is taken to be for the instrument in use', async ({ page }) => {
+    await newSong(page, 'Bare song');
+    await setBody(page, 'C | G\n\n# Voicings\nC = x32010');
+    expect(await page.locator('#sheet-body').inputValue()).toContain(`# Voicings: ${GUITAR}`);
   });
 });

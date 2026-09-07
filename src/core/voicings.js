@@ -1,5 +1,5 @@
 /**
- * Resolving a song's voicings: what was chosen, or a sensible default.
+ * Resolving a song's voicings on one instrument: what was chosen, or a default.
  *
  * A teacher writing out a song should only have to choose voicings for the
  * chords that are not obvious. For the rest, the default is the shape the
@@ -8,15 +8,18 @@
  * are already ordered open-first with empty groups skipped, that is simply the
  * first shape of the first group.
  *
- * Defaults are derived here, never written into the song text. Writing them in
- * would fill `# Voicings` with shapes nobody chose and hide the ones somebody
- * did.
+ * Choices are read from the song's block for the instrument's tuning; on an
+ * instrument with no block yet, everything is a default. Defaults are derived
+ * here, never written into the song text: writing them in would fill the
+ * voicings with shapes nobody chose and hide the ones somebody did.
  *
  * Pure and synchronous, like everything in core/ (docs/DESIGN.md §3.2).
  */
 
 import { parseChord } from './notation/parse.js';
 import { searchFingerings, fingeringFromFrets } from './search.js';
+import { voicingsFor } from './song.js';
+import { formatTuning } from './instrument.js';
 
 /**
  * @typedef {object} ResolvedVoicing
@@ -34,11 +37,11 @@ export function defaultVoicing(chord, instrument) {
 }
 
 /**
- * Every voicing key the chart uses, resolved to a fingering.
+ * Every voicing key the chart uses, resolved to a fingering on this instrument.
  *
- * A key the text defines is `chosen`; a valid chord with no entry falls back
- * to the `default`. A chord the search cannot voice at all is simply absent, as
- * is one that does not parse — the caller reports those separately.
+ * A key the instrument's block defines is `chosen`; a valid chord without one
+ * falls back to the `default`. A chord the search cannot voice at all is
+ * absent, as is one that does not parse — the caller reports those separately.
  *
  * @param {import('./song.js').ParsedSong} parsed
  * @param {object} instrument
@@ -46,6 +49,7 @@ export function defaultVoicing(chord, instrument) {
  * @returns {Map<string, ResolvedVoicing>}  key -> resolution, in chart order
  */
 export function resolveSongVoicings(parsed, instrument, dialect) {
+  const chosen = voicingsFor(parsed, formatTuning(instrument.strings));
   /** @type {Map<string, ResolvedVoicing>} */
   const out = new Map();
   /** @type {Map<string, import('./search.js').Fingering|null>} */
@@ -56,15 +60,15 @@ export function resolveSongVoicings(parsed, instrument, dialect) {
     const parsedChord = parseChord(chord.symbol, dialect).chord;
     if (!parsedChord) continue;
 
-    const frets = parsed.voicings.get(chord.key);
+    const frets = chosen.get(chord.key);
     if (frets) {
       const fingering = fingeringFromFrets(frets, parsedChord, instrument);
       if (fingering) out.set(chord.key, { source: 'chosen', fingering });
       continue;
     }
 
-    // Any key without an entry — the bare symbol, or a hand-written footnote
-    // nothing defines — gets the symbol's default. Computed once per symbol.
+    // Any key without an entry — the bare symbol, or a footnote this tuning
+    // does not define — gets the symbol's default. Computed once per symbol.
     if (!defaultsBySymbol.has(chord.symbol)) {
       defaultsBySymbol.set(chord.symbol, defaultVoicing(parsedChord, instrument));
     }

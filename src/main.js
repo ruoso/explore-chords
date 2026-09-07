@@ -26,9 +26,8 @@ import { confirmDialog } from './ui/confirm-dialog.js';
 import { renderSheetList, renderSheetEditor } from './ui/sheets-view.js';
 import { renderSheetPrint } from './ui/sheet-print.js';
 import { sheetForSharing, sheetFromSharing } from './state/sheets.js';
-import { parseSong, songFitsTuning } from './core/song.js';
 import { encodeSheetLink, decodeSheetLink } from './state/codec.js';
-import { instrumentInstance, formatTuning } from './core/instrument.js';
+import { instrumentInstance } from './core/instrument.js';
 import { setupUpdates } from './ui/update-toast.js';
 import { setupInstallPrompt } from './ui/install-prompt.js';
 
@@ -256,16 +255,8 @@ function printSheet() {
 }
 
 function renderSheets() {
-  const instrument = store.effectiveInstrument;
   const sheet = store.activeSheet;
-
-  // A song open from another instrument cannot be rendered here: its voicings
-  // are fret patterns for a different number of strings. Fall back to the list
-  // rather than showing something meaningless.
-  const fits = sheet ? songFitsTuning(parseSong(sheet.body), formatTuning(instrument.strings)) : false;
-  if (sheet && !fits) store.setActiveSheet(null);
-
-  if (!sheet || !fits) {
+  if (!sheet) {
     renderSheetList(nodes.main, {
       store,
       onOpen: (id) => {
@@ -275,10 +266,6 @@ function renderSheets() {
       onChange: () => {
         clear(nodes.main);
         renderSheets();
-      },
-      onBring: (source) => {
-        const copy = store.bringSheetHere(source.id);
-        if (copy) navigate('sheets');
       },
     });
     return;

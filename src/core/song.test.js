@@ -7,15 +7,27 @@ import {
   songLegend,
   unvoicedKeys,
   measureCount,
-  setSongTuning,
-  songFitsTuning,
-  clearAllVoicings,
+  voicingsFor,
+  songTunings,
+  migrateSong,
 } from './song.js';
 import { shorthandOf, parseShorthand } from './fretstring.js';
 
+const GUITAR = 'E2, A2, D3, G3, B3, E4';
+const UKE = 'G4, C4, E4, A4';
 const CM_OPEN = ['x', 3, 5, 5, 4, 3];
 const CM_HIGH = [8, 10, 10, 8, 8, 8];
 const A_OPEN = ['x', 0, 2, 2, 2, 0];
+const CM_UKE = [0, 3, 3, 3];
+
+const g = { tuning: GUITAR };
+const u = { tuning: UKE };
+
+/** The start offset of the nth occurrence of a symbol. */
+const at = (text, symbol, nth = 0) =>
+  parseSong(text).occurrences.filter((c) => c.symbol === symbol)[nth].start;
+const chart = (text) => text.split('\n')[0];
+const block = (text, tuning) => voicingsFor(parseSong(text), tuning);
 
 describe('fret strings', () => {
   it('runs single digits together and hyphenates double digits', () => {
@@ -62,377 +74,286 @@ describe('reading a chart', () => {
     expect(song.unknown).toEqual(['wobble']);
     expect(song.occurrences.find((c) => c.symbol === 'wobble').valid).toBe(false);
   });
+
+  it('never reads the rule as a chord', () => {
+    const song = parseSong('C | G\n\n---\n\n# Voicings: E2, A2, D3, G3, B3, E4\nC = x32010');
+    expect(song.unknown).toEqual([]);
+    expect(song.occurrences.map((c) => c.symbol)).toEqual(['C', 'G']);
+  });
 });
 
-describe('footnote markers', () => {
-  it('reads a marked chord as a separate voicing key', () => {
-    const song = parseSong(
-      'A | Cm | A | Cm[2]\n\n# Voicings\nA = x02220\nCm = x35543\nCm[2] = 8-10-10-8-8-8'
-    );
-    const keys = song.occurrences.map((c) => c.key);
-    expect(keys).toEqual(['A', 'Cm', 'A', 'Cm[2]']);
-    expect(song.voicings.get('Cm')).toEqual(CM_OPEN);
-    expect(song.voicings.get('Cm[2]')).toEqual(CM_HIGH);
+describe('voicing blocks are per tuning', () => {
+  const text =
+    'A | Cm | A | Cm[2]\n\n---\n\n' +
+    '# Voicings: E2, A2, D3, G3, B3, E4\nA = x02220\nCm = x35543\nCm[2] = 8-10-10-8-8-8\n\n' +
+    '# Voicings: G4, C4, E4, A4\nCm = 0333';
+
+  it('reads each block for its own tuning', () => {
+    const song = parseSong(text);
+    expect(songTunings(song)).toEqual([GUITAR, UKE]);
+    expect(block(text, GUITAR).get('Cm')).toEqual(CM_OPEN);
+    expect(block(text, GUITAR).get('Cm[2]')).toEqual(CM_HIGH);
+    expect(block(text, UKE).get('Cm')).toEqual(CM_UKE);
+    expect(block(text, UKE).has('A')).toBe(false);
   });
 
-  it('reports the legend once per distinct key', () => {
-    const song = parseSong(
-      'A | Cm | A | Cm[2]\n\n# Voicings\nA = x02220\nCm = x35543\nCm[2] = 8-10-10-8-8-8'
-    );
-    expect(songLegend(song).map((e) => e.key)).toEqual(['A', 'Cm', 'Cm[2]']);
+  it('matches a tuning by its pitches, not its spacing or case', () => {
+    expect(block(text, 'e2 a2 d3 g3 b3 e4').get('A')).toEqual(A_OPEN);
   });
 
-  it('lists chords still needing a voicing', () => {
-    const song = parseSong('A | Cm\n\n# Voicings\nA = x02220');
-    expect(unvoicedKeys(song)).toEqual(['Cm']);
+  it('has nothing for a tuning with no block', () => {
+    expect(block(text, 'D2, A2, D3, G3, A3, D4').size).toBe(0);
+  });
+
+  it('reports the legend and the unvoiced list per tuning', () => {
+    const song = parseSong(text);
+    expect(songLegend(song, GUITAR).map((e) => e.key)).toEqual(['A', 'Cm', 'Cm[2]']);
+    expect(songLegend(song, UKE).map((e) => e.key)).toEqual(['Cm']);
+    // On the ukulele, A and the second Cm variant are still unchosen.
+    expect(unvoicedKeys(song, UKE)).toEqual(['A', 'Cm[2]']);
+    expect(unvoicedKeys(song, GUITAR)).toEqual([]);
+  });
+
+  it('accepts a few ways of writing the heading', () => {
+    for (const heading of ['# Voicings: X', '# Voicings X', '# Voicings for X', '# Voicings (X)']) {
+      const song = parseSong(`C\n\n${heading}\nC = x32010`);
+      expect(song.blocks[0].tuning, heading).toBe('X');
+    }
   });
 
   it('rejects a malformed voicing line rather than guessing', () => {
-    const song = parseSong('C\n\n# Voicings\nC = not-a-shape\nnonsense');
-    expect(song.voicings.size).toBe(0);
+    const song = parseSong('C\n\n# Voicings: X\nC = not-a-shape\nnonsense');
+    expect(song.blocks[0].voicings.size).toBe(0);
     expect(song.problems).toHaveLength(2);
   });
 });
 
 describe('choosing a voicing', () => {
-  const at = (song, symbol, nth = 0) =>
-    song.occurrences.filter((c) => c.symbol === symbol)[nth].start;
-
-  it('writes a first voicing with no marker', () => {
-    const before = '# Verse\nA | Cm';
-    const song = parseSong(before);
-    const after = setVoicing(before, at(song, 'Cm'), CM_OPEN);
-
-    expect(after).toContain('A | Cm');
-    expect(after).toContain('# Voicings');
-    expect(after).toContain('Cm = x35543');
-    expect(after).not.toContain('Cm[');
+  it('writes a first voicing after a rule, labelled with the tuning', () => {
+    const after = setVoicing('# Verse\nA | Cm', at('# Verse\nA | Cm', 'Cm'), CM_OPEN, g);
+    expect(after).toBe(`# Verse\nA | Cm\n\n---\n\n# Voicings: ${GUITAR}\nCm = x35543\n`);
   });
 
   it('marks only the second voicing, leaving the first bare', () => {
-    // The shape the user asked for: `A | Cm | A | Cm[2]`.
     let text = 'A | Cm | A | Cm';
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
-    text = setVoicing(text, at(parseSong(text), 'Cm', 1), CM_HIGH);
-
-    expect(text.split('\n')[0]).toBe('A | Cm | A | Cm[2]');
-    expect(text).toContain('Cm = x35543');
-    expect(text).toContain('Cm[2] = 8-10-10-8-8-8');
+    text = setVoicing(text, at(text, 'Cm', 0), CM_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm', 1), CM_HIGH, g);
+    expect(chart(text)).toBe('A | Cm | A | Cm[2]');
+    expect(block(text, GUITAR).get('Cm')).toEqual(CM_OPEN);
+    expect(block(text, GUITAR).get('Cm[2]')).toEqual(CM_HIGH);
   });
 
   it('reuses an existing voicing instead of adding a duplicate', () => {
     let text = 'A | Cm | A | Cm';
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
-    // The second occurrence gets the *same* shape: no new footnote.
-    text = setVoicing(text, at(parseSong(text), 'Cm', 1), CM_OPEN);
-
-    expect(text.split('\n')[0]).toBe('A | Cm | A | Cm');
+    text = setVoicing(text, at(text, 'Cm', 0), CM_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm', 1), CM_OPEN, g);
+    expect(chart(text)).toBe('A | Cm | A | Cm');
     expect(text).not.toContain('Cm[2]');
-    expect((text.match(/^Cm/gm) ?? [])).toHaveLength(1);
   });
 
   it('collapses markers when a chord returns to one voicing', () => {
     let text = 'A | Cm | A | Cm';
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
-    text = setVoicing(text, at(parseSong(text), 'Cm', 1), CM_HIGH);
-    expect(text.split('\n')[0]).toBe('A | Cm | A | Cm[2]');
-
-    // Put the second one back to the first shape.
-    text = setVoicing(text, at(parseSong(text), 'Cm', 1), CM_OPEN);
-    expect(text.split('\n')[0]).toBe('A | Cm | A | Cm');
+    text = setVoicing(text, at(text, 'Cm', 0), CM_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm', 1), CM_HIGH, g);
+    expect(chart(text)).toBe('A | Cm | A | Cm[2]');
+    text = setVoicing(text, at(text, 'Cm', 1), CM_OPEN, g);
+    expect(chart(text)).toBe('A | Cm | A | Cm');
     expect(text).not.toContain('Cm[2]');
   });
 
   it('drops entries nothing refers to', () => {
     let text = 'A | Cm';
-    text = setVoicing(text, at(parseSong(text), 'A'), A_OPEN);
-    text = setVoicing(text, at(parseSong(text), 'Cm'), CM_OPEN);
+    text = setVoicing(text, at(text, 'A'), A_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm'), CM_OPEN, g);
     expect(text).toContain('A = x02220');
-
-    // Clearing a choice removes its line.
-    text = setVoicing(text, at(parseSong(text), 'A'), null);
+    text = setVoicing(text, at(text, 'A'), null, g);
     expect(text).not.toContain('A = x02220');
     expect(text).toContain('Cm = x35543');
   });
 
-  it('removes the block entirely once nothing is voiced', () => {
+  it('removes the block and the rule once nothing is voiced', () => {
     let text = 'A | Cm';
-    text = setVoicing(text, at(parseSong(text), 'A'), A_OPEN);
-    expect(text).toContain('# Voicings');
-    text = setVoicing(text, at(parseSong(text), 'A'), null);
+    text = setVoicing(text, at(text, 'A'), A_OPEN, g);
+    expect(text).toContain('---');
+    text = setVoicing(text, at(text, 'A'), null, g);
     expect(text).not.toContain('# Voicings');
+    expect(text).not.toContain('---');
     expect(text.trim()).toBe('A | Cm');
+  });
+
+  it('does not let rules pile up across edits', () => {
+    let text = 'A | Cm';
+    text = setVoicing(text, at(text, 'A'), A_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm'), CM_OPEN, g);
+    text = setVoicingForKey(text, 'A', ['x', 0, 2, 2, 2, 'x'], g);
+    expect(text.match(/^---$/gm)).toHaveLength(1);
   });
 
   it('preserves the chart formatting around it', () => {
     const before = '# Verse\nC   Am  |  F   G\n\n# Chorus\nC | G';
-    const song = parseSong(before);
-    const after = setVoicing(before, at(song, 'F'), [1, 3, 3, 2, 1, 1]);
-
+    const after = setVoicing(before, at(before, 'F'), [1, 3, 3, 2, 1, 1], g);
     expect(after).toContain('C   Am  |  F   G');
     expect(after).toContain('# Chorus');
     expect(after).toContain('F = 133211');
   });
 
+  it('clears the entry, not just one occurrence of it', () => {
+    let text = 'A | Cm | A | Cm';
+    text = setVoicing(text, at(text, 'Cm', 0), CM_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm', 0), null, g);
+    expect(block(text, GUITAR).size).toBe(0);
+  });
+
+  it('leaves a differently-voiced occurrence and its marker alone when clearing', () => {
+    let text = 'A | Cm | A | Cm';
+    text = setVoicing(text, at(text, 'Cm', 0), CM_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm', 1), CM_HIGH, g);
+    text = setVoicing(text, at(text, 'Cm', 0), null, g);
+    // The bare Cm now has no shape here and falls back to a default; the
+    // marker is an arrangement decision and stays, since another tuning may
+    // still give it meaning.
+    expect(chart(text)).toBe('A | Cm | A | Cm[2]');
+    expect(block(text, GUITAR).has('Cm')).toBe(false);
+    expect(block(text, GUITAR).get('Cm[2]')).toEqual(CM_HIGH);
+  });
+
   it('round-trips: the text is the whole state', () => {
     let text = 'A | Cm | A | Cm';
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
-    text = setVoicing(text, at(parseSong(text), 'Cm', 1), CM_HIGH);
-
-    // Reading the produced text back gives exactly the same assignment, with
-    // no app state involved.
-    const reparsed = parseSong(text);
-    const frets = reparsed.occurrences.map((c) => reparsed.voicings.get(c.key) ?? null);
+    text = setVoicing(text, at(text, 'Cm', 0), CM_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm', 1), CM_HIGH, g);
+    const song = parseSong(text);
+    const frets = song.occurrences.map((c) => voicingsFor(song, GUITAR).get(c.key) ?? null);
     expect(frets).toEqual([null, CM_OPEN, null, CM_HIGH]);
   });
 });
 
-describe('clearing a shared voicing', () => {
-  const at = (song, symbol, nth = 0) =>
-    song.occurrences.filter((c) => c.symbol === symbol)[nth].start;
-
-  it('clears the entry, not just one occurrence of it', () => {
-    // Two occurrences share the bare `Cm` key. Clearing one has to remove the
-    // entry: leaving it would keep both pointing at a voicing the user just
-    // asked to remove, so the click would appear to do nothing.
-    let text = 'A | Cm | A | Cm';
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
-    expect(text).toContain('Cm = x35543');
-
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), null);
-    expect(text).not.toContain('Cm =');
-    expect(parseSong(text).voicings.size).toBe(0);
+describe('one chart, several instruments', () => {
+  it('keeps each tuning in its own block', () => {
+    let text = 'A | Cm';
+    text = setVoicing(text, at(text, 'Cm'), CM_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm'), CM_UKE, u);
+    expect(chart(text)).toBe('A | Cm');
+    expect(block(text, GUITAR).get('Cm')).toEqual(CM_OPEN);
+    expect(block(text, UKE).get('Cm')).toEqual(CM_UKE);
+    expect(text.match(/^# Voicings:/gm)).toHaveLength(2);
   });
 
-  it('leaves a differently-voiced occurrence alone', () => {
-    let text = 'A | Cm | A | Cm';
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
-    text = setVoicing(text, at(parseSong(text), 'Cm', 1), CM_HIGH);
-
-    // Clearing the first must not disturb the second, which is its own entry.
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), null);
-    const song = parseSong(text);
-    expect(song.voicings.get('Cm')).toEqual(CM_HIGH);
-    expect(text.split('\n')[0]).toBe('A | Cm | A | Cm');
-  });
-});
-
-describe('voicings are ordered for reading', () => {
-  const at = (song, symbol, nth = 0) =>
-    song.occurrences.filter((c) => c.symbol === symbol)[nth].start;
-
-  it('writes the block alphabetically, not in the order chords appear', () => {
-    let text = 'G | Am | C | D';
-    text = setVoicing(text, at(parseSong(text), 'G'), [3, 2, 0, 0, 0, 3]);
-    text = setVoicing(text, at(parseSong(text), 'Am'), ['x', 0, 2, 2, 1, 0]);
-    text = setVoicing(text, at(parseSong(text), 'C'), ['x', 3, 2, 0, 1, 0]);
-    text = setVoicing(text, at(parseSong(text), 'D'), ['x', 'x', 0, 2, 3, 2]);
-
-    const block = text.slice(text.indexOf('# Voicings')).trim().split('\n').slice(1);
-    expect(block.map((line) => line.split(' =')[0])).toEqual(['Am', 'C', 'D', 'G']);
-  });
-
-  it('keeps a chord and its footnotes together and in order', () => {
-    let text = 'Cm | A | Cm | A';
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
-    text = setVoicing(text, at(parseSong(text), 'Cm', 1), CM_HIGH);
-    text = setVoicing(text, at(parseSong(text), 'A', 0), A_OPEN);
-
-    const block = text.slice(text.indexOf('# Voicings')).trim().split('\n').slice(1);
-    expect(block.map((line) => line.split(' =')[0])).toEqual(['A', 'Cm', 'Cm[2]']);
-  });
-
-  it('orders the legend and the unvoiced list the same way', () => {
-    const text = 'G | Am | C\n\n# Voicings\nG = 320003\nAm = x02210\nC = x32010';
-    const song = parseSong(text);
-    expect(songLegend(song).map((e) => e.key)).toEqual(['Am', 'C', 'G']);
-
-    const partial = parseSong('G | Am | C\n\n# Voicings\nC = x32010');
-    expect(unvoicedKeys(partial)).toEqual(['Am', 'G']);
-  });
-
-  it('does not let the written order disturb footnote numbering', () => {
-    // The numbers come from first appearance in the chart. Writing the block
-    // alphabetically must not renumber anything.
+  it('shares footnote markers, so each tuning says what its variant is', () => {
     let text = 'Cm | Cm';
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
-    text = setVoicing(text, at(parseSong(text), 'Cm', 1), CM_HIGH);
-
-    const song = parseSong(text);
-    expect(song.voicings.get('Cm')).toEqual(CM_OPEN);
-    expect(song.voicings.get('Cm[2]')).toEqual(CM_HIGH);
-    expect(text.split('\n')[0]).toBe('Cm | Cm[2]');
-  });
-});
-
-describe('the display sorts even when the text does not', () => {
-  const at = (song, symbol, nth = 0) =>
-    song.occurrences.filter((c) => c.symbol === symbol)[nth].start;
-
-  it('reads a hand-written block in any order and shows it sorted', () => {
-    const text = 'G | Am | C | D\n\n# Voicings\nG = 320003\nD = xx0232\nAm = x02210';
-    const song = parseSong(text);
-
-    // The text is however the author left it...
-    expect(text).toContain('G = 320003\nD = xx0232\nAm = x02210');
-    // ...but the legend is ordered for looking things up.
-    expect(songLegend(song).map((e) => e.key)).toEqual(['Am', 'D', 'G']);
-    expect(unvoicedKeys(song)).toEqual(['C']);
+    text = setVoicing(text, at(text, 'Cm', 0), CM_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm', 1), CM_HIGH, g);
+    expect(chart(text)).toBe('Cm | Cm[2]');
+    // The ukulele defines both variants too, on its own strings.
+    text = setVoicingForKey(text, 'Cm', CM_UKE, u);
+    text = setVoicingForKey(text, 'Cm[2]', [3, 3, 3, 6], u);
+    expect(chart(text)).toBe('Cm | Cm[2]');
+    expect(block(text, UKE).get('Cm[2]')).toEqual([3, 3, 3, 6]);
+    expect(block(text, GUITAR).get('Cm[2]')).toEqual(CM_HIGH);
   });
 
-  it('leaves the text alone until something actually changes it', () => {
-    // Reordering someone's text merely because they opened the song would be
-    // rude; the block normalises the next time a voicing is chosen.
-    const text = 'G | Am\n\n# Voicings\nG = 320003\nAm = x02210';
-    const song = parseSong(text);
-    expect(songLegend(song).map((e) => e.key)).toEqual(['Am', 'G']);
-
-    const after = setVoicing(text, at(song, 'Am'), ['x', 0, 2, 2, 1, 0]);
-    const block = after.slice(after.indexOf('# Voicings')).trim().split('\n').slice(1);
-    expect(block.map((line) => line.split(' =')[0])).toEqual(['Am', 'G']);
-  });
-});
-
-describe('changing a voicing everywhere', () => {
-  const at = (song, symbol, nth = 0) =>
-    song.occurrences.filter((c) => c.symbol === symbol)[nth].start;
-  const shapes = (text) => {
-    const song = parseSong(text);
-    return song.occurrences.map((c) => song.voicings.get(c.key) ?? null);
-  };
-
-  it('moves every occurrence that uses the key', () => {
-    let text = 'Cm | A | Cm | Cm';
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
-    expect(shapes(text)).toEqual([CM_OPEN, null, CM_OPEN, CM_OPEN]);
-
-    // One change, three bars.
-    text = setVoicingForKey(text, 'Cm', CM_HIGH);
-    expect(shapes(text)).toEqual([CM_HIGH, null, CM_HIGH, CM_HIGH]);
-    expect(text).toContain('Cm = 8-10-10-8-8-8');
-    expect(text).not.toContain('Cm[2]');
+  it('will not merge two variants another tuning tells apart', () => {
+    // Guitar has two distinct Cm shapes. Choosing the *same* shape for both
+    // on the ukulele must not collapse the guitar arrangement.
+    let text = 'Cm | Cm';
+    text = setVoicing(text, at(text, 'Cm', 0), CM_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm', 1), CM_HIGH, g);
+    text = setVoicingForKey(text, 'Cm', CM_UKE, u);
+    text = setVoicingForKey(text, 'Cm[2]', CM_UKE, u);
+    expect(chart(text)).toBe('Cm | Cm[2]');
+    expect(block(text, GUITAR).get('Cm[2]')).toEqual(CM_HIGH);
+    // The ukulele simply has the same shape written under both keys.
+    expect(block(text, UKE).get('Cm')).toEqual(CM_UKE);
+    expect(block(text, UKE).get('Cm[2]')).toEqual(CM_UKE);
   });
 
-  it('leaves the chord\'s other voicing alone', () => {
+  it('does merge when no other tuning distinguishes them', () => {
+    let text = 'Cm | Cm';
+    text = setVoicing(text, at(text, 'Cm', 0), CM_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm', 1), CM_HIGH, g);
+    // Only guitar knows these apart, and on guitar they are now made equal.
+    text = setVoicingForKey(text, 'Cm[2]', CM_OPEN, g);
+    expect(chart(text)).toBe('Cm | Cm');
+    expect(block(text, GUITAR).size).toBe(1);
+  });
+
+  it('renumbers every block together when a slot is dropped', () => {
     let text = 'Cm | Cm | Cm';
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
-    text = setVoicing(text, at(parseSong(text), 'Cm', 2), CM_HIGH);
-    expect(text.split('\n')[0]).toBe('Cm | Cm | Cm[2]');
-
-    // Changing the default must not disturb the footnoted one.
-    const other = ['x', 3, 1, 0, 1, 3];
-    text = setVoicingForKey(text, 'Cm', other);
-    expect(shapes(text)).toEqual([other, other, CM_HIGH]);
-    expect(text.split('\n')[0]).toBe('Cm | Cm | Cm[2]');
+    text = setVoicing(text, at(text, 'Cm', 0), CM_OPEN, g); // slot 1, all three
+    text = setVoicing(text, at(text, 'Cm', 1), CM_HIGH, g); // splits off slot 2
+    text = setVoicing(text, at(text, 'Cm', 2), ['x', 3, 1, 0, 1, 3], g); // slot 3
+    text = setVoicingForKey(text, 'Cm[3]', [3, 3, 3, 6], u);
+    expect(chart(text)).toBe('Cm | Cm[2] | Cm[3]');
+    // Move the slot-2 bar onto slot 3's shape on guitar; slot 2 dies and
+    // slot 3 becomes 2 in the chart and in *both* blocks.
+    text = setVoicing(text, at(text, 'Cm', 1), ['x', 3, 1, 0, 1, 3], g);
+    expect(chart(text)).toBe('Cm | Cm[2] | Cm[2]');
+    expect(block(text, UKE).get('Cm[2]')).toEqual([3, 3, 3, 6]);
+    expect(block(text, UKE).has('Cm[3]')).toBe(false);
   });
 
-  it('collapses two entries when one is changed to match the other', () => {
-    let text = 'Cm | Cm[2]\n\n# Voicings\nCm = x35543\nCm[2] = 8-10-10-8-8-8';
-    text = setVoicingForKey(text, 'Cm[2]', CM_OPEN);
-
-    // They are the same shape now, so there is nothing to footnote.
-    expect(text.split('\n')[0]).toBe('Cm | Cm');
-    expect(text).not.toContain('Cm[2]');
-    expect(shapes(text)).toEqual([CM_OPEN, CM_OPEN]);
-  });
-
-  it('clears the key everywhere when given null', () => {
-    let text = 'Cm | A | Cm';
-    text = setVoicing(text, at(parseSong(text), 'Cm', 0), CM_OPEN);
-    text = setVoicingForKey(text, 'Cm', null);
-    expect(shapes(text)).toEqual([null, null, null]);
-    expect(text).not.toContain('# Voicings');
-  });
-
-  it('ignores a key the chart does not use', () => {
-    const text = 'Cm | A\n\n# Voicings\nCm = x35543';
-    expect(setVoicingForKey(text, 'Bb', CM_OPEN)).toBe(text);
+  it('a variant undefined on this tuning resolves to nothing chosen', () => {
+    let text = 'Cm | Cm';
+    text = setVoicing(text, at(text, 'Cm', 0), CM_OPEN, g);
+    text = setVoicing(text, at(text, 'Cm', 1), CM_HIGH, g);
+    expect(unvoicedKeys(parseSong(text), UKE)).toEqual(['Cm', 'Cm[2]']);
   });
 
   it('counts how many places use a key', () => {
     const song = parseSong('Cm | A | Cm | Cm[2]');
     expect(countForKey(song, 'Cm')).toBe(2);
     expect(countForKey(song, 'Cm[2]')).toBe(1);
-    expect(countForKey(song, 'A')).toBe(1);
   });
 });
 
-describe('a song records the tuning it was written for', () => {
-  it('writes the tuning at the top, where it can be seen', () => {
-    const text = setSongTuning('# Verse\nC | G', 'E2, A2, D3, G3, B3, E4');
-    expect(text.startsWith('# Tuning\nE2, A2, D3, G3, B3, E4\n')).toBe(true);
-    expect(text).toContain('# Verse');
-    expect(parseSong(text).tuning).toBe('E2, A2, D3, G3, B3, E4');
+describe('the display sorts even when the text does not', () => {
+  it('reads a hand-written block in any order and shows it sorted', () => {
+    const text = `G | Am | C | D\n\n---\n\n# Voicings: ${GUITAR}\nG = 320003\nD = xx0232\nAm = x02210`;
+    const song = parseSong(text);
+    expect(songLegend(song, GUITAR).map((e) => e.key)).toEqual(['Am', 'D', 'G']);
+    expect(unvoicedKeys(song, GUITAR)).toEqual(['C']);
   });
 
-  it('replaces an existing tuning rather than adding a second', () => {
-    let text = setSongTuning('C | G', 'E2, A2, D3, G3, B3, E4');
-    text = setSongTuning(text, 'G4, C4, E4, A4');
-    expect(text.match(/# Tuning/g)).toHaveLength(1);
-    expect(parseSong(text).tuning).toBe('G4, C4, E4, A4');
-  });
-
-  it('does not treat the tuning block as part of the chart', () => {
-    const song = parseSong('# Tuning\nE2, A2, D3, G3, B3, E4\n\n# Verse\nC | G');
-    expect(song.sections.map((s) => s.name)).toEqual(['Verse']);
-    expect(song.occurrences.map((c) => c.symbol)).toEqual(['C', 'G']);
-  });
-
-  it('matches a song to a tuning, and only that tuning', () => {
-    const song = parseSong(setSongTuning('C | G', 'E2, A2, D3, G3, B3, E4'));
-    expect(songFitsTuning(song, 'E2, A2, D3, G3, B3, E4')).toBe(true);
-    // Spacing and case are not meaningful.
-    expect(songFitsTuning(song, 'e2 a2 d3 g3 b3 e4')).toBe(true);
-    expect(songFitsTuning(song, 'G4, C4, E4, A4')).toBe(false);
-  });
-
-  it('takes a song with no tuning to belong wherever it is read', () => {
-    // Hand-written, with nothing to contradict.
-    const song = parseSong('C | G');
-    expect(songFitsTuning(song, 'G4, C4, E4, A4')).toBe(true);
+  it('leaves the text alone until something actually changes it', () => {
+    const text = `G | Am\n\n---\n\n# Voicings: ${GUITAR}\nG = 320003\nAm = x02210`;
+    expect(migrateSong(text, UKE)).toBe(text);
+    const after = setVoicing(text, at(text, 'Am'), ['x', 0, 2, 2, 1, 0], g);
+    const lines = after.slice(after.indexOf('# Voicings')).trim().split('\n').slice(1);
+    expect(lines.map((l) => l.split(' =')[0])).toEqual(['Am', 'G']);
   });
 });
 
-describe('bringing a song to another instrument', () => {
-  it('keeps the chart and drops the voicings', () => {
-    const guitar = setSongTuning('# Verse\nC | G | C', 'E2, A2, D3, G3, B3, E4');
-    let text = setVoicing(guitar, parseSong(guitar).occurrences[0].start, ['x', 3, 2, 0, 1, 0]);
-    text = setVoicing(text, parseSong(text).occurrences[1].start, [3, 2, 0, 0, 0, 3]);
-    expect(parseSong(text).voicings.size).toBe(2);
-
-    const brought = setSongTuning(clearAllVoicings(text), 'G4, C4, E4, A4');
-    const song = parseSong(brought);
-
-    // The chart survives; the six-string shapes do not.
-    expect(song.occurrences.map((c) => c.symbol)).toEqual(['C', 'G', 'C']);
-    expect(song.voicings.size).toBe(0);
-    expect(brought).not.toContain('# Voicings');
-    expect(song.tuning).toBe('G4, C4, E4, A4');
+describe('converting the earlier form', () => {
+  it('turns a # Tuning line and a bare block into a labelled block', () => {
+    const old = `# Tuning\n${GUITAR}\n\n# Verse\nC | G\n\n# Voicings\nC = x32010\nG = 320003`;
+    const text = migrateSong(old, UKE);
+    expect(text).not.toContain('# Tuning');
+    expect(text).toContain(`# Voicings: ${GUITAR}`);
+    expect(text).toContain('---');
+    expect(block(text, GUITAR).get('C')).toEqual(['x', 3, 2, 0, 1, 0]);
+    // The chart is untouched.
+    expect(parseSong(text).sections.map((s) => s.name)).toEqual(['Verse']);
   });
 
-  it('drops footnote markers too, since they numbered shapes that are gone', () => {
-    let text = setSongTuning('Cm | Cm', 'E2, A2, D3, G3, B3, E4');
-    text = setVoicing(text, parseSong(text).occurrences[0].start, CM_OPEN);
-    text = setVoicing(text, parseSong(text).occurrences[1].start, CM_HIGH);
-    expect(text).toContain('Cm[2]');
-
-    const brought = clearAllVoicings(text);
-    expect(brought).not.toContain('Cm[2]');
-    expect(parseSong(brought).occurrences.map((c) => c.key)).toEqual(['Cm', 'Cm']);
-  });
-});
-
-describe('the tuning block is exactly one line', () => {
-  it('does not swallow a chart written straight after it', () => {
-    const song = parseSong('# Tuning\nE2, A2, D3, G3, B3, E4\n\nCm | Cm');
-    expect(song.tuning).toBe('E2, A2, D3, G3, B3, E4');
-    expect(song.occurrences.map((c) => c.symbol)).toEqual(['Cm', 'Cm']);
+  it('assumes the instrument in use for a bare block with no # Tuning', () => {
+    const text = migrateSong('C | G\n\n# Voicings\nC = 0003', UKE);
+    expect(text).toContain(`# Voicings: ${UKE}`);
+    expect(block(text, UKE).get('C')).toEqual([0, 0, 0, 3]);
   });
 
-  it('leaves the chart alone when the tuning is rewritten', () => {
-    const before = '# Tuning\nE2, A2, D3, G3, B3, E4\n\nCm | Cm';
-    const after = setSongTuning(before, 'G4, C4, E4, A4');
-    expect(parseSong(after).occurrences.map((c) => c.symbol)).toEqual(['Cm', 'Cm']);
-    expect(after).toContain('Cm | Cm');
+  it('drops a # Tuning line that has no voicings to label', () => {
+    const text = migrateSong(`# Tuning\n${GUITAR}\n\nC | G`, UKE);
+    expect(text).not.toContain('# Tuning');
+    expect(text.trim()).toBe('C | G');
+  });
+
+  it('is a no-op on the current form', () => {
+    const text = `C\n\n---\n\n# Voicings: ${GUITAR}\nC = x32010\n`;
+    expect(migrateSong(text, UKE)).toBe(text);
+    expect(migrateSong('C | G', UKE)).toBe('C | G');
+  });
+
+  it('lets a labelled block outrank a bare one for the same tuning', () => {
+    const old = `# Tuning\n${GUITAR}\n\nC\n\n# Voicings\nC = x32010\n\n# Voicings: ${GUITAR}\nC = x35553`;
+    expect(block(migrateSong(old, UKE), GUITAR).get('C')).toEqual(['x', 3, 5, 5, 5, 3]);
   });
 });
