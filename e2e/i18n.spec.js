@@ -60,6 +60,17 @@ test.describe('a Spanish browser', () => {
   });
 });
 
+test.describe('an Italian browser', () => {
+  test.use({ locale: 'it-IT' });
+
+  test('gets Italian', async ({ page }) => {
+    await freshVisit(page);
+    await expect(page.getByRole('heading', { name: 'Scegli il tuo strumento' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'it');
+    await expect(page.locator('#instrument-catalog')).toContainText('Chitarra (6 corde)');
+  });
+});
+
 test.describe('an unsupported browser language', () => {
   test.use({ locale: 'fr-FR' });
 

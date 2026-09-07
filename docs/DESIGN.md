@@ -350,9 +350,9 @@ through the same element helper as everything else and cannot smuggle in markup.
 
 ### 2.9 Languages
 
-The app speaks English, Brazilian Portuguese and Latin American Spanish. It
-follows the browser's language until one is chosen — matched by primary
-subtag, so `pt-PT` gets Brazilian Portuguese and `es-ES` Latin American
+The app speaks English, Brazilian Portuguese, Latin American Spanish and
+Italian. It follows the browser's language until one is chosen — matched by
+primary subtag, so `pt-PT` gets Brazilian Portuguese and `es-ES` Latin American
 Spanish, each closer than English — and falls back to English. A **select in
 the header**, each option written in its own language, changes it; the choice
 is one setting in prefs, remembered on this device and applied on the next
@@ -360,7 +360,7 @@ open. Changing it redraws every screen in place, header included.
 
 The mechanism is deliberately small (`src/i18n/`): one object per language,
 lookup by dotted key, `{name}` interpolation, and plural forms chosen by
-`Intl.PluralRules` from `{ one, other }` values. No library: three languages
+`Intl.PluralRules` from `{ one, other }` values. No library: four languages
 and a few hundred strings do not justify one. English is the source; a unit
 test checks every other language has exactly its keys, with the same
 placeholders, and anything missing falls back to English rather than to a bare
@@ -445,7 +445,7 @@ src/
     announcements.js       tutorial and release-note ids (text is in i18n)
   i18n/
     index.js               t(), plurals, language detection and switching
-    locales/               en, pt-BR, es-419 — one object each
+    locales/               en, pt-BR, es-419, it — one object each
   main.js
   styles/
 ```

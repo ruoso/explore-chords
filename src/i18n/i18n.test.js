@@ -34,8 +34,8 @@ function leafValue(node, path) {
 }
 
 describe('the languages', () => {
-  it('are English, Brazilian Portuguese and Latin American Spanish', () => {
-    expect(LOCALE_IDS).toEqual(['en', 'pt-BR', 'es-419']);
+  it('are English, Brazilian Portuguese, Latin American Spanish and Italian', () => {
+    expect(LOCALE_IDS).toEqual(['en', 'pt-BR', 'es-419', 'it']);
     expect(DEFAULT_LOCALE).toBe('en');
     for (const locale of LOCALES) expect(locale.name).toBeTruthy();
   });
@@ -119,11 +119,13 @@ describe('ordinals', () => {
     ]);
   });
 
-  it('use the feminine ordinal indicator in Portuguese and Spanish (string is feminine)', () => {
+  it('use the feminine ordinal indicator in Portuguese, Spanish and Italian (string is feminine)', () => {
     setLocale('pt-BR');
     expect(ordinal(5)).toBe('5ª');
     setLocale('es-419');
     expect(ordinal(1)).toBe('1ª');
+    setLocale('it');
+    expect(ordinal(3)).toBe('3ª');
   });
 });
 
@@ -133,6 +135,8 @@ describe('choosing a language', () => {
     expect(detectLocale(['es-ES'])).toBe('es-419');
     expect(detectLocale(['es-MX', 'pt-BR'])).toBe('es-419');
     expect(detectLocale(['en-GB'])).toBe('en');
+    expect(detectLocale(['it-IT', 'en'])).toBe('it');
+    expect(detectLocale(['it-CH'])).toBe('it');
     expect(detectLocale(['fr', 'de'])).toBe('en');
     expect(detectLocale([])).toBe('en');
     expect(detectLocale(['fr', 'pt'])).toBe('pt-BR');

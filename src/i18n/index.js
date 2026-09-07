@@ -19,12 +19,14 @@
 import en from './locales/en.js';
 import ptBR from './locales/pt-BR.js';
 import es419 from './locales/es-419.js';
+import it from './locales/it.js';
 
 /** Each language's name is written in that language: it is how you find yours. */
 export const LOCALES = [
   { id: 'en', name: 'English', messages: en },
   { id: 'pt-BR', name: 'Português (Brasil)', messages: ptBR },
   { id: 'es-419', name: 'Español (Latinoamérica)', messages: es419 },
+  { id: 'it', name: 'Italiano', messages: it },
 ];
 
 export const DEFAULT_LOCALE = 'en';

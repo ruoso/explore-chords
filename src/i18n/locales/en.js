@@ -460,10 +460,10 @@ export default {
       title: 'What changed in 0.3',
       sections: [
         {
-          heading: 'Português e español',
+          heading: 'Português, español e italiano',
           text:
-            'The app now speaks Brazilian Portuguese and Latin American Spanish as well as ' +
-            'English. It follows your browser’s language; the selector in the header changes ' +
+            'The app now speaks Brazilian Portuguese, Latin American Spanish and Italian as ' +
+            'well as English. It follows your browser’s language; the selector in the header changes ' +
             'it, and the choice is remembered on this device.',
         },
         {

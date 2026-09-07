@@ -464,9 +464,9 @@ export default {
       title: 'O que mudou na 0.3',
       sections: [
         {
-          heading: 'Português e español',
+          heading: 'Português, español e italiano',
           text:
-            'O app agora fala português do Brasil e espanhol latino-americano, além de inglês. ' +
+            'O app agora fala português do Brasil, espanhol latino-americano e italiano, além de inglês. ' +
             'Ele segue o idioma do navegador; o seletor no cabeçalho troca, e a escolha fica ' +
             'guardada neste aparelho.',
         },
