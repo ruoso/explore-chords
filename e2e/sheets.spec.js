@@ -497,6 +497,11 @@ test.describe('printing', () => {
     await page.emulateMedia({ media: 'print' });
     await expect(printRoot).toBeVisible();
     await expect(page.locator('#app')).toBeHidden();
+
+    // The chart is what gets read while playing, so it comes before the shapes.
+    const legendBox = await printRoot.locator('.ec-print-legend').boundingBox();
+    const chartBox = await printRoot.locator('.ec-print-section').first().boundingBox();
+    expect(chartBox.y).toBeLessThan(legendBox.y);
     await page.emulateMedia({ media: 'screen' });
   });
 });

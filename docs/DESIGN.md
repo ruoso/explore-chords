@@ -296,9 +296,10 @@ returns to one voicing loses its marker again, and entries nothing refers to are
 dropped.
 
 Stored in localStorage; shared by compressing the whole sheet into a URL
-fragment. Printable via a dedicated print stylesheet — legend of the voicings
-used, then the chart. Opening a sheet whose instrument is not the active one
-triggers the §2.1 "viewing as" bar.
+fragment. Printable via a dedicated print stylesheet — the chart, then a legend
+of the voicings used, drawn small enough that a song's shapes fit in a row or
+two: the chart is read while playing, the shapes are looked up. Opening a sheet
+whose instrument is not the active one triggers the §2.1 "viewing as" bar.
 
 ### 2.7 Other v1 features
 
@@ -1221,8 +1222,8 @@ constraint on every later phase** — it is not a phase of its own.
 - A fingering can be added to a sheet from the result grid.
 - Sections can be added, named and reordered.
 - The legend lists each distinct chord+fingering exactly once.
-- Under `emulateMedia({ media: 'print' })` the sheet shows legend and
-  progressions and fits the page.
+- Under `emulateMedia({ media: 'print' })` the sheet shows progressions then
+  legend and fits the page.
 - A share link round-trips through `CompressionStream` and imports with a
   preview step.
 - Opening a sheet whose instrument is not active raises the `viewAs` bar (§2.1).
