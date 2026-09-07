@@ -405,6 +405,70 @@ test.describe('default voicings', () => {
   });
 });
 
+test.describe('saved shapes flow into songs', () => {
+  test.beforeEach(async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+  });
+
+  /** Star the nth shape shown for a chord and return its shorthand. */
+  async function star(page, symbol, nth) {
+    await goToView(page, 'explore');
+    await page.fill('#chord-input', symbol);
+    await page.getByRole('button', { name: 'Show', exact: true }).click();
+    await expect(page.locator('.ec-results .ec-card').nth(nth)).toBeVisible();
+    const shorthand = await page.locator('.ec-results .ec-shorthand').nth(nth).textContent();
+    await page.locator('.ec-star').nth(nth).click();
+    return shorthand;
+  }
+
+  test('a saved shape that differs from the default is written into a new song', async ({
+    page,
+  }) => {
+    // The second shape shown, not the first: the first is the default and
+    // would not be worth writing.
+    const shape = await star(page, 'C', 1);
+    await newSong(page, 'Lesson'); // the starter chart contains a C
+
+    expect(await page.locator('#sheet-body').inputValue()).toContain(`C = ${shape}`);
+    const card = page.locator('.ec-voicings .ec-card[data-key="C"]');
+    await expect(card).toHaveCount(1);
+    await expect(card).not.toHaveClass(/is-default/);
+  });
+
+  test('a saved shape that is the default anyway is not written', async ({ page }) => {
+    await star(page, 'G', 0);
+    await newSong(page, 'Lesson');
+    expect(await page.locator('#sheet-body').inputValue()).not.toMatch(/^G = /m);
+    await expect(page.locator('.ec-voicings .ec-card.is-default[data-key="G"]')).toHaveCount(1);
+  });
+
+  test('a chord entering the song later gets its saved shape then', async ({ page }) => {
+    const shape = await star(page, 'Am', 1);
+    await newSong(page, 'Lesson');
+    await setBody(page, '# Verse\nC | G');
+    expect(await page.locator('#sheet-body').inputValue()).not.toContain('Am');
+
+    await setBody(page, '# Verse\nC | G | Am');
+    expect(await page.locator('#sheet-body').inputValue()).toContain(`Am = ${shape}`);
+  });
+
+  test('clearing a saved shape from a song does not bring it back', async ({ page }) => {
+    await star(page, 'C', 1);
+    await newSong(page, 'Lesson');
+    expect(await page.locator('#sheet-body').inputValue()).toMatch(/^C = /m);
+
+    await page.locator('.ec-measure-chord', { hasText: /^C$/ }).first().click();
+    await page.locator('#voicing-clear').click();
+    expect(await page.locator('#sheet-body').inputValue()).not.toMatch(/^C = /m);
+
+    // A later edit that does not introduce C must leave it cleared.
+    const body = await page.locator('#sheet-body').inputValue();
+    await setBody(page, `${body.trim()}\n\n# Chorus\nG`);
+    expect(await page.locator('#sheet-body').inputValue()).not.toMatch(/^C = /m);
+  });
+});
+
 test.describe('printing', () => {
   test('the print layout shows the legend and the chart', async ({ page }) => {
     await freshVisit(page);

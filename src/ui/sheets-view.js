@@ -233,7 +233,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
   body.addEventListener('change', (event) => {
     // Normalised on the way in, so a song pasted in the earlier form converts
     // the moment it is saved rather than lingering half-understood.
-    const next = store.normaliseBody(event.target.value);
+    const next = store.normaliseBody(event.target.value, sheet.body);
     store.updateSheet(sheet.id, (s) => ({ ...s, body: next }));
     onChange({ keepFocus: true });
   });
@@ -250,7 +250,8 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
         'A line beginning with # names a section. A vertical bar starts a new measure; ' +
           'spaces separate chords inside one. Voicings sit after a --- rule, one block per ' +
           'tuning, so the same chart serves every instrument. Where a chord is played more ' +
-          'than one way, the extra voicings are footnoted — Cm[2].'
+          'than one way, the extra voicings are footnoted — Cm[2]. A chord you have saved a ' +
+          'shape for gets that shape when it first appears in the song.'
       )
     )
   );
@@ -387,7 +388,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       grid.append(
         el(
           'li',
-          { class: `ec-card${isDefault ? ' is-default' : ''}` },
+          { class: `ec-card${isDefault ? ' is-default' : ''}`, 'data-key': entry.key },
           el(
             'button',
             {

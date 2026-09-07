@@ -2,8 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { parseChord } from './notation/parse.js';
 import { fromCatalog } from './instrument.js';
 import { searchFingerings } from './search.js';
-import { parseSong, setVoicing } from './song.js';
-import { defaultVoicing, resolveSongVoicings, unvoiceableKeys } from './voicings.js';
+import { parseSong, setVoicing, voicingsFor } from './song.js';
+import {
+  defaultVoicing,
+  resolveSongVoicings,
+  unvoiceableKeys,
+  applySavedVoicings,
+} from './voicings.js';
 
 const guitar = fromCatalog('6guitar');
 const uke = fromCatalog('ukulele');
@@ -99,5 +104,70 @@ describe('resolving a song', () => {
     const song = parseSong('C | C | C | C | C | C');
     const resolved = resolveSongVoicings(song, guitar);
     expect(resolved.size).toBe(1);
+  });
+});
+
+describe('saved shapes entering a song', () => {
+  const GUITAR = 'E2, A2, D3, G3, B3, E4';
+  const C_HIGH = ['x', 3, 5, 5, 5, 3]; // not the open default
+  const fav = (chordText, frets, added = 1) => ({ chordText, frets, added });
+  const chosen = (text) => voicingsFor(parseSong(text), GUITAR);
+  const apply = (text, symbols, favorites) =>
+    applySavedVoicings(text, { symbols, favorites, instrument: guitar });
+
+  it('writes a saved shape that differs from the default', () => {
+    const out = apply('# Verse\nC | G', ['C', 'G'], [fav('C', C_HIGH)]);
+    expect(chosen(out).get('C')).toEqual(C_HIGH);
+    expect(chosen(out).has('G')).toBe(false);
+    expect(out).toContain(`# Voicings: ${GUITAR}`);
+  });
+
+  it('leaves out a saved shape that is the default anyway', () => {
+    // The default already shows it; writing it in would only add noise.
+    const open = defaultVoicing(parseChord('C').chord, guitar).frets;
+    const out = apply('C | G', ['C'], [fav('C', open)]);
+    expect(out).toBe('C | G');
+  });
+
+  it('applies only to chords that are new to the song', () => {
+    const out = apply('C | G', ['G'], [fav('C', C_HIGH)]);
+    expect(chosen(out).has('C')).toBe(false);
+  });
+
+  it('never overwrites a choice already made', () => {
+    const before = `C | G\n\n---\n\n# Voicings: ${GUITAR}\nC = x32013\n`;
+    const out = apply(before, ['C'], [fav('C', C_HIGH)]);
+    expect(chosen(out).get('C')).toEqual(['x', 3, 2, 0, 1, 3]);
+  });
+
+  it('matches by the chord, not by how it was typed', () => {
+    // Saved as Cmaj7 in one notation; the song writes C7M in another.
+    const shape = ['x', 3, 5, 4, 5, 3];
+    const out = apply('C7M | G', ['C7M'], [fav('Cmaj7', shape)]);
+    expect(chosen(out).get('C7M')).toEqual(shape);
+  });
+
+  it('prefers the most recently saved shape when several are saved', () => {
+    const older = ['x', 3, 5, 5, 5, 3];
+    const newer = [8, 10, 10, 9, 8, 8];
+    // favoritesFor returns newest first, which is the order given here.
+    const out = apply('C', ['C'], [fav('C', newer, 2), fav('C', older, 1)]);
+    expect(chosen(out).get('C')).toEqual(newer);
+  });
+
+  it('fills only the bare slot, never a footnoted variant', () => {
+    const out = apply('C | C[2]', ['C'], [fav('C', C_HIGH)]);
+    expect(chosen(out).get('C')).toEqual(C_HIGH);
+    expect(chosen(out).has('C[2]')).toBe(false);
+  });
+
+  it('ignores a saved shape from an instrument with a different string count', () => {
+    const out = apply('C', ['C'], [fav('C', [0, 0, 0, 3])]);
+    expect(out).toBe('C');
+  });
+
+  it('does nothing without favourites or without new symbols', () => {
+    expect(apply('C', ['C'], [])).toBe('C');
+    expect(apply('C', [], [fav('C', C_HIGH)])).toBe('C');
   });
 });

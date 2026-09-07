@@ -3,7 +3,13 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from './store.js';
-import { saveInstruments, saveActiveId, saveActiveSheetId, clearAll } from './persist.js';
+import {
+  saveInstruments,
+  saveActiveId,
+  saveActiveSheetId,
+  saveFavorites,
+  clearAll,
+} from './persist.js';
 import { saveSheets } from './sheets.js';
 import { fromCatalog } from '../core/instrument.js';
 import { parseSong, voicingsFor } from '../core/song.js';
@@ -89,5 +95,50 @@ describe('loading songs saved under the earlier form', () => {
     const second = createStore().state.sheets;
     expect(second).toHaveLength(1);
     expect(second[0].body).toBe(first[0].body);
+  });
+});
+
+describe('saved shapes flow into songs', () => {
+  const C_HIGH = ['x', 3, 5, 5, 5, 3];
+  const AM_BARRE = [5, 7, 7, 5, 5, 5];
+
+  function seedWithFavorites(favorites) {
+    clearAll();
+    const guitar = fromCatalog('6guitar');
+    saveInstruments([guitar]);
+    saveActiveId(guitar.id);
+    saveFavorites(favorites.map((f, i) => ({ instrumentId: guitar.id, added: i + 1, ...f })));
+    return createStore();
+  }
+
+  it('gives a new song the shapes saved for its chords', () => {
+    const store = seedWithFavorites([{ chordText: 'C', frets: C_HIGH }]);
+    const sheet = store.createSheet('Lesson', '# Verse\nC | G');
+    const chosen = voicingsFor(parseSong(sheet.body), GUITAR);
+    expect(chosen.get('C')).toEqual(C_HIGH);
+    // G had nothing saved, so it stays a default and is not written.
+    expect(chosen.has('G')).toBe(false);
+  });
+
+  it('applies to a chord only when it first enters the song', () => {
+    const store = seedWithFavorites([
+      { chordText: 'C', frets: C_HIGH },
+      { chordText: 'Am', frets: AM_BARRE },
+    ]);
+    const sheet = store.createSheet('Lesson', '# Verse\nC | G');
+    // Am arrives in a later edit and picks up its saved shape then.
+    const next = store.normaliseBody(sheet.body.replace('C | G', 'C | G | Am'), sheet.body);
+    expect(voicingsFor(parseSong(next), GUITAR).get('Am')).toEqual(AM_BARRE);
+  });
+
+  it('does not bring a shape back once it has been cleared', () => {
+    const store = seedWithFavorites([{ chordText: 'C', frets: C_HIGH }]);
+    const sheet = store.createSheet('Lesson', '# Verse\nC | G');
+    expect(sheet.body).toContain('C = x35553');
+
+    // The user clears C's shape; the chord is still in the chart.
+    const cleared = '# Verse\nC | G';
+    const next = store.normaliseBody(`${cleared}\n\n# Chorus\nG`, cleared);
+    expect(next).not.toContain('C = ');
   });
 });

@@ -26,7 +26,8 @@ import {
   saveActiveSheetId,
 } from './persist.js';
 import { loadSheets, saveSheets, newSheet } from './sheets.js';
-import { migrateSong, chartKey, canMergeSongs, mergeSongs } from '../core/song.js';
+import { migrateSong, chartKey, canMergeSongs, mergeSongs, parseSong } from '../core/song.js';
+import { applySavedVoicings } from '../core/voicings.js';
 import { formatTuning } from '../core/instrument.js';
 import { DEFAULT_VIEW, isView } from './views.js';
 
@@ -264,19 +265,32 @@ export function createStore(initial = {}) {
     },
 
     /**
-     * Bring a body up to the current form, assuming the instrument in use for
-     * anything written without a tuning. Applied to what the user types, so a
-     * song pasted in the earlier form converts as soon as it is saved.
+     * Bring a body up to the current form, and give chords that are new to the
+     * song the shapes saved for them.
+     *
+     * Applied to what the user types, so a song pasted in the earlier form
+     * converts as soon as it is saved. `previousBody` is what the song said
+     * before this edit: only chords that were not in the chart then get a saved
+     * shape, so clearing one you did not want does not just bring it back.
      */
-    normaliseBody(body) {
+    normaliseBody(body, previousBody = '') {
       const instrument = store.effectiveInstrument;
-      return instrument
-        ? migrateSong(body, formatTuning(instrument.strings), state.prefs.dialect)
-        : body;
+      if (!instrument) return body;
+      const dialect = state.prefs.dialect;
+      const migrated = migrateSong(body, formatTuning(instrument.strings), dialect);
+      const before = new Set(parseSong(previousBody, dialect).symbols);
+      const symbols = parseSong(migrated, dialect).symbols.filter((s) => !before.has(s));
+      return applySavedVoicings(migrated, {
+        symbols,
+        favorites: store.favoritesFor(instrument.id),
+        instrument,
+        dialect,
+      });
     },
 
     createSheet(title, body = '') {
-      const sheet = newSheet({ title, body });
+      // Everything in a new song is new to it, so saved shapes apply throughout.
+      const sheet = newSheet({ title, body: store.normaliseBody(body, '') });
       const sheets = [...state.sheets, sheet];
       saveSheets(sheets);
       saveActiveSheetId(sheet.id);

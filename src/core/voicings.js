@@ -17,8 +17,10 @@
  */
 
 import { parseChord } from './notation/parse.js';
+import { sameChord } from './chord.js';
 import { searchFingerings, fingeringFromFrets } from './search.js';
-import { voicingsFor } from './song.js';
+import { shorthandOf } from './fretstring.js';
+import { parseSong, voicingsFor, setVoicingForKey } from './song.js';
 import { formatTuning } from './instrument.js';
 
 /**
@@ -88,5 +90,53 @@ export function unvoiceableKeys(parsed, resolved) {
     seen.add(chord.key);
     out.push(chord.key);
   }
+  return out;
+}
+
+/**
+ * Write saved shapes into a song for chords that have just entered it.
+ *
+ * A shape starred in the library is "how I play this chord", so when that
+ * chord first appears in a song it gets that shape without being asked — but
+ * only if it differs from the default, since the default already shows it,
+ * and only for the bare slot, never over a choice already made. A footnoted
+ * variant is a deliberate second way of playing the chord and is left alone.
+ *
+ * Written into the text rather than preferred at render time, so a shared
+ * song reads the same for someone who has no such favourite.
+ *
+ * @param {string} text
+ * @param {object} options
+ * @param {string[]} options.symbols   chart symbols that are new to this song
+ * @param {{chordText:string, frets:(number|'x')[]}[]} options.favorites  newest first
+ * @param {object} options.instrument
+ * @param {string} [options.dialect]
+ * @returns {string}
+ */
+export function applySavedVoicings(text, { symbols, favorites, instrument, dialect }) {
+  if (!symbols?.length || !favorites?.length) return text;
+  const tuning = formatTuning(instrument.strings);
+  let out = text;
+
+  for (const symbol of new Set(symbols)) {
+    const parsed = parseSong(out, dialect);
+    if (!parsed.occurrences.some((c) => c.key === symbol)) continue; // not a bare key in the chart
+    if (voicingsFor(parsed, tuning).has(symbol)) continue; // already chosen
+
+    const chord = parseChord(symbol, dialect).chord;
+    if (!chord) continue;
+
+    const fallback = defaultVoicing(chord, instrument);
+    const saved = favorites.find((f) => {
+      const theirs = parseChord(f.chordText, dialect).chord;
+      if (!theirs || !sameChord(theirs, chord)) return false;
+      if (f.frets.length !== instrument.strings.length) return false;
+      return !fallback || shorthandOf(f.frets) !== fallback.shorthand;
+    });
+    if (!saved) continue;
+
+    out = setVoicingForKey(out, symbol, saved.frets, { tuning, dialect });
+  }
+
   return out;
 }

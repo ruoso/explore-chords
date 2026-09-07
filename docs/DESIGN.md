@@ -271,7 +271,19 @@ voicings for the chords that are not obvious. Defaults are *derived at display
 time and never written into the text*: writing them in would fill `# Voicings`
 with shapes nobody chose and hide the ones somebody did. They are marked as
 defaults in the editor and printed plain, since on paper a student needs the
-shape, not its provenance. Clearing a choice falls back to the default. The bare symbol is the
+shape, not its provenance. Clearing a choice falls back to the default.
+
+**Saved shapes flow into songs.** A shape starred in the library is "how I play
+this chord", so when that chord *first enters* a song — on creation, or when a
+save introduces a symbol the chart did not have — it gets that shape without
+being asked. It is written into the text rather than preferred at render time,
+so a shared song reads the same for someone who has no such favourite. Three
+limits keep this from being a nuisance: only if it differs from the default,
+which already shows it; only for the bare slot, never over a choice already made
+or a footnoted variant, which is a deliberate second way of playing the chord;
+and only on first entry, so clearing a shape you did not want does not bring it
+back on the next save. Matching is by the chord, not the text, so a shape saved
+as `Cmaj7` applies to a song that writes `C7M`. The bare symbol is the
 chord's default voicing and `[2]`, `[3]` … are the others, defined under a
 `# Voicings` heading. This is what lets one song play `Cm` two ways, and it
 means the sheet has no hidden state: what you read is what you have, and a
