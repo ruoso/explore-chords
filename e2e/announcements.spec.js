@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import { freshVisit, completeSetup, dismissTutorial } from './helpers.js';
 import { latestReleaseOf } from '../src/state/announcements.js';

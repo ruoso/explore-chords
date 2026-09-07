@@ -1095,6 +1095,17 @@ Three capabilities Playwright gives us that matter specifically here:
 - **Real service worker and Web Worker execution** — jsdom has neither, so the
   worker wiring (§3.5) and SW scope (§3.1) are only genuinely exercised here.
 
+Every spec takes `test` from `e2e/fixtures.js` rather than from Playwright,
+so checks that should hold on every screen run without each spec asking. The
+one so far: **no unexpected scrollbars**. At the end of every test, whatever is
+on screen is scanned for elements that scroll on an axis they were not meant
+to — a scroll container appears whenever content pokes outside a box with
+overflow set, such as a negative margin inside a sideways-scrolling chart
+section, and nothing is *wrong*, it just looks broken. Where scrolling is
+intended (result rows sideways on a phone, the navigation, a long dialog, the
+song text) is listed in the fixture; the document itself may scroll down,
+never sideways.
+
 ### 9.5 Accessibility
 
 `@axe-core/playwright` runs against each main view, with zero violations as the

@@ -853,11 +853,11 @@ body {
 }
 
 .ec-song-section + .ec-song-section {
-  margin-top: 0.9rem;
+  margin-top: 0.6rem;
 }
 
 .ec-song-section-name {
-  margin: 0 0 0.25rem;
+  margin: 0;
   font-size: 0.85rem;
   font-weight: 650;
   color: var(--muted);
@@ -872,11 +872,16 @@ body {
 }
 
 /* Borders stay separate so each row's bar lines are its own: a bar that ran
-   unbroken down the section read as a column rule, not as bars. */
+   unbroken down the section read as a column rule, not as bars.
+
+   No negative margin to swallow the outer border-spacing: the section scrolls
+   sideways, which makes it a scroll container on both axes, and anything
+   poking outside its box would grow a vertical scrollbar. The neighbours
+   give up that space instead. */
 .ec-song-chart {
   border-collapse: separate;
   border-spacing: 0 0.3rem;
-  margin: -0.3rem 0;
+  margin: 0;
 }
 
 .ec-chord-cell {

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, expectNoUnexpectedScrollbars } from './fixtures.js';
 import { freshVisit, completeSetup, goToView, appState, addInstrument, dismissTutorial } from './helpers.js';
 
 /**
@@ -79,6 +79,19 @@ test.describe('writing the chart as text', () => {
     const secondLine = page.locator('.ec-song-line').nth(1);
     await expect(secondLine.locator('.ec-chord-cell')).toHaveCount(2);
     await expect(secondLine.locator('.ec-chord-cell').first()).toHaveAttribute('colspan', '2');
+  });
+
+  test('a chart of several sections and lines sits in its panel without scrollbars', async ({ page }) => {
+    // The measures of a section are laid out in columns inside a box that may
+    // scroll sideways for a long line — which makes it a scroll container on
+    // both axes, so anything poking out of it vertically grows a scrollbar.
+    await setBody(
+      page,
+      '# Verse\nG | Am7 | C | D\nG | Am7 | C | D\nEm | C | G | D\n\n' +
+        '# Chorus\nC | G | Am | F\nC | G | F  G | C\n\n# Bridge\nAm | F | C | G'
+    );
+    await expect(page.locator('.ec-song-section')).toHaveCount(3);
+    await expectNoUnexpectedScrollbars(page);
   });
 
   test('a symbol that is not a chord is reported, not silently dropped', async ({ page }) => {

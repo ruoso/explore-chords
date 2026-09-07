@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { freshVisit, completeSetup, searchChord, goToView, addInstrument } from './helpers.js';
 
 /**
