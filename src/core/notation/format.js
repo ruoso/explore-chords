@@ -80,7 +80,8 @@ function formatBrazilian(c, a) {
       base += 'm';
       break;
     case 'dim':
-      base += a.isHalfDim ? 'm' : '°';
+      // ° alone reads as the 7th, so a bare triad is written out as `dim`.
+      base += a.isHalfDim ? 'm' : a.isDim7 ? '°' : 'dim';
       break;
     case 'aug':
       base += a.hasSeventh ? '' : '+';
@@ -102,8 +103,8 @@ function formatBrazilian(c, a) {
   if (a.hasSix && !a.hasSeventh) tail += '6';
 
   if (a.hasSeventh) {
-    // The base already carries the degree sign for a diminished triad.
-    if (a.isDim7) tail += '7';
+    // A diminished 7th is the ° in the base; nothing more to write.
+    if (a.isDim7) tail += '';
     else if (a.seventh === 0) tail += a.top === 7 ? '7M' : `7M(${a.top})`;
     else if (a.top === 9) tail += '7(9)'; // a bare C9 would read as an added 9th
     else tail += String(a.top);
@@ -183,7 +184,7 @@ function formatRealBook(c, a) {
       base += '−';
       break;
     case 'dim':
-      base += a.isHalfDim ? 'ø' : '°';
+      base += a.isHalfDim ? 'ø' : a.isDim7 ? '°' : 'dim';
       break;
     case 'aug':
       base += a.hasSeventh ? '' : '+';
@@ -205,7 +206,7 @@ function formatRealBook(c, a) {
   if (a.hasSix && !a.hasSeventh) tail += '6';
 
   if (a.hasSeventh) {
-    if (a.isDim7) tail += '7';
+    if (a.isDim7) tail += '';
     else if (a.isHalfDim) tail += '7';
     else if (a.seventh === 0) tail += `∆${a.top}`;
     else tail += String(a.top);

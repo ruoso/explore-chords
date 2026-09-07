@@ -187,6 +187,10 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
   let quality = 'major';
   let majorSeventh = false;
   let sawSeventh = false;
+  // A bare ° (as opposed to the word `dim`) is read as a diminished 7th unless
+  // a 7th is stated explicitly. Tracked here and resolved once the tokens are
+  // consumed, since `°7` must not be flagged as ambiguous.
+  let bareDegreeSign = false;
   let primaryTop = null;
   /** @type {Map<number, number>} degree -> alteration */
   const exts = new Map();
@@ -227,6 +231,7 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
         if (primaryTop === null && exts.size === 0) {
           quality = 'dim';
           sawQualityWord = true;
+          if (t.type === 'DEG') bareDegreeSign = true;
         } else {
           errors.push({ message: `Unexpected "${t.text}".` });
         }
@@ -451,6 +456,19 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
 
   // A named major 7th with no stated degree still means a 7th: `CM`, `C∆`.
   if (majorSeventh && !exts.has(7)) exts.set(7, 0);
+
+  // The documented third ambiguity: `B°` with no 7th written. Convention reads
+  // it as the diminished 7th, which is the shape people actually mean.
+  if (bareDegreeSign && quality === 'dim' && !exts.has(7)) {
+    const reading = readings.degreeSign;
+    ambiguities.push({
+      kind: 'degreeSign',
+      text: '°',
+      chosen: reading,
+      alternatives: ['diminishedSeventh', 'diminishedTriad'].filter((r) => r !== reading),
+    });
+    if (reading === 'diminishedSeventh') exts.set(7, -2);
+  }
 
   // Normalise triad-defining alterations into the quality, so that chords
   // which sound and function alike compare equal. m7b5 becomes a diminished

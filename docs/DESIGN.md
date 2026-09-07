@@ -486,25 +486,33 @@ use ordinary letter names with `7M` qualities, so "Brazilian" is not one bundle.
 v1 ships letters-only on the note axis and three vocabularies on the quality
 axis:
 
-| Dialect | Major 7 | Minor 7 | Half-dim | Dim 7 | Aug | sus4 |
-|---|---|---|---|---|---|---|
-| Brazilian (cifra) | `C7M` | `Cm7` | `Cm7(5-)` | `C°7` | `C+` | `C4` |
-| American / jazz | `Cmaj7` | `Cm7` | `Cm7b5` | `Cdim7` | `C+` / `Caug` | `Csus4` |
-| Real Book | `C∆7` | `C−7` | `Cø7` | `C°7` | `C+` | `Csus4` |
+| Dialect | Major 7 | Minor 7 | Half-dim | Dim 7 | Dim triad | Aug | sus4 |
+|---|---|---|---|---|---|---|---|
+| Brazilian (cifra) | `C7M` | `Cm7` | `Cm7(5-)` | `C°` | `Cdim` | `C+` | `C4` |
+| American / jazz | `Cmaj7` | `Cm7` | `Cm7b5` | `Cdim7` | `Cdim` | `C+` / `Caug` | `Csus4` |
+| Real Book | `C∆7` | `C−7` | `Cø7` | `C°` | `Cdim` | `C+` | `Csus4` |
 
 #### Genuine ambiguities
 
-Three inputs cannot be resolved by tokens alone. Only these consult the dialect
-setting:
+Three inputs cannot be resolved by tokens alone. These consult the dialect
+setting, and each is reported so the UI can offer the other reading:
 
-| Input | Brazilian reading | American reading |
+| Input | Default reading | The other reading |
 |---|---|---|
-| `C7+` | **Cmaj7** — `7+` is the major 7th (11 semitones) in the reference's own table | **C7♯5** — dominant 7 with raised 5th |
-| `C9` | C add9, often no ♭7 | C dominant 9 — always includes ♭7 |
-| `C+` | augmented triad | augmented triad *(not actually a conflict)* |
+| `C7+` | Brazilian: **Cmaj7** — `7+` is the major 7th in the reference's own table. American: **C7♯5** | whichever the dialect did not pick |
+| `C9` | Brazilian: C add9, no ♭7. American: dominant 9, includes ♭7 | likewise |
+| `B°` | **B°7**, in every dialect | the bare triad, B D F |
 
 `C7+` is the dangerous one: three identical characters, two chords differing by
 a semitone in two places.
+
+`B°` is the deceptive one. Read strictly it is a diminished *triad*, and the
+reference treated it that way (`°` for the triad, `°7` for the seventh). But in
+practice the symbol nearly always means the diminished seventh: nobody writes a
+bare diminished triad, and the shape every guitarist knows for "B°" — `x2313x` —
+has the A♭ in it. A strict reading hides the one voicing people are looking for.
+So a bare `°` reads as the seventh everywhere, the word `dim` written out is the
+triad, and `°7`/`dim7` are unambiguous.
 
 Everything else — `°`, `dim`, `o`, `∆`, `maj`, `M`, `−`, `m`, `min`, `ø`,
 `b5`/`5-`/`♭5` — is accepted unconditionally in every dialect.

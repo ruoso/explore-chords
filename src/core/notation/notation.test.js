@@ -38,7 +38,7 @@ describe('the same chord across dialects', () => {
   });
 
   it('parses diminished sevenths written three ways', () => {
-    for (const form of ['Cdim7', 'C°7', 'Cdim7']) {
+    for (const form of ['Cdim7', 'C°7', 'C°']) {
       expect(tones(form)).toBe('C Eb Gb Bbb');
     }
   });
@@ -129,6 +129,36 @@ describe('the C9 ambiguity', () => {
   });
 });
 
+describe('the ° ambiguity', () => {
+  // The shape every guitarist knows for "B°" is x2313x, which has the A♭ in
+  // it: the symbol means the diminished 7th in practice, whatever the theory
+  // book says. So a bare ° reads as the 7th, and says so.
+  it('reads a bare ° as a diminished 7th in every dialect', () => {
+    for (const dialect of DIALECT_IDS) {
+      expect(tones('B°', dialect)).toBe('B D F Ab');
+    }
+  });
+
+  it('reports it, offering the bare triad', () => {
+    const r = parseChord('B°');
+    expect(r.ambiguities).toHaveLength(1);
+    expect(r.ambiguities[0]).toMatchObject({ kind: 'degreeSign', chosen: 'diminishedSeventh' });
+    expect(r.ambiguities[0].alternatives).toEqual(['diminishedTriad']);
+  });
+
+  it('flips to the triad when asked', () => {
+    const r = parseChord('B°', 'brazilian', { readings: { degreeSign: 'diminishedTriad' } });
+    expect(describeChordTones(r.chord)).toBe('B D F');
+  });
+
+  it('is unambiguous once the 7th is written, or the word dim is used', () => {
+    expect(parseChord('B°7').ambiguities).toHaveLength(0);
+    expect(parseChord('Bdim').ambiguities).toHaveLength(0);
+    expect(parseChord('Bdim7').ambiguities).toHaveLength(0);
+    expect(tones('Bdim')).toBe('B D F');
+  });
+});
+
 describe('extensions and alterations', () => {
   it.each([
     ['C', 'C E G'],
@@ -142,7 +172,8 @@ describe('extensions and alterations', () => {
     ['C4', 'C F G'],
     ['Caug', 'C E G#'],
     ['C+', 'C E G#'],
-    ['C°', 'C Eb Gb'],
+    ['Cdim', 'C Eb Gb'],
+    ['C°', 'C Eb Gb Bbb'],
     ['Cmaj7#11', 'C E G B F#'],
     ['C7b9', 'C E G Bb Db'],
     ['C13', 'C E G Bb D A'],
@@ -245,6 +276,14 @@ describe('round-trip matrix', () => {
     expect(formatChord(halfDim, 'brazilian')).toBe('Cm7(5-)');
     expect(formatChord(halfDim, 'american')).toBe('Cm7b5');
     expect(formatChord(halfDim, 'realbook')).toBe('Cø7');
+
+    // ° carries the 7th, so a bare triad has to be spelled out.
+    const dim7 = chord(n('B'), 'dim', [{ degree: 7, alter: -2 }]);
+    expect(formatChord(dim7, 'brazilian')).toBe('B°');
+    expect(formatChord(dim7, 'realbook')).toBe('B°');
+    expect(formatChord(dim7, 'american')).toBe('Bdim7');
+    const triad = chord(n('B'), 'dim');
+    for (const dialect of DIALECT_IDS) expect(formatChord(triad, dialect)).toBe('Bdim');
   });
 
   it('carries a slash bass through every dialect', () => {

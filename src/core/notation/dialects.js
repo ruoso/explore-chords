@@ -18,22 +18,40 @@
  *
  * `bareNine` — `C9`. Jazz stacks it: a dominant 9th always includes the flat
  * 7th. Pop and Brazilian usage often means a plain added 9th with no 7th.
+ *
+ * `degreeSign` — `B°`. Read strictly it is a diminished triad, but in practice
+ * the symbol nearly always means the diminished *seventh*: nobody writes a bare
+ * diminished triad, and the shape every guitarist knows for "B°" (x2313x) has
+ * the A♭ in it. Every dialect defaults to the seventh; the word `dim` written
+ * out is the triad.
  */
 export const DIALECTS = {
   brazilian: {
     id: 'brazilian',
     name: 'Brazilian (cifra)',
-    readings: { sevenPlus: 'majorSeventh', bareNine: 'add' },
+    readings: {
+      sevenPlus: 'majorSeventh',
+      bareNine: 'add',
+      degreeSign: 'diminishedSeventh',
+    },
   },
   american: {
     id: 'american',
     name: 'American / jazz',
-    readings: { sevenPlus: 'dominantSharpFive', bareNine: 'dominant' },
+    readings: {
+      sevenPlus: 'dominantSharpFive',
+      bareNine: 'dominant',
+      degreeSign: 'diminishedSeventh',
+    },
   },
   realbook: {
     id: 'realbook',
     name: 'Real Book symbols',
-    readings: { sevenPlus: 'dominantSharpFive', bareNine: 'dominant' },
+    readings: {
+      sevenPlus: 'dominantSharpFive',
+      bareNine: 'dominant',
+      degreeSign: 'diminishedSeventh',
+    },
   },
 };
 
@@ -60,5 +78,9 @@ export const READING_LABELS = {
   bareNine: {
     add: 'added 9th, no 7th',
     dominant: 'dominant 9th, includes the flat 7th',
+  },
+  degreeSign: {
+    diminishedSeventh: 'diminished 7th',
+    diminishedTriad: 'diminished triad, no 7th',
   },
 };
