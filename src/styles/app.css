@@ -1258,3 +1258,28 @@ body {
   color: var(--fg);
   border-color: var(--accent);
 }
+
+/* --- language ------------------------------------------------------------ */
+
+.ec-locale {
+  max-width: 9rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.ec-locale:hover,
+.ec-locale:focus-visible {
+  color: var(--ink);
+}
+@media (max-width: 30rem) {
+  /* On a phone the header is tight: keep the switcher to a short code. */
+  .ec-locale {
+    max-width: 4.5rem;
+    text-overflow: ellipsis;
+  }
+}

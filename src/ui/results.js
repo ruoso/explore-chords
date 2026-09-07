@@ -14,8 +14,8 @@
 
 import { el, clear } from './dom.js';
 import { renderDiagram } from '../render/index.js';
-import { DIFFICULTY_LABELS } from '../core/score.js';
 import { renderFingeringGroups } from './fingering-groups.js';
+import { t } from '../i18n/index.js';
 
 export function renderResults(
   container,
@@ -25,7 +25,7 @@ export function renderResults(
 
   if (!chord) {
     container.append(
-      el('p', { class: 'ec-empty' }, 'Enter a chord to see how it can be played.')
+      el('p', { class: 'ec-empty' }, t('results.empty'))
     );
     return;
   }
@@ -37,11 +37,11 @@ export function renderResults(
       el(
         'div',
         { class: 'ec-empty' },
-        el('p', {}, `No fingerings for this chord on ${instrument.label}.`),
+        el('p', {}, t('results.none', { label: instrument.label })),
         el(
           'p',
           { class: 'ec-help' },
-          'It may need more strings than this instrument has, or your voicing rules may be too strict.'
+          t('results.noneHelp')
         ),
         el(
           'button',
@@ -51,7 +51,7 @@ export function renderResults(
             id: 'empty-open-rules',
             onClick: () => onOpenRules?.(),
           },
-          'Adjust voicing rules'
+          t('results.adjustRules')
         )
       )
     );
@@ -89,7 +89,7 @@ export function renderResults(
           el(
             'span',
             { class: `ec-badge ec-badge-${fingering.difficulty}` },
-            DIFFICULTY_LABELS[fingering.difficulty]
+            t(`difficulty.${fingering.difficulty}`)
           )
         ),
         el(
@@ -98,13 +98,13 @@ export function renderResults(
             type: 'button',
             class: `ec-star${starred ? ' is-on' : ''}`,
             'aria-pressed': starred ? 'true' : 'false',
-            'aria-label': `${starred ? 'Remove' : 'Save'} ${fingering.shorthand} ${
-              starred ? 'from' : 'to'
-            } your library`,
+            'aria-label': t(starred ? 'results.removeLabel' : 'results.saveLabel', {
+              shorthand: fingering.shorthand,
+            }),
             onClick: () => onToggleFavorite?.(fingering),
           },
           el('span', { 'aria-hidden': 'true' }, starred ? '\u2605' : '\u2606'),
-          starred ? ' Saved' : ' Save'
+          t(starred ? 'results.saved' : 'results.save')
         )
       );
     },

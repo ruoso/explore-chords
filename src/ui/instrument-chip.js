@@ -6,6 +6,7 @@
  */
 
 import { el, clear } from './dom.js';
+import { t } from '../i18n/index.js';
 
 export function renderInstrumentChip(container, { store, onAdd, onSwitch }) {
   clear(container);
@@ -16,7 +17,7 @@ export function renderInstrumentChip(container, { store, onAdd, onSwitch }) {
   const details = el('details', { class: 'ec-chip' });
   const summary = el(
     'summary',
-    { class: 'ec-chip-summary', 'aria-label': `Instrument: ${active.label}. Change instrument.` },
+    { class: 'ec-chip-summary', 'aria-label': t('chip.summary', { label: active.label }) },
     el('span', { class: 'ec-chip-icon', 'aria-hidden': 'true' }, '♫'),
     el('span', { class: 'ec-chip-label' }, active.label)
   );
@@ -51,7 +52,7 @@ export function renderInstrumentChip(container, { store, onAdd, onSwitch }) {
           details.open = false;
           onAdd();
         } },
-        '+ Add instrument'
+        t('chip.add')
       )
     )
   );

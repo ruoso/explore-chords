@@ -17,7 +17,8 @@ import { getDialect, DEFAULT_DIALECT } from './dialects.js';
  * @typedef {object} ParseResult
  * @property {import('../chord.js').Chord|null} chord
  * @property {Ambiguity[]} ambiguities
- * @property {{ message: string }[]} errors
+ * @property {{ message: string, code?: string, params?: object }[]} errors
+ *   `message` is English for logs; the UI translates by `code` (src/core/errors.js)
  *
  * @typedef {object} Ambiguity
  * @property {string} kind      'sevenPlus' | 'bareNine'
@@ -135,17 +136,22 @@ function stackFor(top) {
 export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
   const errors = [];
   const ambiguities = [];
-  const fail = (message) => ({ chord: null, ambiguities, errors: [...errors, { message }] });
+  const fail = (message, code, params = {}) => ({
+    chord: null,
+    ambiguities,
+    errors: [...errors, { message, code, params }],
+  });
+  const push = (message, code, params = {}) => errors.push({ message, code, params });
 
   if (typeof text !== 'string' || text.trim() === '') {
-    return fail('Enter a chord.');
+    return fail('Enter a chord.', 'empty');
   }
 
   let dialect;
   try {
     dialect = getDialect(dialectId);
   } catch {
-    return fail(`Unknown notation dialect: ${dialectId}`);
+    return fail(`Unknown notation dialect: ${dialectId}`, 'unknownDialect', { dialect: dialectId });
   }
 
   // The UI can override a reading for one parse, so the disambiguation chip
@@ -156,14 +162,14 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
   const trimmed = text.trim();
   const rootMatch = /^([A-Ga-g](?:bb|##|[b#])?)/.exec(trimmed);
   if (!rootMatch) {
-    return fail(`"${trimmed}" does not start with a note name.`);
+    return fail(`"${trimmed}" does not start with a note name.`, 'noRoot', { text: trimmed });
   }
 
   let root;
   try {
     root = parseNote(rootMatch[1]);
   } catch {
-    return fail(`Cannot read the root note "${rootMatch[1]}".`);
+    return fail(`Cannot read the root note "${rootMatch[1]}".`, 'badRoot', { text: rootMatch[1] });
   }
 
   const { body, bassText } = splitBass(trimmed.slice(rootMatch[1].length));
@@ -173,13 +179,13 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
     try {
       bass = parseNote(bassText);
     } catch {
-      return fail(`Cannot read the bass note "${bassText}".`);
+      return fail(`Cannot read the bass note "${bassText}".`, 'badBass', { text: bassText });
     }
   }
 
   const { tokens, bad } = tokenize(body);
   if (bad) {
-    return fail(`Cannot read "${bad}" in "${trimmed}".`);
+    return fail(`Cannot read "${bad}" in "${trimmed}".`, 'unreadable', { text: bad, whole: trimmed });
   }
 
   // --- interpret -----------------------------------------------------------
@@ -214,7 +220,7 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
           quality = quality === 'dim' ? 'dim' : 'minor';
           sawQualityWord = true;
         } else {
-          errors.push({ message: `Unexpected "${t.text}".` });
+          push(`Unexpected "${t.text}".`, 'unexpected', { text: t.text });
         }
         i += 1;
         break;
@@ -233,7 +239,7 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
           sawQualityWord = true;
           if (t.type === 'DEG') bareDegreeSign = true;
         } else {
-          errors.push({ message: `Unexpected "${t.text}".` });
+          push(`Unexpected "${t.text}".`, 'unexpected', { text: t.text });
         }
         i += 1;
         break;
@@ -263,7 +269,7 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
           quality = 'aug';
           sawQualityWord = true;
         } else {
-          errors.push({ message: `Unexpected "+".` });
+          push('Unexpected "+".', 'unexpected', { text: '+' });
         }
         i += 1;
         break;
@@ -278,7 +284,7 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
           quality = 'minor'; // Real Book writes a minor chord as C−7
           sawQualityWord = true;
         } else {
-          errors.push({ message: `Unexpected "${t.text}".` });
+          push(`Unexpected "${t.text}".`, 'unexpected', { text: t.text });
         }
         i += 1;
         break;
@@ -308,7 +314,7 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
       case 'ADD': {
         const next = tokens[i + 1];
         if (next?.type !== 'NUM') {
-          errors.push({ message: '"add" must be followed by a number.' });
+          push('"add" must be followed by a number.', 'needsNumber', { text: 'add' });
           i += 1;
           break;
         }
@@ -321,7 +327,7 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
       case 'FLAT': {
         const next = tokens[i + 1];
         if (next?.type !== 'NUM') {
-          errors.push({ message: `"${t.text}" must be followed by a number.` });
+          push(`"${t.text}" must be followed by a number.`, 'needsNumber', { text: t.text });
           i += 1;
           break;
         }
@@ -442,13 +448,13 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
         // A slash not followed by a note is compound notation, as in 6/9. One
         // followed by nothing at all is a typo.
         if (at(i + 1) !== 'NUM') {
-          errors.push({ message: 'A "/" must be followed by a bass note or a number.' });
+          push('A "/" must be followed by a bass note or a number.', 'bassNeeded');
         }
         i += 1;
         break;
 
       default:
-        errors.push({ message: `Unexpected "${t.text}".` });
+        push(`Unexpected "${t.text}".`, 'unexpected', { text: t.text });
         i += 1;
         break;
     }
@@ -495,7 +501,7 @@ export function parseChord(text, dialectId = DEFAULT_DIALECT, options = {}) {
   try {
     return { chord: chord(root, quality, extensions, bass), ambiguities, errors };
   } catch (e) {
-    return fail(e.message);
+    return fail(e.message, e.code, e.params);
   }
 }
 

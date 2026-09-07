@@ -14,7 +14,7 @@ import { el, clear } from './dom.js';
 import { parseChord } from '../core/notation/parse.js';
 import { fingeringFromFrets } from '../core/search.js';
 import { renderDiagram } from '../render/index.js';
-import { DIFFICULTY_LABELS } from '../core/score.js';
+import { t } from '../i18n/index.js';
 
 export function renderLibrary(container, { store, onOpen, onRemove }) {
   clear(container);
@@ -23,14 +23,14 @@ export function renderLibrary(container, { store, onOpen, onRemove }) {
 
   const saved = store.favoritesFor(instrument.id);
   const page = el('div', { class: 'ec-page' });
-  page.append(el('h2', { class: 'ec-page-title' }, 'Saved shapes'));
+  page.append(el('h2', { class: 'ec-page-title' }, t('library.title')));
 
   if (saved.length === 0) {
     page.append(
       el(
         'p',
         { class: 'ec-empty' },
-        `Nothing saved for ${instrument.label} yet. Star a shape on the chords screen to keep it here.`
+        t('library.empty', { label: instrument.label })
       )
     );
     container.append(page);
@@ -38,13 +38,13 @@ export function renderLibrary(container, { store, onOpen, onRemove }) {
   }
 
   page.append(
-    el('p', { class: 'ec-help' }, `${saved.length} saved for ${instrument.label}.`)
+    el('p', { class: 'ec-help' }, t('library.count', { count: saved.length, label: instrument.label }))
   );
 
   const list = el('ul', {
     class: 'ec-grid',
     tabindex: '0',
-    'aria-label': `Saved shapes for ${instrument.label}`,
+    'aria-label': t('library.list', { label: instrument.label }),
   });
 
   for (const entry of saved) {
@@ -76,7 +76,7 @@ export function renderLibrary(container, { store, onOpen, onRemove }) {
           el(
             'span',
             { class: `ec-badge ec-badge-${fingering.difficulty}` },
-            DIFFICULTY_LABELS[fingering.difficulty]
+            t(`difficulty.${fingering.difficulty}`)
           )
         ),
         el(
@@ -87,20 +87,20 @@ export function renderLibrary(container, { store, onOpen, onRemove }) {
             {
               type: 'button',
               class: 'ec-button ec-button-small',
-              'aria-label': `Show ${entry.chordText} on the chords screen`,
+              'aria-label': t('library.openLabel', { chord: entry.chordText }),
               onClick: () => onOpen(entry),
             },
-            'Open'
+            t('library.open')
           ),
           el(
             'button',
             {
               type: 'button',
               class: 'ec-button ec-button-small',
-              'aria-label': `Remove ${entry.chordText} ${fingering.shorthand} from your saved shapes`,
+              'aria-label': t('library.removeLabel', { chord: entry.chordText, shorthand: fingering.shorthand }),
               onClick: () => onRemove(entry),
             },
-            'Remove'
+            t('library.remove')
           )
         )
       )

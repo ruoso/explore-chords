@@ -8,6 +8,7 @@
  */
 
 import { el, clear } from './dom.js';
+import { t } from '../i18n/index.js';
 
 export function renderViewAsBar(container, { store, onBack, onKeep }) {
   clear(container);
@@ -19,7 +20,7 @@ export function renderViewAsBar(container, { store, onBack, onKeep }) {
 
   container.hidden = false;
   const mine = store.activeInstrument;
-  const source = viewAs.source === 'sheet' ? 'from this sheet' : 'from the link';
+  const source = t(viewAs.source === 'sheet' ? 'viewAs.fromSheet' : 'viewAs.fromLink');
 
   const bar = el(
     'div',
@@ -28,7 +29,7 @@ export function renderViewAsBar(container, { store, onBack, onKeep }) {
       'p',
       { class: 'ec-viewas-text' },
       el('span', { class: 'ec-viewas-icon', 'aria-hidden': 'true' }, '⚠'),
-      ` Viewing as ${viewAs.instance.label} (${source})`
+      t('viewAs.viewing', { label: viewAs.instance.label, source })
     ),
     el(
       'div',
@@ -37,13 +38,13 @@ export function renderViewAsBar(container, { store, onBack, onKeep }) {
         ? el(
             'button',
             { type: 'button', class: 'ec-button ec-button-small', onClick: onBack },
-            `Back to my ${mine.label}`
+            t('viewAs.back', { label: mine.label })
           )
         : null,
       el(
         'button',
         { type: 'button', class: 'ec-button ec-button-small', onClick: onKeep },
-        'Keep as my default'
+        t('viewAs.keep')
       )
     )
   );

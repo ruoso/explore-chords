@@ -12,6 +12,7 @@
  */
 
 import { parsePitch, formatPitch, pitchToMidi } from './pitch.js';
+import { fault } from './errors.js';
 import { CATALOG as CATALOG_DATA } from '../data/instruments.js';
 import { presetConfig } from './heuristics.js';
 
@@ -34,7 +35,7 @@ export function parseTuning(text) {
     .split(/[,\s]+/)
     .map((s) => s.trim())
     .filter(Boolean);
-  if (parts.length === 0) throw new Error('A tuning needs at least one string.');
+  if (parts.length === 0) throw fault('emptyTuning', {}, 'A tuning needs at least one string.');
   return parts.map(parsePitch);
 }
 
@@ -80,7 +81,7 @@ export function instrumentInstance({
 } = {}) {
   const pitches = typeof strings === 'string' ? parseTuning(strings) : strings;
   if (!Array.isArray(pitches) || pitches.length === 0) {
-    throw new Error('An instrument needs a tuning.');
+    throw fault('emptyTuning', {}, 'An instrument needs a tuning.');
   }
   const entry = catalogId ? catalogEntry(catalogId) : undefined;
   const resolvedFretCount = fretCount ?? entry?.fretCount ?? 20;

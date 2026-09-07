@@ -17,7 +17,7 @@ import { el, clear } from './dom.js';
 import { parseChord } from '../core/notation/parse.js';
 import { searchFingerings } from '../core/search.js';
 import { renderDiagram } from '../render/index.js';
-import { DIFFICULTY_LABELS } from '../core/score.js';
+import { t, errorText } from '../i18n/index.js';
 import { renderFingeringGroups } from './fingering-groups.js';
 
 export function openVoicingDialog({
@@ -45,8 +45,8 @@ export function openVoicingDialog({
     'h2',
     { class: 'ec-dialog-title', id: 'voicing-dialog-title' },
     everywhere
-      ? `Change ${label ?? chordText} everywhere`
-      : `How is ${chordText} played here?`
+      ? t('picker.changeEverywhere', { label: label ?? chordText })
+      : t('picker.howPlayed', { chord: chordText })
   );
   dialog.setAttribute('aria-labelledby', 'voicing-dialog-title');
 
@@ -59,7 +59,7 @@ export function openVoicingDialog({
 
   if (!parsed.chord) {
     body.append(
-      el('p', { class: 'ec-error' }, parsed.errors[0]?.message ?? 'That chord does not parse.')
+      el('p', { class: 'ec-error' }, parsed.errors[0] ? errorText(parsed.errors[0]) : t('picker.noParse'))
     );
   } else {
     const results = searchFingerings(parsed.chord, instrument);
@@ -69,7 +69,7 @@ export function openVoicingDialog({
         el(
           'p',
           { class: 'ec-help' },
-          `No fingerings for ${chordText} on ${instrument.label}. Its voicing rules may be too strict.`
+          t('picker.none', { chord: chordText, label: instrument.label })
         )
       );
     } else {
@@ -77,11 +77,8 @@ export function openVoicingDialog({
         el(
           'p',
           { class: 'ec-help' },
-          everywhere
-            ? `Replaces this shape in ${usedIn} place${usedIn === 1 ? '' : 's'}. ` +
-              `${results.count} ways to play it, grouped by position and easiest first.`
-            : `Changes this one chord. ${results.count} ways to play it, ` +
-              'grouped by position and easiest first.'
+          (everywhere ? t('picker.replaces', { count: usedIn }) : t('picker.changesOne')) +
+            t('picker.ways', { count: results.count })
         )
       );
 
@@ -112,9 +109,9 @@ export function openVoicingDialog({
                   type: 'button',
                   class: `ec-dialog-choice${isChosen ? ' is-chosen' : ''}`,
                   'aria-pressed': isChosen ? 'true' : 'false',
-                  'aria-label': `${fingering.shorthand}, ${
-                    DIFFICULTY_LABELS[fingering.difficulty]
-                  }${isChosen ? ', currently chosen' : ''}`,
+                  'aria-label': `${fingering.shorthand}, ${t(
+                    `difficulty.${fingering.difficulty}`
+                  )}${isChosen ? t('picker.chosen') : ''}`,
                   onClick: () => {
                     onChoose(fingering.frets);
                     close();
@@ -138,7 +135,7 @@ export function openVoicingDialog({
                   el(
                     'span',
                     { class: `ec-badge ec-badge-${fingering.difficulty}` },
-                    DIFFICULTY_LABELS[fingering.difficulty]
+                    t(`difficulty.${fingering.difficulty}`)
                   )
                 )
               )
@@ -167,13 +164,13 @@ export function openVoicingDialog({
               close();
             },
           },
-          everywhere ? 'Clear everywhere' : 'Clear choice'
+          t(everywhere ? 'picker.clearEverywhere' : 'picker.clearChoice')
         )
       : null,
     el(
       'button',
       { type: 'button', class: 'ec-button ec-button-small', id: 'voicing-cancel', onClick: close },
-      'Cancel'
+      t('picker.cancel')
     )
   );
 

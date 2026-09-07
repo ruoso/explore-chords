@@ -13,6 +13,8 @@
  */
 
 import { KEYS, readJson, writeJson } from './persist.js';
+import { fault } from '../core/errors.js';
+import { t } from '../i18n/index.js';
 
 let counter = 0;
 function newId(prefix) {
@@ -22,7 +24,7 @@ function newId(prefix) {
 
 export const EXAMPLE_BODY = '# Verse\nC  Am | F  G | C\n';
 
-export function newSheet({ title = 'Untitled song', body } = {}) {
+export function newSheet({ title = t('sheets.untitled'), body } = {}) {
   return {
     id: newId('sheet'),
     title,
@@ -74,7 +76,7 @@ export function sheetForSharing(sheet, instrument) {
 /** Rebuild a sheet from a shared payload. */
 export function sheetFromSharing(payload) {
   if (!payload || typeof payload.body !== 'string') {
-    throw new Error('That link does not contain a song sheet.');
+    throw fault('notASheet', {}, 'That link does not contain a song sheet.');
   }
-  return newSheet({ title: payload.title ?? 'Shared song', body: payload.body });
+  return newSheet({ title: payload.title ?? t('sheets.shared'), body: payload.body });
 }

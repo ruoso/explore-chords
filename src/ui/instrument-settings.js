@@ -12,52 +12,56 @@
 
 import { el, clear } from './dom.js';
 import { formatTuning, configFor, isReentrant } from '../core/instrument.js';
-import { PRESET_IDS, PRESET_LABELS, withOverrides } from '../core/heuristics.js';
+import { PRESET_IDS, withOverrides } from '../core/heuristics.js';
+import { t } from '../i18n/index.js';
 import { renderInstrumentForm } from './instrument-form.js';
 
+/** Each rule, limit and weight is labelled by its key under `rules` in the translations. */
 const RULES = [
-  ['rootInBass', 'Root must be the lowest note'],
-  ['requireThird', 'Require the 3rd'],
-  ['omitFifth', 'The 5th may be omitted'],
-  ['allowRootless', 'Allow rootless voicings'],
-  ['requireExtensions', 'Require every named extension'],
-  ['allowBarre', 'Allow barre chords'],
-  ['allowInnerMutes', 'Allow a muted string between sounding ones'],
-  ['allowDoubling', 'Allow a note on more than one string'],
-  ['allowDuplicatePitch', 'Allow the identical pitch twice'],
+  'rootInBass',
+  'requireThird',
+  'omitFifth',
+  'allowRootless',
+  'requireExtensions',
+  'allowBarre',
+  'allowInnerMutes',
+  'allowDoubling',
+  'allowDuplicatePitch',
 ];
 
 const LIMITS = [
-  ['maxSpan', 'Maximum stretch (frets)', 1, 6],
-  ['minSoundingStrings', 'Fewest strings sounding', 1, 8],
-  ['maxResultsPerGroup', 'Shapes shown per position', 1, 20],
+  ['maxSpan', 1, 6],
+  ['minSoundingStrings', 1, 8],
+  ['maxResultsPerGroup', 1, 20],
 ];
 
-const WEIGHT_LABELS = {
-  spanPerFret: 'Stretch, per fret',
-  barre: 'Barre',
-  fullBarre: 'Full barre, extra',
-  perFinger: 'Each finger',
-  innerMute: 'Inner muted string',
-  mutedString: 'Each muted string',
-  positionPerFret: 'Position, per fret',
-  omittedFifth: 'Omitting the 5th',
-  rootless: 'Omitting the root',
-  nonRootBass: 'Unrequested inversion',
-  openString: 'Each open string (a bonus)',
-  nonAdjacentStretch: 'Wide stretch',
-};
+const WEIGHTS = [
+  'spanPerFret',
+  'barre',
+  'fullBarre',
+  'perFinger',
+  'innerMute',
+  'mutedString',
+  'positionPerFret',
+  'omittedFifth',
+  'rootless',
+  'nonRootBass',
+  'openString',
+  'nonAdjacentStretch',
+];
+
+const presetLabel = (id) => t(id === 'custom' ? 'rules.custom' : `rules.presets.${id}`);
 
 /** The list of instruments. */
 export function renderInstrumentList(container, { store, onAdd, onEdit, onUse, onDelete }) {
   clear(container);
   const page = el('div', { class: 'ec-page' });
   page.append(
-    el('h2', { class: 'ec-page-title' }, 'Instruments'),
+    el('h2', { class: 'ec-page-title' }, t('instruments.title')),
     el(
       'p',
       { class: 'ec-help' },
-      'Everything on screen is for the instrument in use. Each keeps its own tuning, voicing rules, saved shapes and songs.'
+      t('instruments.help')
     )
   );
 
@@ -75,13 +79,13 @@ export function renderInstrumentList(container, { store, onAdd, onEdit, onUse, o
             'p',
             { class: 'ec-instrument-name' },
             instrument.label,
-            isActive ? el('span', { class: 'ec-badge' }, 'In use') : null,
-            isReentrant(instrument) ? el('span', { class: 'ec-badge' }, 'Re-entrant') : null
+            isActive ? el('span', { class: 'ec-badge' }, t('instruments.inUse')) : null,
+            isReentrant(instrument) ? el('span', { class: 'ec-badge' }, t('instruments.reentrant')) : null
           ),
           el(
             'p',
             { class: 'ec-instrument-tuning' },
-            `${formatTuning(instrument.strings)} · ${instrument.fretCount} frets`
+            t('instruments.meta', { tuning: formatTuning(instrument.strings), count: instrument.fretCount })
           )
         ),
         el(
@@ -94,20 +98,20 @@ export function renderInstrumentList(container, { store, onAdd, onEdit, onUse, o
                 {
                   type: 'button',
                   class: 'ec-button ec-button-small',
-                  'aria-label': `Use ${instrument.label}`,
+                  'aria-label': t('instruments.useLabel', { label: instrument.label }),
                   onClick: () => onUse(instrument),
                 },
-                'Use'
+                t('instruments.use')
               ),
           el(
             'button',
             {
               type: 'button',
               class: 'ec-button ec-button-small',
-              'aria-label': `Edit ${instrument.label}`,
+              'aria-label': t('instruments.editLabel', { label: instrument.label }),
               onClick: () => onEdit(instrument),
             },
-            'Edit'
+            t('instruments.edit')
           ),
           store.state.instruments.length > 1
             ? el(
@@ -115,10 +119,10 @@ export function renderInstrumentList(container, { store, onAdd, onEdit, onUse, o
                 {
                   type: 'button',
                   class: 'ec-button ec-button-small',
-                  'aria-label': `Delete ${instrument.label}`,
+                  'aria-label': t('instruments.deleteLabel', { label: instrument.label }),
                   onClick: () => onDelete(instrument),
                 },
-                'Delete'
+                t('instruments.delete')
               )
             : null
         )
@@ -134,7 +138,7 @@ export function renderInstrumentList(container, { store, onAdd, onEdit, onUse, o
       el(
         'button',
         { type: 'button', class: 'ec-button ec-button-primary', id: 'instrument-add', onClick: onAdd },
-        'Add instrument'
+        t('instruments.add')
       )
     )
   );
@@ -156,7 +160,7 @@ export function renderInstrumentEditor(
     el(
       'button',
       { type: 'button', class: 'ec-button ec-button-small ec-back', id: 'instrument-back', onClick: onCancel },
-      '← All instruments'
+      t('instruments.back')
     )
   );
 
@@ -172,8 +176,7 @@ export function renderInstrumentEditor(
   // --- voicing rules ------------------------------------------------------
 
   const config = instrument.heuristics;
-  const presetName =
-    config.preset === 'custom' ? 'Custom' : (PRESET_LABELS[config.preset] ?? 'Custom');
+  const presetName = presetLabel(config.preset);
   const apply = (patch) => onRules(withOverrides(config, patch));
 
   const rulesPanel = el('section', { class: 'ec-panel', 'aria-labelledby': 'settings-rules' });
@@ -181,10 +184,10 @@ export function renderInstrumentEditor(
     el(
       'h3',
       { class: 'ec-panel-title', id: 'settings-rules' },
-      'Voicing rules',
+      t('rules.title'),
       el('span', { class: 'ec-panel-tag' }, presetName)
     ),
-    el('p', { class: 'ec-help' }, `How chords are voiced on ${instrument.label}.`)
+    el('p', { class: 'ec-help' }, t('rules.help', { label: instrument.label }))
   );
 
   const presetSelect = el('select', {
@@ -193,19 +196,19 @@ export function renderInstrumentEditor(
   });
   for (const id of PRESET_IDS) {
     presetSelect.append(
-      el('option', { value: id, selected: id === config.preset || null }, PRESET_LABELS[id])
+      el('option', { value: id, selected: id === config.preset || null }, presetLabel(id))
     );
   }
   if (config.preset === 'custom') {
-    presetSelect.append(el('option', { value: 'custom', selected: true }, 'Custom'));
+    presetSelect.append(el('option', { value: 'custom', selected: true }, presetLabel('custom')));
   }
   rulesPanel.append(
-    el('div', { class: 'ec-field' }, el('label', { for: 'heuristics-preset' }, 'Preset'), presetSelect)
+    el('div', { class: 'ec-field' }, el('label', { for: 'heuristics-preset' }, t('rules.preset')), presetSelect)
   );
 
   const rules = el('fieldset', { class: 'ec-rules' });
-  rules.append(el('legend', {}, 'Rules'));
-  for (const [key, label] of RULES) {
+  rules.append(el('legend', {}, t('rules.rules')));
+  for (const key of RULES) {
     const id = `rule-${key}`;
     rules.append(
       el(
@@ -217,21 +220,21 @@ export function renderInstrumentEditor(
           checked: config[key] || null,
           onChange: (event) => apply({ [key]: event.target.checked }),
         }),
-        label
+        t(`rules.${key}`)
       )
     );
   }
   rulesPanel.append(rules);
 
   const limits = el('fieldset', { class: 'ec-limits' });
-  limits.append(el('legend', {}, 'Limits'));
-  for (const [key, label, min, max] of LIMITS) {
+  limits.append(el('legend', {}, t('rules.limits')));
+  for (const [key, min, max] of LIMITS) {
     const id = `limit-${key}`;
     limits.append(
       el(
         'div',
         { class: 'ec-field ec-field-inline' },
-        el('label', { for: id }, label),
+        el('label', { for: id }, t(`rules.${key}`)),
         el('input', {
           type: 'number',
           id,
@@ -251,21 +254,21 @@ export function renderInstrumentEditor(
 
   const advanced = el('details', { class: 'ec-weights' });
   advanced.append(
-    el('summary', {}, 'Difficulty weights'),
+    el('summary', {}, t('rules.weights')),
     el(
       'p',
       { class: 'ec-help' },
-      'How much each thing counts towards a shape being hard. Negative values make a shape easier.'
+      t('rules.weightsHelp')
     )
   );
   const weightGrid = el('div', { class: 'ec-weights-grid' });
-  for (const [key, label] of Object.entries(WEIGHT_LABELS)) {
+  for (const key of WEIGHTS) {
     const id = `weight-${key}`;
     weightGrid.append(
       el(
         'div',
         { class: 'ec-field ec-field-inline' },
-        el('label', { for: id }, label),
+        el('label', { for: id }, t(`rules.weight.${key}`)),
         el('input', {
           type: 'number',
           id,
@@ -296,7 +299,7 @@ export function renderInstrumentEditor(
             id: 'instrument-delete',
             onClick: () => onDelete(instrument),
           },
-          'Delete this instrument'
+          t('instruments.deleteThis')
         )
       )
     );

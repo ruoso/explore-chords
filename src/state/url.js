@@ -15,6 +15,7 @@ import { formatTuning } from '../core/instrument.js';
 import { DIALECT_IDS } from '../core/notation/dialects.js';
 import { PRESET_IDS } from '../core/heuristics.js';
 import { isView } from './views.js';
+import { t } from '../i18n/index.js';
 
 /** Read app state out of a URL's query string. */
 export function readUrl(search = globalThis.location?.search ?? '') {
@@ -43,7 +44,7 @@ export function readUrl(search = globalThis.location?.search ?? '') {
     try {
       out.instrument = instrumentInstance({
         catalogId: entry ? catalogId : null,
-        label: params.get('l') ?? entry?.name ?? 'Shared instrument',
+        label: params.get('l') ?? entry?.name ?? t('sheets.sharedInstrument'),
         strings: tuning,
         fretCount: entry?.fretCount,
       });

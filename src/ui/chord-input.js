@@ -14,25 +14,20 @@ import { chord as makeChord } from '../core/chord.js';
 import { parseNote, formatNote } from '../core/pitch.js';
 import { formatChord } from '../core/notation/format.js';
 import { READING_LABELS } from '../core/notation/dialects.js';
+import { t, hasMessage, errorText } from '../i18n/index.js';
 
 const ROOTS = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
 
-const QUALITIES = [
-  ['major', 'Major'],
-  ['minor', 'Minor'],
-  ['dim', 'Diminished'],
-  ['aug', 'Augmented'],
-  ['sus2', 'Sus2'],
-  ['sus4', 'Sus4'],
-  ['power', 'Power (5)'],
-];
+/** Picker options, named by their translation keys. */
+const QUALITIES = ['major', 'minor', 'dim', 'aug', 'sus2', 'sus4', 'power'];
+const SEVENTHS = ['none', 'dominant', 'major', 'diminished'];
 
-const SEVENTHS = [
-  ['none', 'No 7th'],
-  ['dominant', 'Dominant 7th'],
-  ['major', 'Major 7th'],
-  ['diminished', 'Diminished 7th'],
-];
+/** How a reading of an ambiguous symbol is described, in the user's language. */
+function readingLabel(kind, reading) {
+  const key = `readings.${kind}.${reading}`;
+  if (hasMessage(key)) return t(key);
+  return READING_LABELS[kind]?.[reading] ?? reading;
+}
 
 /** Extension chips, as degree/alteration pairs. */
 const EXTENSIONS = [
@@ -113,7 +108,7 @@ export function renderChordInput(container, { store, onChange, onReading }) {
     type: 'text',
     class: 'ec-chord-input',
     value: state.chordText,
-    placeholder: 'C7M, Am7, F#m7b5…',
+    placeholder: t('input.placeholder'),
     autocomplete: 'off',
     autocapitalize: 'off',
     autocorrect: 'off',
@@ -122,9 +117,9 @@ export function renderChordInput(container, { store, onChange, onReading }) {
   });
 
   form.append(
-    el('label', { for: 'chord-input', class: 'ec-visually-hidden' }, 'Chord'),
+    el('label', { for: 'chord-input', class: 'ec-visually-hidden' }, t('input.label')),
     input,
-    el('button', { type: 'submit', class: 'ec-button ec-button-primary' }, 'Show')
+    el('button', { type: 'submit', class: 'ec-button ec-button-primary' }, t('input.show'))
   );
 
   form.addEventListener('submit', (event) => {
@@ -148,19 +143,18 @@ export function renderChordInput(container, { store, onChange, onReading }) {
 
   if (state.errors.length > 0) {
     status.append(
-      el('p', { class: 'ec-error', role: 'alert' }, state.errors[0].message)
+      el('p', { class: 'ec-error', role: 'alert' }, errorText(state.errors[0]))
     );
   }
 
   for (const ambiguity of state.ambiguities) {
-    const labels = READING_LABELS[ambiguity.kind] ?? {};
-    const alternative = ambiguity.alternatives[0];
+        const alternative = ambiguity.alternatives[0];
     status.append(
       el(
         'p',
         { class: 'ec-ambiguity' },
         el('span', { class: 'ec-ambiguity-icon', 'aria-hidden': 'true' }, 'ⓘ'),
-        ` Read “${ambiguity.text}” as ${labels[ambiguity.chosen] ?? ambiguity.chosen}. `,
+        t('input.readAs', { text: ambiguity.text, reading: readingLabel(ambiguity.kind, ambiguity.chosen) }),
         alternative
           ? el(
               'button',
@@ -169,7 +163,7 @@ export function renderChordInput(container, { store, onChange, onReading }) {
                 class: 'ec-button ec-button-small ec-ambiguity-flip',
                 onClick: () => onReading(ambiguity.kind, alternative),
               },
-              `Use ${labels[alternative] ?? alternative}`
+              t('input.use', { reading: readingLabel(ambiguity.kind, alternative) })
             )
           : null
       )
@@ -190,17 +184,16 @@ export function renderChordInput(container, { store, onChange, onReading }) {
     clear(status);
     const s = store.state;
     if (s.errors.length > 0) {
-      status.append(el('p', { class: 'ec-error', role: 'alert' }, s.errors[0].message));
+      status.append(el('p', { class: 'ec-error', role: 'alert' }, errorText(s.errors[0])));
     }
     for (const ambiguity of s.ambiguities) {
-      const labels = READING_LABELS[ambiguity.kind] ?? {};
-      const alternative = ambiguity.alternatives[0];
+            const alternative = ambiguity.alternatives[0];
       status.append(
         el(
           'p',
           { class: 'ec-ambiguity' },
           el('span', { class: 'ec-ambiguity-icon', 'aria-hidden': 'true' }, 'ⓘ'),
-          ` Read “${ambiguity.text}” as ${labels[ambiguity.chosen] ?? ambiguity.chosen}. `,
+          t('input.readAs', { text: ambiguity.text, reading: readingLabel(ambiguity.kind, ambiguity.chosen) }),
           alternative
             ? el(
                 'button',
@@ -209,7 +202,7 @@ export function renderChordInput(container, { store, onChange, onReading }) {
                   class: 'ec-button ec-button-small ec-ambiguity-flip',
                   onClick: () => onReading(ambiguity.kind, alternative),
                 },
-                `Use ${labels[alternative] ?? alternative}`
+                t('input.use', { reading: readingLabel(ambiguity.kind, alternative) })
               )
             : null
         )
@@ -220,7 +213,7 @@ export function renderChordInput(container, { store, onChange, onReading }) {
   // --- structured pickers -------------------------------------------------
 
   const details = el('details', { class: 'ec-pickers', open: state.pickersOpen || null });
-  details.append(el('summary', { class: 'ec-pickers-summary' }, 'Build the chord'));
+  details.append(el('summary', { class: 'ec-pickers-summary' }, t('input.build')));
 
   const grid = el('div', { class: 'ec-pickers-grid' });
 
@@ -240,34 +233,34 @@ export function renderChordInput(container, { store, onChange, onReading }) {
   }
 
   const qualitySelect = el('select', { id: 'picker-quality', onChange: emit });
-  for (const [value, label] of QUALITIES) {
+  for (const value of QUALITIES) {
     qualitySelect.append(
-      el('option', { value, selected: value === pickers.quality || null }, label)
+      el('option', { value, selected: value === pickers.quality || null }, t(`quality.${value}`))
     );
   }
 
   const seventhSelect = el('select', { id: 'picker-seventh', onChange: emit });
-  for (const [value, label] of SEVENTHS) {
+  for (const value of SEVENTHS) {
     seventhSelect.append(
-      el('option', { value, selected: value === pickers.seventh || null }, label)
+      el('option', { value, selected: value === pickers.seventh || null }, t(`seventh.${value}`))
     );
   }
 
   const bassSelect = el('select', { id: 'picker-bass', onChange: emit });
-  bassSelect.append(el('option', { value: '', selected: pickers.bass === '' || null }, 'Root'));
+  bassSelect.append(el('option', { value: '', selected: pickers.bass === '' || null }, t('input.bassRoot')));
   for (const note of ROOTS) {
     bassSelect.append(el('option', { value: note, selected: note === pickers.bass || null }, note));
   }
 
   grid.append(
-    el('div', { class: 'ec-field' }, el('label', { for: 'picker-root' }, 'Root'), rootSelect),
-    el('div', { class: 'ec-field' }, el('label', { for: 'picker-quality' }, 'Quality'), qualitySelect),
-    el('div', { class: 'ec-field' }, el('label', { for: 'picker-seventh' }, 'Seventh'), seventhSelect),
-    el('div', { class: 'ec-field' }, el('label', { for: 'picker-bass' }, 'Bass'), bassSelect)
+    el('div', { class: 'ec-field' }, el('label', { for: 'picker-root' }, t('input.root')), rootSelect),
+    el('div', { class: 'ec-field' }, el('label', { for: 'picker-quality' }, t('input.quality')), qualitySelect),
+    el('div', { class: 'ec-field' }, el('label', { for: 'picker-seventh' }, t('input.seventh')), seventhSelect),
+    el('div', { class: 'ec-field' }, el('label', { for: 'picker-bass' }, t('input.bass')), bassSelect)
   );
 
   const chipGroup = el('fieldset', { class: 'ec-chips' });
-  chipGroup.append(el('legend', {}, 'Extensions'));
+  chipGroup.append(el('legend', {}, t('input.extensions')));
   const chipBoxes = [];
   for (const ext of EXTENSIONS) {
     const id = `ext-${ext.key.replace(/[^a-z0-9]/gi, '')}`;

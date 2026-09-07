@@ -15,6 +15,7 @@ import { parseChord } from '../core/notation/parse.js';
 import { parseSong, compareVoicings } from '../core/song.js';
 import { resolveSongVoicings } from '../core/voicings.js';
 import { renderDiagram } from '../render/index.js';
+import { t } from '../i18n/index.js';
 
 /**
  * Diagrams in the legend are looked up, not read along with, so they are drawn
@@ -64,7 +65,7 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
     .sort(compareVoicings);
 
   if (legend.length > 0) {
-    const list = el('ul', { class: 'ec-print-legend', 'aria-label': 'Chord shapes used' });
+    const list = el('ul', { class: 'ec-print-legend', 'aria-label': t('print.legend') });
     for (const entry of legend) {
       const chord = parseChord(entry.symbol, dialect).chord;
       if (!chord) continue;

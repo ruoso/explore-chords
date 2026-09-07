@@ -7,6 +7,7 @@
  */
 
 import { el, clear } from './dom.js';
+import { t } from '../i18n/index.js';
 
 export function renderDisplayToggles(container, { store, onChange }) {
   clear(container);
@@ -15,7 +16,7 @@ export function renderDisplayToggles(container, { store, onChange }) {
   const group = el('div', {
     class: 'ec-toggles',
     role: 'group',
-    'aria-label': 'Diagram display',
+    'aria-label': t('toggles.label'),
   });
 
   const toggle = (label, pressed, onClick) =>
@@ -31,10 +32,10 @@ export function renderDisplayToggles(container, { store, onChange }) {
     );
 
   group.append(
-    toggle('Neck view', orientation === 'horizontal', () =>
+    toggle(t('toggles.neck'), orientation === 'horizontal', () =>
       onChange({ orientation: orientation === 'horizontal' ? 'vertical' : 'horizontal' })
     ),
-    toggle('Left-handed', handed === 'left', () =>
+    toggle(t('toggles.left'), handed === 'left', () =>
       onChange({ handed: handed === 'left' ? 'right' : 'left' })
     )
   );

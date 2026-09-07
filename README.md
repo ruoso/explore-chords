@@ -35,6 +35,8 @@ at runtime — once loaded, it works entirely offline.
   to one specific chosen fingering — printable, and shareable as a link.
 - **Offline and installable.** Mobile-first, add it to a phone home screen and
   use it in a lesson with no signal.
+- **In three languages.** English, Brazilian Portuguese and Latin American
+  Spanish, following the browser until you choose one from the header.
 
 ## Design decisions worth knowing
 

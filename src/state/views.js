@@ -9,11 +9,12 @@
  * so a project-subpath deploy needs no SPA fallback.
  */
 
+/** Each view's label is the `nav.<id>` string in the translations. */
 export const VIEWS = {
-  explore: { id: 'explore', label: 'Chords', title: 'Explore chords' },
-  instrument: { id: 'instrument', label: 'Instrument', title: 'Instrument settings' },
-  library: { id: 'library', label: 'Saved', title: 'Saved shapes' },
-  sheets: { id: 'sheets', label: 'Songs', title: 'Song sheets' },
+  explore: { id: 'explore' },
+  instrument: { id: 'instrument' },
+  library: { id: 'library' },
+  sheets: { id: 'sheets' },
 };
 
 export const DEFAULT_VIEW = 'explore';

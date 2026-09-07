@@ -19,6 +19,7 @@
  */
 
 import { el, clear } from './dom.js';
+import { t } from '../i18n/index.js';
 
 const DISMISSED = 'installPromptDismissed';
 
@@ -96,7 +97,7 @@ export function setupInstallPrompt(container, { store }) {
               }
             },
           },
-          'Install'
+          t('install.install')
         )
       );
     }
@@ -110,28 +111,28 @@ export function setupInstallPrompt(container, { store }) {
           id: 'install-dismiss',
           onClick: () => dismiss(forever.checked),
         },
-        deferred ? 'Not now' : 'Got it'
+        t(deferred ? 'install.notNow' : 'install.gotIt')
       )
     );
 
     container.append(
       el(
         'section',
-        { class: 'ec-install', 'aria-label': 'Install this app' },
+        { class: 'ec-install', 'aria-label': t('install.label') },
         el(
           'div',
           { class: 'ec-install-text' },
-          el('p', { class: 'ec-install-title' }, 'Add Explore Chords to your home screen'),
+          el('p', { class: 'ec-install-title' }, t('install.title')),
           deferred
             ? el(
                 'p',
                 { class: 'ec-help' },
-                'It opens like an app and keeps working with no network — handy in a lesson.'
+                t('install.promptHelp')
               )
             : el(
                 'p',
                 { class: 'ec-help' },
-                'Tap Share, then "Add to Home Screen". It then opens like an app and keeps working with no network.'
+                t('install.iosHelp')
               )
         ),
         actions,
@@ -139,7 +140,7 @@ export function setupInstallPrompt(container, { store }) {
           'label',
           { class: 'ec-install-never', for: 'install-never' },
           forever,
-          "Don't ask again"
+          t('install.never')
         )
       )
     );

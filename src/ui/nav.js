@@ -8,12 +8,13 @@
 
 import { el, clear } from './dom.js';
 import { VIEWS } from '../state/views.js';
+import { t } from '../i18n/index.js';
 
 export function renderNav(container, { store, onNavigate }) {
   clear(container);
   const current = store.state.view;
 
-  const nav = el('nav', { class: 'ec-nav', 'aria-label': 'Sections' });
+  const nav = el('nav', { class: 'ec-nav', 'aria-label': t('nav.label') });
   const list = el('ul', { class: 'ec-nav-list' });
 
   for (const view of Object.values(VIEWS)) {
@@ -31,7 +32,7 @@ export function renderNav(container, { store, onNavigate }) {
             'aria-current': active ? 'page' : null,
             onClick: () => onNavigate(view.id),
           },
-          view.label
+          t(`nav.${view.id}`)
         )
       )
     );

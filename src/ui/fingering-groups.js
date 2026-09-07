@@ -11,9 +11,10 @@
  */
 
 import { el } from './dom.js';
+import { t } from '../i18n/index.js';
 
 export function positionLabel(position) {
-  return position === 0 ? 'Open position' : `Fret ${position}`;
+  return position === 0 ? t('groups.open') : t('groups.fret', { position });
 }
 
 /**
@@ -48,7 +49,7 @@ export function renderFingeringGroups(
       class: 'ec-grid',
       tabindex: '0',
       role: 'list',
-      'aria-label': `${positionLabel(group.position)} fingerings`,
+      'aria-label': t('groups.list', { position: positionLabel(group.position) }),
     });
     for (const fingering of shown) list.append(renderItem(fingering));
     section.append(list);
@@ -63,7 +64,7 @@ export function renderFingeringGroups(
             'aria-expanded': isExpanded ? 'true' : 'false',
             onClick: () => onToggleGroup(group.position),
           },
-          isExpanded ? 'Show fewer' : `Show all ${group.fingerings.length}`
+          isExpanded ? t('groups.showFewer') : t('groups.showAll', { count: group.fingerings.length })
         )
       );
     }

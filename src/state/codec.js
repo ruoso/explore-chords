@@ -10,6 +10,8 @@
  * so a reader never has to guess.
  */
 
+import { fault } from '../core/errors.js';
+
 const COMPRESSED = 'z';
 const PLAIN = 'u';
 
@@ -76,7 +78,7 @@ export async function encodePayload(value) {
 /** @returns {Promise<unknown>} @throws when the payload is unreadable */
 export async function decodePayload(text) {
   if (typeof text !== 'string' || text.length < 2) {
-    throw new Error('That link carries no sheet.');
+    throw fault('noSheetInLink', {}, 'That link carries no sheet.');
   }
   const marker = text[0];
   const bytes = fromBase64Url(text.slice(1));
@@ -86,12 +88,12 @@ export async function decodePayload(text) {
   }
   if (marker === COMPRESSED) {
     if (!hasCompression()) {
-      throw new Error('This browser cannot read compressed sheet links.');
+      throw fault('cannotDecompress', {}, 'This browser cannot read compressed sheet links.');
     }
     const plain = await through(new DecompressionStream('deflate'), bytes);
     return JSON.parse(new TextDecoder().decode(plain));
   }
-  throw new Error('That link is not in a format this app understands.');
+  throw fault('unknownLinkFormat', {}, 'That link is not in a format this app understands.');
 }
 
 /** Build the fragment for a sheet. */

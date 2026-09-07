@@ -10,6 +10,8 @@
  */
 
 import { el } from './dom.js';
+import { t } from '../i18n/index.js';
+import { withContent } from '../data/announcements.js';
 import {
   pendingAnnouncement,
   tutorialOf,
@@ -24,8 +26,10 @@ import {
  * @param {() => void} options.onClose
  * @param {(other: object) => void} options.onSwitch
  */
-export function openAnnouncement({ announcement, alternate, onClose, onSwitch }) {
+export function openAnnouncement({ announcement: entry, alternate, onClose, onSwitch }) {
   document.querySelector('#announcement-dialog')?.remove();
+  // Text is looked up at open time, so it follows the current language.
+  const announcement = withContent(entry);
 
   const dialog = el('dialog', {
     class: 'ec-dialog ec-announcement',
@@ -72,7 +76,7 @@ export function openAnnouncement({ announcement, alternate, onClose, onSwitch })
             onSwitch(alternate);
           },
         },
-        isTutorial ? "What's new" : 'Show the tutorial'
+        t(isTutorial ? 'announce.whatsNew' : 'announce.showTutorial')
       )
     );
   }
@@ -85,7 +89,7 @@ export function openAnnouncement({ announcement, alternate, onClose, onSwitch })
         id: 'announcement-close',
         onClick: close,
       },
-      isTutorial ? "Let's go" : 'Close'
+      t(isTutorial ? 'announce.letsGo' : 'announce.close')
     )
   );
 

@@ -10,7 +10,7 @@
  */
 
 import { formatChord } from '../core/notation/format.js';
-import { DIFFICULTY_LABELS } from '../core/score.js';
+import { t, ordinal } from '../i18n/index.js';
 
 /** Fret rows drawn in a chord box. A 4-fret span needs 4; 5 leaves air. */
 export const FRETS_SHOWN = 5;
@@ -100,12 +100,6 @@ export function stringNumber(index, stringCount) {
   return stringCount - index;
 }
 
-const ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
-
-function ordinal(n) {
-  return ORDINALS[n] ?? `${n}th`;
-}
-
 /**
  * A sentence describing a fingering, used as the diagram's `aria-label`.
  *
@@ -118,30 +112,36 @@ export function describeFingering(fingering, { chord, dialect, instrument } = {}
   if (chord) parts.push(formatChord(chord, dialect));
   parts.push(fingering.shorthand);
 
-  parts.push(fingering.position === 0 ? 'open position' : `starting at fret ${fingering.position}`);
+  parts.push(
+    fingering.position === 0
+      ? t('diagram.open')
+      : t('diagram.startingAt', { position: fingering.position })
+  );
 
   if (fingering.barre) {
     const count = fingering.barre.toString - fingering.barre.fromString + 1;
-    parts.push(`barre across ${count} strings at fret ${fingering.barre.fret}`);
+    parts.push(t('diagram.barre', { count, fret: fingering.barre.fret }));
   }
 
   const used = fingering.fingers.filter((f) => f !== null);
-  if (used.length > 0) parts.push(`fingers ${used.join('-')}`);
+  if (used.length > 0) parts.push(t('diagram.fingers', { fingers: used.join('-') }));
 
   const muted = fingering.frets.filter((f) => f === 'x').length;
-  if (muted > 0) parts.push(`${muted} string${muted === 1 ? '' : 's'} not played`);
+  if (muted > 0) parts.push(t('diagram.muted', { count: muted }));
 
   if (chord && instrument) {
     const rootIndex = lowestRootString(fingering, chord, instrument);
     if (rootIndex !== -1) {
       parts.push(
-        `root on the ${ordinal(stringNumber(rootIndex, fingering.frets.length))} string`
+        t('diagram.rootOn', { ordinal: ordinal(stringNumber(rootIndex, fingering.frets.length)) })
       );
     }
   }
 
   if (fingering.difficulty) {
-    parts.push(`${DIFFICULTY_LABELS[fingering.difficulty].toLowerCase()} to play`);
+    parts.push(
+      t('diagram.toPlay', { difficulty: t(`difficulty.${fingering.difficulty}`).toLowerCase() })
+    );
   }
 
   return `${parts.join(', ')}.`;

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { pendingAnnouncement, tutorialOf, latestReleaseOf, byId } from './announcements.js';
-import { ANNOUNCEMENTS } from '../data/announcements.js';
+import { ANNOUNCEMENTS, withContent } from '../data/announcements.js';
+import { LOCALES, setLocale, DEFAULT_LOCALE } from '../i18n/index.js';
 
 const list = [
   { id: 'welcome', kind: 'tutorial', title: 'Hi', sections: [] },
@@ -51,8 +52,18 @@ describe('the real announcements', () => {
     expect(latestReleaseOf()).not.toBeNull();
     for (const a of ANNOUNCEMENTS) {
       expect(a.id).toBeTruthy();
-      expect(a.title).toBeTruthy();
-      expect(a.sections.length).toBeGreaterThan(0);
+      // Written out in every language, not only the source one.
+      for (const locale of LOCALES) {
+        setLocale(locale.id);
+        const full = withContent(a);
+        expect(full.title, `${a.id} in ${locale.id}`).not.toBe(a.id);
+        expect(full.sections.length, `${a.id} in ${locale.id}`).toBeGreaterThan(0);
+        for (const s of full.sections) {
+          expect(s.heading).toBeTruthy();
+          expect(s.text).toBeTruthy();
+        }
+      }
+      setLocale(DEFAULT_LOCALE);
     }
   });
 

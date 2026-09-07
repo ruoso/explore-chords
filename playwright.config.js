@@ -17,6 +17,10 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4173/explore-chords/',
     trace: 'on-first-retry',
+    // The app follows the browser's language, and the specs assert on the
+    // English text. Pinned so a Portuguese machine does not fail them all;
+    // the other languages have their own spec.
+    locale: 'en-US',
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },

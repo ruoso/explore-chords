@@ -31,6 +31,8 @@ import { instrumentInstance } from './core/instrument.js';
 import { setupUpdates } from './ui/update-toast.js';
 import { setupInstallPrompt } from './ui/install-prompt.js';
 import { setupAnnouncements } from './ui/announcement-dialog.js';
+import { renderLocaleSelect, applyLocale } from './ui/locale-select.js';
+import { t, errorText } from './i18n/index.js';
 
 const store = createStore();
 let install = null;
@@ -41,11 +43,8 @@ const root = document.querySelector('#app');
 
 const nodes = {
   header: el('header', { class: 'ec-header' }),
-  help: el(
-    'button',
-    { type: 'button', class: 'ec-help', id: 'help-open', 'aria-label': 'Help and what changed' },
-    'Help'
-  ),
+  actions: el('div', { class: 'ec-header-actions' }),
+  locale: el('div', { class: 'ec-header-locale' }),
   chip: el('div', { class: 'ec-header-chip' }),
   nav: el('div', { class: 'ec-nav-slot' }),
   viewAs: el('div', { class: 'ec-viewas-slot', hidden: true }),
@@ -61,11 +60,8 @@ const nodes = {
 
 function mount() {
   clear(root);
-  nodes.header.append(
-    el('h1', { class: 'ec-title' }, 'Explore Chords'),
-    el('div', { class: 'ec-header-actions' }, nodes.help, nodes.chip)
-  );
-  nodes.help.addEventListener('click', () => announcements?.open('welcome'));
+  nodes.header.append(el('h1', { class: 'ec-title' }, t('app.name')), nodes.actions);
+  renderHeaderActions();
   root.append(
     nodes.header,
     nodes.nav,
@@ -75,6 +71,30 @@ function mount() {
     nodes.install,
     nodes.toast
   );
+}
+
+/**
+ * The header's controls, redrawn whenever the language changes, since the
+ * header is otherwise built once.
+ */
+function renderHeaderActions() {
+  clear(nodes.actions);
+  const help = el(
+    'button',
+    { type: 'button', class: 'ec-help', id: 'help-open', 'aria-label': t('header.helpLabel') },
+    t('header.help')
+  );
+  help.addEventListener('click', () => announcements?.open('welcome'));
+  renderLocaleSelect(nodes.locale, {
+    store,
+    onChange: (locale) => {
+      store.setPrefs({ locale });
+      applyLocale(store);
+      renderHeaderActions();
+      render();
+    },
+  });
+  nodes.actions.append(nodes.locale, help, nodes.chip);
 }
 
 /** Apply anything the URL carried, once, at startup. */
@@ -127,8 +147,8 @@ function runSearch() {
   announce(
     nodes.live,
     results.count === 0
-      ? 'No fingerings found.'
-      : `${results.count} fingerings in ${results.groups.length} positions.`
+      ? t('results.announceNone')
+      : t('results.announceCount', { count: results.count, positions: results.groups.length })
   );
 
   // Now the user has seen what the app does, it is fair to ask about installing.
@@ -233,11 +253,11 @@ async function shareSheet() {
     type: 'text',
     readonly: true,
     value: url,
-    'aria-label': 'Share link for this song',
+    'aria-label': t('editor.shareLabel'),
     class: 'ec-share-link',
   });
   box.append(
-    el('p', { class: 'ec-help' }, 'Anyone opening this link sees the song as written.'),
+    el('p', { class: 'ec-help' }, t('editor.shareHelp')),
     field
   );
   field.select();
@@ -399,15 +419,13 @@ function confirmDeleteInstrument(instrument) {
   // Songs are not tied to an instrument: they carry their own tuning, so they
   // survive and simply appear under "songs for other instruments" until
   // something is tuned to match again.
-  const message = shapes
-    ? `Its ${shapes} saved shape${shapes === 1 ? '' : 's'} will go with it. ` +
-      'Songs are kept, since they carry their own tuning. This cannot be undone.'
-    : 'Songs are kept, since they carry their own tuning. This cannot be undone.';
+  const message =
+    (shapes ? t('instruments.confirmShapes', { count: shapes }) : '') + t('instruments.confirmSongs');
 
   confirmDialog({
-    title: `Delete ${instrument.label}?`,
+    title: t('instruments.confirmTitle', { label: instrument.label }),
     message,
-    confirmLabel: 'Delete instrument',
+    confirmLabel: t('instruments.confirmButton'),
     onConfirm: () => {
       store.removeInstrument(instrument.id);
       store.set({ instrumentForm: null });
@@ -510,7 +528,7 @@ async function applySharedSheet() {
   try {
     payload = await decodeSheetLink();
   } catch (error) {
-    announce(nodes.live, error.message);
+    announce(nodes.live, errorText(error));
     return;
   }
   if (!payload) return;
@@ -520,7 +538,7 @@ async function applySharedSheet() {
     try {
       const shared = instrumentInstance({
         catalogId: payload.instrument.catalogId ?? null,
-        label: payload.instrument.label ?? 'Shared instrument',
+        label: payload.instrument.label ?? t('sheets.sharedInstrument'),
         strings: payload.instrument.strings,
         fretCount: payload.instrument.fretCount,
       });
@@ -544,9 +562,10 @@ async function applySharedSheet() {
     /* history may be unavailable */
   }
   render();
-  announce(nodes.live, `Imported the song "${sheet.title}".`);
+  announce(nodes.live, t('sheets.imported', { title: sheet.title }));
 }
 
+applyLocale(store);
 mount();
 applyUrlState();
 if (!store.needsSetup) runSearch();

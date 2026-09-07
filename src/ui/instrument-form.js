@@ -13,8 +13,17 @@
 
 import { el, clear } from './dom.js';
 import { CATALOG, catalogEntry, parseTuning, formatTuning } from '../core/instrument.js';
+import { t, hasMessage, errorText } from '../i18n/index.js';
 
 const CUSTOM = '__custom__';
+
+/** Catalog entries and preset tunings are named by id; a name we have no text for shows as is. */
+export function catalogName(entry) {
+  return hasMessage(`catalog.${entry.id}`) ? t(`catalog.${entry.id}`) : entry.name;
+}
+export function tuningName(name) {
+  return hasMessage(['tuning', name]) ? t(['tuning', name]) : name;
+}
 
 /**
  * @param {HTMLElement} container
@@ -41,7 +50,7 @@ export function renderInstrumentForm(
     el(
       'h2',
       { class: 'ec-page-title' },
-      editing ? 'Edit instrument' : firstRun ? 'Choose your instrument' : 'Add an instrument'
+      t(editing ? 'form.edit' : firstRun ? 'form.choose' : 'form.add')
     )
   );
   if (!editing) {
@@ -49,9 +58,7 @@ export function renderInstrumentForm(
       el(
         'p',
         { class: 'ec-help' },
-        firstRun
-          ? 'Everything is shown for this instrument. You can add others and switch at any time.'
-          : 'It joins your list; the header switcher moves between them.'
+        t(firstRun ? 'form.firstRunHelp' : 'form.addHelp')
       )
     );
   }
@@ -61,7 +68,7 @@ export function renderInstrumentForm(
   const catalogSelect = el('select', { id: 'instrument-catalog', name: 'catalog' });
   for (const entry of CATALOG) {
     catalogSelect.append(
-      el('option', { value: entry.id, selected: entry.id === startingCatalog || null }, entry.name)
+      el('option', { value: entry.id, selected: entry.id === startingCatalog || null }, catalogName(entry))
     );
   }
 
@@ -107,11 +114,9 @@ export function renderInstrumentForm(
 
   function suggestedName() {
     const entry = catalogEntry(catalogSelect.value);
-    const preset =
-      presetSelect.value === CUSTOM
-        ? 'Custom'
-        : (entry?.tunings.find((t) => t.name === presetSelect.value)?.name ?? 'Custom');
-    return `${entry?.name ?? 'Instrument'} · ${preset}`;
+    const found = entry?.tunings.find((tuning) => tuning.name === presetSelect.value);
+    const preset = presetSelect.value === CUSTOM || !found ? t('tuning.custom') : tuningName(found.name);
+    return `${entry ? catalogName(entry) : t('form.fallbackName')} · ${preset}`;
   }
 
   function refreshName() {
@@ -122,9 +127,9 @@ export function renderInstrumentForm(
     const entry = catalogEntry(catalogSelect.value);
     clear(presetSelect);
     for (const tuning of entry.tunings) {
-      presetSelect.append(el('option', { value: tuning.name }, `${tuning.name} — ${tuning.strings}`));
+      presetSelect.append(el('option', { value: tuning.name }, `${tuningName(tuning.name)} — ${tuning.strings}`));
     }
-    presetSelect.append(el('option', { value: CUSTOM }, 'Custom tuning'));
+    presetSelect.append(el('option', { value: CUSTOM }, t('tuning.customOption')));
 
     if (!keepTuning) {
       presetSelect.value = entry.tunings[0].name;
@@ -141,7 +146,7 @@ export function renderInstrumentForm(
       tuningInput.focus();
     } else {
       const entry = catalogEntry(catalogSelect.value);
-      const tuning = entry.tunings.find((t) => t.name === presetSelect.value);
+      const tuning = entry.tunings.find((candidate) => candidate.name === presetSelect.value);
       if (tuning) tuningInput.value = tuning.strings;
     }
     refreshName();
@@ -150,7 +155,7 @@ export function renderInstrumentForm(
   // Typing a tuning by hand means it is no longer one of the presets.
   tuningInput.addEventListener('input', () => {
     const entry = catalogEntry(catalogSelect.value);
-    const match = entry?.tunings.find((t) => t.strings === tuningInput.value.trim());
+    const match = entry?.tunings.find((candidate) => candidate.strings === tuningInput.value.trim());
     presetSelect.value = match ? match.name : CUSTOM;
     refreshName();
   });
@@ -160,7 +165,7 @@ export function renderInstrumentForm(
   // When editing, the stored values win over the catalog defaults.
   if (instrument) {
     const entry = catalogEntry(instrument.catalogId);
-    const match = entry?.tunings.find((t) => t.strings === startingTuning);
+    const match = entry?.tunings.find((candidate) => candidate.strings === startingTuning);
     presetSelect.value = match ? match.name : CUSTOM;
     tuningInput.value = startingTuning;
     fretsInput.value = String(instrument.fretCount);
@@ -173,41 +178,41 @@ export function renderInstrumentForm(
     el(
       'div',
       { class: 'ec-field' },
-      el('label', { for: 'instrument-catalog' }, 'Instrument'),
+      el('label', { for: 'instrument-catalog' }, t('form.instrument')),
       catalogSelect
     ),
     el(
       'div',
       { class: 'ec-field' },
-      el('label', { for: 'instrument-tuning-preset' }, 'Tuning'),
+      el('label', { for: 'instrument-tuning-preset' }, t('form.tuning')),
       presetSelect
     ),
     el(
       'div',
       { class: 'ec-field' },
-      el('label', { for: 'instrument-tuning' }, 'Strings'),
+      el('label', { for: 'instrument-tuning' }, t('form.strings')),
       tuningInput,
       el(
         'p',
         { class: 'ec-help', id: 'instrument-tuning-help' },
-        'Lowest string first. Any comma-separated pitch list works, including re-entrant tunings.'
+        t('form.stringsHelp')
       )
     ),
     el(
       'div',
       { class: 'ec-field' },
-      el('label', { for: 'instrument-name' }, 'Name'),
+      el('label', { for: 'instrument-name' }, t('form.name')),
       nameInput,
       el(
         'p',
         { class: 'ec-help' },
-        'Shown in the switcher. Give custom tunings names you will recognise.'
+        t('form.nameHelp')
       )
     ),
     el(
       'div',
       { class: 'ec-field ec-field-inline' },
-      el('label', { for: 'instrument-frets' }, 'Frets'),
+      el('label', { for: 'instrument-frets' }, t('form.frets')),
       fretsInput
     ),
     error
@@ -218,7 +223,7 @@ export function renderInstrumentForm(
     el(
       'button',
       { type: 'submit', class: 'ec-button ec-button-primary', id: 'instrument-save' },
-      editing ? 'Save changes' : firstRun ? 'Start playing' : 'Add instrument'
+      t(editing ? 'form.save' : firstRun ? 'form.start' : 'form.addButton')
     )
   );
   if (onCancel) {
@@ -226,7 +231,7 @@ export function renderInstrumentForm(
       el(
         'button',
         { type: 'button', class: 'ec-button', id: 'instrument-cancel', onClick: onCancel },
-        'Cancel'
+        t('form.cancel')
       )
     );
   }
@@ -238,7 +243,7 @@ export function renderInstrumentForm(
 
     const name = nameInput.value.trim();
     if (!name) {
-      error.textContent = 'Give the instrument a name.';
+      error.textContent = t('form.needName');
       error.hidden = false;
       nameInput.focus();
       return;
@@ -248,7 +253,7 @@ export function renderInstrumentForm(
     try {
       strings = parseTuning(tuningInput.value);
     } catch (e) {
-      error.textContent = `That tuning does not read: ${e.message}`;
+      error.textContent = t('form.badTuning', { reason: errorText(e) });
       error.hidden = false;
       tuningInput.focus();
       return;

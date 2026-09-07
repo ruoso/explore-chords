@@ -10,6 +10,8 @@
  * Everything in this file is synchronous and free of I/O. See §3.2.
  */
 
+import { fault } from './errors.js';
+
 /** Letter names in scale order, so index arithmetic is diatonic. */
 const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
@@ -50,7 +52,7 @@ export function note(letter, accidental = 0) {
  */
 export function parseNote(text) {
   const m = /^([A-Ga-g])(bb|##|[b#])?$/.exec(String(text).trim());
-  if (!m) throw new Error(`Cannot parse note: ${text}`);
+  if (!m) throw fault('badNote', { text }, `Cannot parse note: ${text}`);
   const accidental = { bb: -2, b: -1, '#': 1, '##': 2 }[m[2]] ?? 0;
   return note(m[1], accidental);
 }
@@ -129,7 +131,7 @@ export function transposeNote(n, iv) {
  */
 export function parsePitch(text) {
   const m = /^([A-Ga-g](?:bb|##|[b#])?)(-?\d+)$/.exec(String(text).trim());
-  if (!m) throw new Error(`Cannot parse pitch: ${text}`);
+  if (!m) throw fault('badPitch', { text }, `Cannot parse pitch: ${text}`);
   return { note: parseNote(m[1]), octave: Number(m[2]) };
 }
 

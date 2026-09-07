@@ -42,6 +42,7 @@ import { parseChord } from '../core/notation/parse.js';
 import { renderDiagram } from '../render/index.js';
 import { EXAMPLE_BODY } from '../state/sheets.js';
 import { openVoicingDialog } from './voicing-dialog.js';
+import { t } from '../i18n/index.js';
 
 /** The list of sheets for the active instrument, with create and delete. */
 /** The name of whichever of the user's instruments has this tuning, else the tuning. */
@@ -62,11 +63,11 @@ export function renderSheetList(container, { store, onOpen, onChange }) {
 
   const page = el('div', { class: 'ec-page' });
   page.append(
-    el('h2', { class: 'ec-page-title' }, 'Song sheets'),
+    el('h2', { class: 'ec-page-title' }, t('sheets.title')),
     el(
       'p',
       { class: 'ec-help' },
-      `Chords for a song on ${instrument.label}, each pinned to the fingering you want taught.`
+      t('sheets.help', { label: instrument.label })
     )
   );
 
@@ -75,25 +76,25 @@ export function renderSheetList(container, { store, onOpen, onChange }) {
     type: 'text',
     id: 'new-sheet-title',
     class: 'ec-chord-input',
-    placeholder: 'Song title',
-    'aria-label': 'New song title',
+    placeholder: t('sheets.titlePlaceholder'),
+    'aria-label': t('sheets.newTitleLabel'),
     autocomplete: 'off',
   });
   form.append(
     input,
-    el('button', { type: 'submit', class: 'ec-button ec-button-primary' }, 'New song')
+    el('button', { type: 'submit', class: 'ec-button ec-button-primary' }, t('sheets.create'))
   );
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     // The starter body goes through createSheet so it gets the tuning written
     // into it; setting the body afterwards would overwrite that.
-    const sheet = store.createSheet(input.value.trim() || 'Untitled song', EXAMPLE_BODY);
+    const sheet = store.createSheet(input.value.trim() || t('sheets.untitled'), EXAMPLE_BODY);
     onOpen(sheet.id);
   });
   page.append(form);
 
   if (sheets.length === 0) {
-    page.append(el('p', { class: 'ec-empty' }, 'No songs yet.'));
+    page.append(el('p', { class: 'ec-empty' }, t('sheets.empty')));
   } else {
     const list = el('ul', { class: 'ec-sheet-list' });
     for (const sheet of sheets) {
@@ -113,13 +114,13 @@ export function renderSheetList(container, { store, onOpen, onChange }) {
             el(
               'p',
               { class: 'ec-sheet-meta' },
-              `${bars} measure${bars === 1 ? '' : 's'} · ${song.symbols.length} chord${
-                song.symbols.length === 1 ? '' : 's'
-              }`,
-              chosen > 0 ? ` · ${chosen} voicing${chosen === 1 ? '' : 's'} chosen here` : ''
+              `${t('sheets.measures', { count: bars })} · ${t('sheets.chords', {
+                count: song.symbols.length,
+              })}`,
+              chosen > 0 ? t('sheets.chosenHere', { count: chosen }) : ''
             ),
             voicedFor.length > 0
-              ? el('p', { class: 'ec-sheet-meta ec-sheet-voiced' }, `Voiced for ${voicedFor.join(', ')}`)
+              ? el('p', { class: 'ec-sheet-meta ec-sheet-voiced' }, t('sheets.voicedFor', { list: voicedFor.join(', ') }))
               : null
           ),
           el(
@@ -130,36 +131,36 @@ export function renderSheetList(container, { store, onOpen, onChange }) {
               {
                 type: 'button',
                 class: 'ec-button ec-button-small',
-                'aria-label': `Open ${sheet.title}`,
+                'aria-label': t('sheets.openLabel', { title: sheet.title }),
                 onClick: () => onOpen(sheet.id),
               },
-              'Open'
+              t('sheets.open')
             ),
             el(
               'button',
               {
                 type: 'button',
                 class: 'ec-button ec-button-small',
-                'aria-label': `Duplicate ${sheet.title}`,
+                'aria-label': t('sheets.duplicateLabel', { title: sheet.title }),
                 onClick: () => {
                   store.duplicateSheet(sheet.id);
                   onChange();
                 },
               },
-              'Duplicate'
+              t('sheets.duplicate')
             ),
             el(
               'button',
               {
                 type: 'button',
                 class: 'ec-button ec-button-small',
-                'aria-label': `Delete ${sheet.title}`,
+                'aria-label': t('sheets.deleteLabel', { title: sheet.title }),
                 onClick: () => {
                   store.deleteSheet(sheet.id);
                   onChange();
                 },
               },
-              'Delete'
+              t('sheets.delete')
             )
           )
         )
@@ -194,7 +195,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
         id: 'sheet-back',
         onClick: onBack,
       },
-      '← All songs'
+      t('editor.back')
     )
   );
 
@@ -203,7 +204,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
     id: 'sheet-title',
     class: 'ec-sheet-title',
     value: sheet.title,
-    'aria-label': 'Song title',
+    'aria-label': t('editor.titleLabel'),
     onChange: (event) => {
       store.updateSheet(sheet.id, (s) => ({ ...s, title: event.target.value }));
       onChange({ keepFocus: true });
@@ -215,7 +216,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
   layout.append(left, right);
   page.append(layout);
 
-  left.append(el('div', { class: 'ec-field' }, el('label', { for: 'sheet-title' }, 'Title'), title));
+  left.append(el('div', { class: 'ec-field' }, el('label', { for: 'sheet-title' }, t('editor.title')), title));
 
   // --- the song, as text --------------------------------------------------
 
@@ -225,11 +226,11 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
     rows: '12',
     spellcheck: 'false',
     autocapitalize: 'off',
-    'aria-label': 'The song',
+    'aria-label': t('editor.song'),
     'aria-describedby': 'song-help',
   });
   body.value = sheet.body;
-  body.placeholder = '# Verse\nA | Cm | A | Cm';
+  body.placeholder = t('editor.placeholder');
   body.addEventListener('change', (event) => {
     // Normalised on the way in, so a song pasted in the earlier form converts
     // the moment it is saved rather than lingering half-understood.
@@ -242,23 +243,19 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
     el(
       'div',
       { class: 'ec-field' },
-      el('label', { for: 'sheet-body' }, 'The song'),
+      el('label', { for: 'sheet-body' }, t('editor.song')),
       body,
       el(
         'p',
         { class: 'ec-help', id: 'song-help' },
-        'A line beginning with # names a section. A vertical bar starts a new measure; ' +
-          'spaces separate chords inside one. Voicings sit after a --- rule, one block per ' +
-          'tuning, so the same chart serves every instrument. Where a chord is played more ' +
-          'than one way, the extra voicings are footnoted — Cm[2]. A chord you have saved a ' +
-          'shape for gets that shape when it first appears in the song.'
+        t('editor.help')
       )
     )
   );
 
   if (song.unknown.length > 0) {
     left.append(
-      el('p', { class: 'ec-error', role: 'alert' }, `Not a chord: ${song.unknown.join(', ')}`)
+      el('p', { class: 'ec-error', role: 'alert' }, t('editor.notAChord', { list: song.unknown.join(', ') }))
     );
   }
   if (song.problems.length > 0) {
@@ -266,7 +263,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       el(
         'p',
         { class: 'ec-error', role: 'alert' },
-        `Could not read these voicing lines: ${song.problems.join('; ')}`
+        t('editor.badVoicingLines', { list: song.problems.join('; ') })
       )
     );
   }
@@ -289,12 +286,12 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
 
   const chart = el('section', { class: 'ec-panel', 'aria-labelledby': 'sheet-chart' });
   chart.append(
-    el('h3', { class: 'ec-panel-title', id: 'sheet-chart' }, 'The chart'),
-    el('p', { class: 'ec-help' }, 'Click any chord to choose how that one is played.')
+    el('h3', { class: 'ec-panel-title', id: 'sheet-chart' }, t('editor.chart')),
+    el('p', { class: 'ec-help' }, t('editor.chartHelp'))
   );
 
   if (song.sections.length === 0) {
-    chart.append(el('p', { class: 'ec-help' }, 'Nothing written yet.'));
+    chart.append(el('p', { class: 'ec-help' }, t('editor.nothingYet')));
   } else {
     for (const section of song.sections) {
       const block = el('div', { class: 'ec-song-section' });
@@ -320,14 +317,12 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
                   class: `ec-measure-chord${chord.valid ? '' : ' is-invalid'}${state}`,
                   disabled: chord.valid ? null : true,
                   'aria-label': `${chord.symbol}${
-                    chord.index > 1 ? `, voicing ${chord.index}` : ''
+                    chord.index > 1 ? t('editor.chordVoicing', { index: chord.index }) : ''
                   }${
                     source === 'chosen'
                       ? ''
-                      : source === 'default'
-                        ? ', using the default shape'
-                        : ', cannot be voiced'
-                  }. Choose a voicing.`,
+                      : t(source === 'default' ? 'editor.chordDefault' : 'editor.chordUnvoiced')
+                  }${t('editor.chordChoose')}`,
                   onClick: () => chooseFor(chord),
                 },
                 chord.symbol,
@@ -361,28 +356,25 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
 
   const chordsPanel = el('section', { class: 'ec-panel', 'aria-labelledby': 'sheet-chords' });
   chordsPanel.append(
-    el('h3', { class: 'ec-panel-title', id: 'sheet-chords' }, 'Voicings'),
+    el('h3', { class: 'ec-panel-title', id: 'sheet-chords' }, t('editor.voicings')),
     entries.length > 0
       ? el(
           'p',
           { class: 'ec-help' },
-          'Click a shape to change it everywhere it is used.' +
-            (defaults > 0
-              ? ' Shapes marked default are what the explorer would show first; choose only the ones that need it.'
-              : '')
+          t('editor.voicingsHelp') + (defaults > 0 ? t('editor.voicingsDefaults') : '')
         )
       : null
   );
 
   if (entries.length === 0) {
     chordsPanel.append(
-      el('p', { class: 'ec-help' }, 'Write the song above and its chords appear here.')
+      el('p', { class: 'ec-help' }, t('editor.voicingsEmpty'))
     );
   } else {
     const grid = el('ul', {
       class: 'ec-grid ec-voicings',
       tabindex: '0',
-      'aria-label': 'Voicings used in this song',
+      'aria-label': t('editor.voicingsList'),
     });
 
     for (const entry of entries) {
@@ -399,9 +391,13 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
             {
               type: 'button',
               class: 'ec-voicing-choice',
-              'aria-label': `${isDefault ? 'Choose' : 'Change'} ${entry.key} everywhere. ${
-                isDefault ? 'Using the default shape. ' : ''
-              }Used in ${usedIn} place${usedIn === 1 ? '' : 's'}.`,
+              'aria-label':
+                t('editor.everywhere', {
+                  verb: t(isDefault ? 'editor.choose' : 'editor.change'),
+                  key: entry.key,
+                }) +
+                (isDefault ? t('editor.usingDefault') : '') +
+                t('editor.usedIn', { count: usedIn }),
               onClick: () =>
                 openVoicingDialog({
                   store,
@@ -423,7 +419,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
               'span',
               { class: 'ec-card-chord' },
               entry.key,
-              isDefault ? el('span', { class: 'ec-badge ec-badge-default' }, 'default') : null
+              isDefault ? el('span', { class: 'ec-badge ec-badge-default' }, t('editor.default')) : null
             ),
             el('span', {
               class: 'ec-card-diagram',
@@ -451,8 +447,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       el(
         'p',
         { class: 'ec-error', role: 'alert', id: 'sheet-missing' },
-        `No playable shape on ${instrument.label} for: ${missing.join(', ')}. ` +
-          'Its voicing rules may be too strict.'
+        t('editor.missing', { label: instrument.label, list: missing.join(', ') })
       )
     );
   }
@@ -465,12 +460,12 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       el(
         'button',
         { type: 'button', class: 'ec-button ec-button-small', id: 'sheet-share', onClick: onShare },
-        'Share link'
+        t('editor.share')
       ),
       el(
         'button',
         { type: 'button', class: 'ec-button ec-button-small', id: 'sheet-print', onClick: onPrint },
-        'Print'
+        t('editor.print')
       )
     ),
     el('div', { class: 'ec-share-slot', id: 'sheet-share-out' })

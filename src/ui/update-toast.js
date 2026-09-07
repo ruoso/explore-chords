@@ -7,6 +7,7 @@
  */
 
 import { el, clear } from './dom.js';
+import { t } from '../i18n/index.js';
 
 export function setupUpdates(container) {
   if (!('serviceWorker' in navigator)) return null;
@@ -20,7 +21,7 @@ export function setupUpdates(container) {
       el(
         'div',
         { class: 'ec-toast', role: 'status' },
-        el('p', { class: 'ec-toast-text' }, 'A new version is ready.'),
+        el('p', { class: 'ec-toast-text' }, t('update.ready')),
         el(
           'div',
           { class: 'ec-toast-actions' },
@@ -32,7 +33,7 @@ export function setupUpdates(container) {
               id: 'update-reload',
               onClick: () => updateHandler?.(),
             },
-            'Reload'
+            t('update.reload')
           ),
           el(
             'button',
@@ -45,7 +46,7 @@ export function setupUpdates(container) {
                 clear(container);
               },
             },
-            'Later'
+            t('update.later')
           )
         )
       )

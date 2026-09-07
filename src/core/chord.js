@@ -9,6 +9,8 @@
  * Synchronous and free of I/O, like everything in core/ (§3.2).
  */
 
+import { fault } from './errors.js';
+
 import {
   degreeToInterval,
   transposeNote,
@@ -80,11 +82,11 @@ export function roleForDegree(degree) {
 function normaliseExtension(ext) {
   const degree = ext.degree;
   if (!Number.isInteger(degree) || degree < 1) {
-    throw new Error(`Bad extension degree: ${degree}`);
+    throw fault('badDegree', { degree }, `Bad extension degree: ${degree}`);
   }
   const alter = ext.alter ?? 0;
   if (!Number.isInteger(alter) || alter < -2 || alter > 2) {
-    throw new Error(`Bad extension alteration: ${alter}`);
+    throw fault('badAlteration', { alter }, `Bad extension alteration: ${alter}`);
   }
   return { degree, alter };
 }
@@ -100,7 +102,7 @@ function normaliseExtension(ext) {
  */
 export function chord(root, quality = 'major', extensions = [], bass = null) {
   if (!(quality in QUALITIES)) {
-    throw new Error(`Unknown chord quality: ${quality}`);
+    throw fault('unknownQuality', { quality }, `Unknown chord quality: ${quality}`);
   }
   return {
     root,

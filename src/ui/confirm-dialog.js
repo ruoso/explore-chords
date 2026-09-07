@@ -6,8 +6,9 @@
  */
 
 import { el } from './dom.js';
+import { t } from '../i18n/index.js';
 
-export function confirmDialog({ title, message, confirmLabel = 'Delete', onConfirm }) {
+export function confirmDialog({ title, message, confirmLabel = t('confirm.confirm'), onConfirm }) {
   const existing = document.querySelector('#confirm-dialog');
   if (existing) existing.remove();
 
@@ -31,7 +32,7 @@ export function confirmDialog({ title, message, confirmLabel = 'Delete', onConfi
       el(
         'button',
         { type: 'button', class: 'ec-button ec-button-small', id: 'confirm-cancel', onClick: close },
-        'Cancel'
+        t('confirm.cancel')
       ),
       el(
         'button',
