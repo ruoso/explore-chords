@@ -922,6 +922,46 @@ body {
   cursor: not-allowed;
 }
 
+/* A sung line flows and wraps: a phone is narrower than a verse, and two
+   verses share no columns, so nothing is gained by holding them to a grid.
+   Segments are inline-blocks, so a wrap falls between two of them rather than
+   between a chord and the syllable it belongs over. */
+.ec-song-sung {
+  margin: 0.25rem 0;
+  line-height: 1.35;
+}
+
+.ec-sung-segment {
+  display: inline-block;
+  vertical-align: top;
+  /* Left, not centred: the chord marks the point in the words where it
+     changes, so it belongs at the start of its segment and nowhere else. */
+  text-align: left;
+}
+
+.ec-sung-segment.is-measure-start:not(:first-child) {
+  margin-left: 0.35rem;
+  padding-left: 0.35rem;
+  border-left: 1px solid var(--border);
+}
+
+.ec-sung-segment .ec-measure-chord {
+  display: block;
+  width: fit-content;
+}
+
+.ec-sung-words {
+  display: block;
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+}
+
+/* A stanza break is a blank line in the song, and reads as one. */
+.ec-song-break {
+  height: 0.7rem;
+}
+
 .ec-footnote {
   margin-left: 0.05rem;
   color: var(--accent);

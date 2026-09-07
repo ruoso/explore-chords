@@ -56,7 +56,10 @@ describe('reading a chart', () => {
     expect(song.sections.map((s) => s.name)).toEqual(['Verse', 'Chorus']);
     expect(song.sections[0].lines).toHaveLength(2);
     expect(song.sections[0].lines[0].measures).toHaveLength(2);
-    expect(song.sections[0].lines[0].measures[0].chords.map((c) => c.symbol)).toEqual(['C', 'Am']);
+    expect(song.sections[0].lines[0].measures[0].segments.map((s) => s.chord.symbol)).toEqual([
+      'C',
+      'Am',
+    ]);
     // Two lines of two measures in the verse, plus two in the chorus.
     expect(measureCount(song)).toBe(6);
   });
@@ -69,7 +72,10 @@ describe('reading a chart', () => {
 
   it('drops empty measures from doubled or trailing bars', () => {
     const song = parseSong('C || G |');
-    expect(song.sections[0].lines[0].measures.map((m) => m.chords[0].symbol)).toEqual(['C', 'G']);
+    expect(song.sections[0].lines[0].measures.map((m) => m.segments[0].chord.symbol)).toEqual([
+      'C',
+      'G',
+    ]);
   });
 
   it('flags symbols that are not chords', () => {
@@ -82,6 +88,115 @@ describe('reading a chart', () => {
     const song = parseSong('C | G\n\n---\n\n# Voicings: E2, A2, D3, G3, B3, E4\nC = x32010');
     expect(song.unknown).toEqual([]);
     expect(song.occurrences.map((c) => c.symbol)).toEqual(['C', 'G']);
+  });
+});
+
+describe('a song with words under the chords', () => {
+  const CIFRA =
+    '[Intro] G  D  Em  C\n\n[Primeira Parte]\nG           D\nQuando eu te vi passar\n\nEm            C\nnaquela tarde clara\n';
+
+  it('names a section written in brackets, chords on the same line and all', () => {
+    const song = parseSong(CIFRA);
+    expect(song.sections.map((s) => s.name)).toEqual(['Intro', 'Primeira Parte']);
+    const intro = song.sections[0].lines[0];
+    expect(intro.lyrics).toBe(false);
+    expect(intro.measures[0].segments.map((seg) => seg.chord.symbol)).toEqual(['G', 'D', 'Em', 'C']);
+  });
+
+  it('divides the words at the chords above them', () => {
+    const song = parseSong(CIFRA);
+    const sung = song.sections[1].lines[0];
+    expect(sung.lyrics).toBe(true);
+    const segments = sung.measures[0].segments;
+    expect(segments.map((seg) => seg.chord?.symbol ?? null)).toEqual(['G', 'D']);
+    expect(segments.map((seg) => seg.lyric)).toEqual(['Quando eu te', ' vi passar']);
+  });
+
+  it('splits a word when a chord sits inside it', () => {
+    // Which is the entire reason for writing the chord where it is written.
+    const song = parseSong('C     G\nguitarra minha');
+    expect(song.sections[0].lines[0].measures[0].segments.map((seg) => seg.lyric)).toEqual([
+      'guitar',
+      'ra minha',
+    ]);
+  });
+
+  it('gives words before the first chord a segment of their own', () => {
+    const song = parseSong('      C\nMeu amor voltou');
+    const segments = song.sections[0].lines[0].measures[0].segments;
+    expect(segments[0].chord).toBeNull();
+    expect(segments[0].lyric).toBe('Meu am');
+    expect(segments[1].chord.symbol).toBe('C');
+  });
+
+  it('takes a line with no chords over it as words, and keeps the stanza break', () => {
+    const song = parseSong('C\nprimeira linha cantada\nsegunda linha cantada\n\nC\nterceira linha cantada');
+    const lines = song.sections[0].lines;
+    expect(lines.map((l) => l.lyrics)).toEqual([true, true, true, true]);
+    // The second sung line has no chords of its own: the chord above it holds.
+    expect(lines[1].measures[0].segments[0].chord).toBeNull();
+    expect(lines[1].measures[0].segments[0].lyric).toBe('segunda linha cantada');
+    expect(lines[2].blank).toBe(true);
+  });
+
+  it('divides the words at a bar, when the chords are barred', () => {
+    const song = parseSong('C     | G\nMeu amor voltou');
+    const measures = song.sections[0].lines[0].measures;
+    expect(measures).toHaveLength(2);
+    // The division falls where the next chord starts, so the bar itself and the
+    // space around it stay with the measure they close.
+    expect(measures[0].segments[0].lyric).toBe('Meu amor');
+    expect(measures[1].segments[0].lyric).toBe(' voltou');
+  });
+
+  it('reads none of the words as chords', () => {
+    const song = parseSong(CIFRA);
+    expect(song.unknown).toEqual([]);
+    expect(song.symbols).toEqual(['G', 'D', 'Em', 'C']);
+  });
+
+  it('takes a marked line as words however it reads', () => {
+    // "A" is a chord and a word, and no rule can tell which. The marker can.
+    const plain = parseSong('G\nA\nG\nA');
+    expect(plain.sections[0].lines.every((l) => l.lyrics === false)).toBe(true);
+
+    const marked = parseSong('G\n> A');
+    const line = marked.sections[0].lines[0];
+    expect(line.lyrics).toBe(true);
+    expect(line.measures[0].segments[0].lyric.trim()).toBe('A');
+    expect(marked.symbols).toEqual(['G']);
+  });
+});
+
+describe('reading words never changes a song that has none', () => {
+  // The guarantee: a song with no chord line standing over a line of words
+  // parses exactly as it did before any of this existed.
+  const EXISTING = [
+    '# Verse\nC  Am | F  G | C\n',
+    '# Verse\nC  Am | F  G\nC | G\n\n# Chorus\nF | C',
+    'C | wobble | G',
+    'C | G\n# Verse\nF',
+    'C || G |',
+    'A | Cm | A | Cm[2]',
+    'Cm | A | Cm | Cm[2]',
+    'C\n\n# Voicings: X\nC = not-a-shape\nnonsense',
+    'C | G\n\n---\n\n# Voicings: E2, A2, D3, G3, B3, E4\nC = x32010',
+    // A bar-less chord line above a line with one typo in it: still a chart.
+    '# Verse\nC Am F G\nC Am wobble G',
+    // And a lone unknown word under one, which is a typo and not a lyric.
+    '# Verse\nC Am F G\nwobble',
+  ];
+
+  it.each(EXISTING)('reads %j as chart lines only', (text) => {
+    const song = parseSong(text);
+    for (const section of song.sections) {
+      for (const line of section.lines) expect(line.lyrics).toBe(false);
+    }
+  });
+
+  it('keeps every chord it always found', () => {
+    expect(parseSong('# Verse\nC Am F G\nC Am wobble G').unknown).toEqual(['wobble']);
+    expect(parseSong('# Verse\nC Am F G\nwobble').symbols).toEqual(['C', 'Am', 'F', 'G', 'wobble']);
   });
 });
 
@@ -262,6 +377,55 @@ describe('choosing a voicing', () => {
     const song = parseSong(text);
     const frets = song.occurrences.map((c) => voicingsFor(song, GUITAR).get(c.key) ?? null);
     expect(frets).toEqual([null, CM_OPEN, null, CM_HIGH]);
+  });
+});
+
+describe('a footnote marker on a sung line keeps its column', () => {
+  const GUITAR = 'E2, A2, D3, G3, B3, E4';
+  const SUNG = 'C           G\nQuando eu te vi passar\n\nC           G\nnaquela tarde clara\n';
+
+  it('takes the width out of the gap, not out of the alignment', () => {
+    // A chord's column is the syllable it is sung on. Writing C[2] where C
+    // stood would otherwise push G three characters along and re-sing the line.
+    let text = SUNG;
+    const first = parseSong(text).occurrences.find((c) => c.symbol === 'C');
+    text = setVoicing(text, first.start, ['x', 3, 2, 0, 1, 0], { tuning: GUITAR });
+    const second = parseSong(text).occurrences.filter((c) => c.symbol === 'C')[1];
+    text = setVoicing(text, second.start, [8, 10, 10, 9, 8, 8], { tuning: GUITAR });
+
+    expect(text).toContain('C[2]        G');
+    const sung = parseSong(text)
+      .sections[0].lines.filter((l) => l.lyrics && !l.blank)
+      .map((l) => l.measures.flatMap((m) => m.segments.map((seg) => seg.lyric)));
+    // Both lines still divide at the same column, which is the whole point.
+    expect(sung[0]).toEqual(['Quando eu te', ' vi passar']);
+    expect(sung[1]).toEqual(['naquela tard', 'e clara']);
+  });
+
+  it('gives the room back when the marker goes away', () => {
+    let text = SUNG;
+    const first = parseSong(text).occurrences.find((c) => c.symbol === 'C');
+    text = setVoicing(text, first.start, ['x', 3, 2, 0, 1, 0], { tuning: GUITAR });
+    const second = parseSong(text).occurrences.filter((c) => c.symbol === 'C')[1];
+    text = setVoicing(text, second.start, [8, 10, 10, 9, 8, 8], { tuning: GUITAR });
+    expect(text).toContain('C[2]        G');
+
+    // Back to the shape the bare slot already has: the marker is dropped and
+    // the three characters it took are handed back to the gap.
+    const marked = parseSong(text).occurrences.find((c) => c.index === 2);
+    text = setVoicing(text, marked.start, ['x', 3, 2, 0, 1, 0], { tuning: GUITAR });
+    expect(text).toContain('C           G\nnaquela tarde clara');
+  });
+
+  it("leaves a chart line's spacing alone", () => {
+    // Nothing is sung here, so nothing needs realigning and the text is
+    // rewritten exactly as it always was.
+    let text = 'C  Am | F  G\nC  Am | F  G';
+    const first = parseSong(text).occurrences.find((c) => c.symbol === 'C');
+    text = setVoicing(text, first.start, ['x', 3, 2, 0, 1, 0], { tuning: GUITAR });
+    const second = parseSong(text).occurrences.filter((c) => c.symbol === 'C')[1];
+    text = setVoicing(text, second.start, [8, 10, 10, 9, 8, 8], { tuning: GUITAR });
+    expect(text.split('\n')[1]).toBe('C[2]  Am | F  G');
   });
 });
 

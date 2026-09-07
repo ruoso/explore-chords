@@ -16,9 +16,14 @@
  *     # Voicings: G4, C4, E4, A4
  *     Cm = 0333
  *
- * A line starting with `#` names a section. Every other line is a line of the
- * chart: a vertical bar separates measures, spaces separate chords inside one
- * measure. A rule of three dashes ends the chart; the voicings follow it.
+ * A line starting with `#` names a section, and so does `[Intro]`, the way a
+ * cifra writes one. Every other line is a line of the chart: a vertical bar
+ * separates measures, spaces separate chords inside one measure. A rule of
+ * three dashes ends the chart; the voicings follow it.
+ *
+ * A song may also be written with its words under the chords, which is one
+ * document and not a second format — see lineShape and assembleLines for how
+ * the two are told apart, and §2.6 for why.
  *
  * The chart is the song, and it is the same on every instrument. What differs
  * per instrument is how each chord is fingered, so voicings live in blocks
@@ -49,6 +54,10 @@ const LABELLED_HEADING = /^(.*?)\s*[:\-–(]\s*(.*?)\)?\s*$/;
 const TUNING_HEADING = /^tuning$/i;
 const VOICING_LINE = /^\s*([^\s=[\]]+)(?:\[(\d+)\])?\s*=\s*(\S+)\s*$/;
 const CHORD_TOKEN = /^(.*?)(?:\[(\d+)\])?$/;
+/** `[Intro]`, alone or with the chords of that section on the same line. */
+const BRACKET_HEADING = /^(\s*\[\s*([^\]]*?)\s*\]\s*)(.*)$/;
+/** A leading `>` forces a line to be read as words. Kept in the text. */
+const LYRIC_MARKER = /^(\s*)>( ?)/;
 
 export const VOICINGS_SECTION = 'Voicings';
 export const RULE_LINE = '---';
@@ -129,6 +138,214 @@ export function normaliseTuning(text) {
     .toUpperCase();
 }
 
+
+
+/** Does this song read words at all? See assembleLines. */
+function songIsSung(shapesBySection) {
+  return shapesBySection.some((shapes) =>
+    shapes.some(
+      (shape, i) => (shape.kind === 'chords' && shapes[i + 1]?.kind === 'words') || shape.forced
+    )
+  );
+}
+
+/** One chord token, recorded as an occurrence of that chord. */
+function makeChord(word, start, dialect, collect) {
+  const token = CHORD_TOKEN.exec(word);
+  const symbol = token[1] || word;
+  const index = token[2] ? Number(token[2]) : 1;
+  const valid = Boolean(parseChord(symbol, dialect).chord);
+
+  if (!collect.seen.has(symbol)) {
+    collect.seen.add(symbol);
+    collect.symbols.push(symbol);
+    if (!valid) collect.unknown.push(symbol);
+  }
+
+  const chord = {
+    raw: word,
+    symbol,
+    index,
+    key: keyFor(symbol, index),
+    valid,
+    start,
+    end: start + word.length,
+    // Set on a chord that has words under it, so an edit knows to keep the
+    // line's columns when the token it writes is a different width.
+    sung: false,
+  };
+  collect.occurrences.push(chord);
+  return chord;
+}
+
+/**
+ * The chords of one line, grouped into measures, with each chord's column.
+ *
+ * The column is where the chord sits in its line, which is what a line of words
+ * beneath it is divided by.
+ */
+function scanChords(raw, lineStart, dialect, collect) {
+  const measures = [];
+  const tokens = [];
+  let cursor = 0;
+
+  for (const chunk of raw.split('|')) {
+    const chunkStart = cursor;
+    cursor += chunk.length + 1;
+
+    const segments = [];
+    const wordRe = /\S+/g;
+    let match;
+    while ((match = wordRe.exec(chunk)) !== null) {
+      const column = chunkStart + match.index;
+      const segment = { chord: makeChord(match[0], lineStart + column, dialect, collect), lyric: '' };
+      segments.push(segment);
+      tokens.push({ segment, column });
+    }
+
+    // An empty measure means a doubled or trailing bar — a typo, not a bar of
+    // silence — so it is dropped rather than rendered blank.
+    if (segments.length > 0) measures.push({ segments });
+  }
+
+  return { measures, tokens };
+}
+
+/** A line of chords alone: measures of segments, no words. */
+function chartLine(raw, lineStart, dialect, collect) {
+  const { measures } = scanChords(raw, lineStart, dialect, collect);
+  return measures.length > 0 ? { measures, lyrics: false } : null;
+}
+
+/**
+ * A line of chords with the words it is sung to.
+ *
+ * Each chord takes the words from its own column up to the next chord's, so a
+ * chord written inside a word divides that word — which is the whole point of
+ * writing it there. Words before the first chord become a segment with no
+ * chord, and a bar divides the words exactly as it divides the chords.
+ */
+function sungLine(raw, lineStart, words, dialect, collect) {
+  const { measures, tokens } = scanChords(raw, lineStart, dialect, collect);
+
+  tokens.forEach(({ segment, column }, i) => {
+    const next = tokens[i + 1];
+    segment.lyric = next ? words.slice(column, next.column) : words.slice(column);
+    segment.chord.sung = true;
+  });
+
+  const lead = words.slice(0, tokens[0].column);
+  if (lead.trim() !== '') measures[0].segments.unshift({ chord: null, lyric: lead });
+
+  return { measures, lyrics: true };
+}
+
+/** A line of words with no chords over it. */
+function wordsLine(words) {
+  return { measures: [{ segments: [{ chord: null, lyric: words }] }], lyrics: true };
+}
+
+/** A stanza break: an empty sung line. */
+function emptyLine() {
+  return { measures: [{ segments: [{ chord: null, lyric: '' }] }], lyrics: true, blank: true };
+}
+
+/**
+ * How a line of the chart reads, before the song as a whole is considered.
+ *
+ * A cifra is the same document as a chart, not a second format: its intro and
+ * solo sections *are* chart lines, and its verses are chord lines with words
+ * beneath them. So classification is per line, by content, since nothing marks
+ * a pasted cifra as one.
+ *
+ * - `chords` — every word is a chord, bars or not. It can head a line of words.
+ * - `words` — at least two words and at least half of them are not chords.
+ *   Both halves matter: `C Am wobble G` is a chart line with a typo in it, and
+ *   a lone unknown word is too, which is what keeps an existing song reading
+ *   the way it always has.
+ * - `chart` — anything else, which is what every line was before this.
+ *
+ * A leading `>` forces `words`, for the handful of lines no rule can call: a
+ * verse that really does read "A", against the chord of the same name.
+ */
+function lineShape(raw, dialect) {
+  const forced = LYRIC_MARKER.test(raw);
+  const body = forced ? stripLyricMarker(raw) : raw;
+  const words = body.replace(/\|/g, ' ').match(/\S+/g) ?? [];
+  if (words.length === 0) return { kind: 'blank', body, forced };
+  if (forced) return { kind: 'words', body, forced };
+
+  const chords = words.filter((w) => Boolean(parseChord(chordSymbolOf(w), dialect).chord)).length;
+  if (chords === words.length) return { kind: 'chords', body, forced };
+  if (words.length >= 2 && (words.length - chords) / words.length >= 0.5) {
+    return { kind: 'words', body, forced };
+  }
+  return { kind: 'chart', body, forced };
+}
+
+/** Blank the marker rather than remove it, so the columns still line up. */
+function stripLyricMarker(raw) {
+  return raw.replace(LYRIC_MARKER, (m, indent, space) => indent + ' ' + space);
+}
+
+/** The chord symbol inside a token, footnote marker removed. */
+function chordSymbolOf(token) {
+  const m = CHORD_TOKEN.exec(token);
+  return m[1] || token;
+}
+
+/**
+ * Turn the lines of a whole song into chart lines, lines of words, or both.
+ *
+ * Whether words are read at all is decided for the song, not the line, and is
+ * passed in: unless some chord line actually has words under it, or a line is
+ * marked with `>`, every line is a chart line and the song parses exactly as it
+ * did before any of this existed. That is what keeps every song already
+ * written safe.
+ */
+function assembleLines(pending, shapes, sung, dialect, collect) {
+  const wordsUnder = (i) => shapes[i] && shapes[i].kind === 'words';
+  const out = [];
+  let blanks = 0;
+  let previousSung = false;
+
+  for (let i = 0; i < pending.length; i += 1) {
+    const { raw, lineStart } = pending[i];
+    const shape = shapes[i];
+
+    if (!sung) {
+      const line = chartLine(raw, lineStart, dialect, collect);
+      if (line) out.push(line);
+      continue;
+    }
+
+    if (shape.kind === 'blank') {
+      blanks += 1;
+      continue;
+    }
+
+    // A stanza break only survives between two sung lines; anywhere else a
+    // blank line is the breathing room in the text it has always been.
+    const paired = shape.kind === 'chords' && wordsUnder(i + 1);
+    const sings = paired || shape.kind === 'words';
+    if (blanks > 0 && previousSung && sings) out.push(emptyLine());
+    blanks = 0;
+
+    if (paired) {
+      out.push(sungLine(raw, lineStart, shapes[i + 1].body, dialect, collect));
+      i += 1;
+    } else if (shape.kind === 'words') {
+      out.push(wordsLine(shape.body));
+    } else {
+      const line = chartLine(raw, lineStart, dialect, collect);
+      if (line) out.push(line);
+    }
+    previousSung = sings;
+  }
+
+  return out;
+}
+
 /**
  * @param {string} text
  * @param {string} [dialect]
@@ -151,11 +368,13 @@ export function parseSong(text, dialect) {
   let inTuning = false;
   // Anything written before the first heading is still part of the song, so it
   // gets an unnamed section rather than being dropped.
-  let current = { name: '', lines: [] };
+  let current = { name: '', pending: [] };
   let offset = 0;
 
+  // Lines are held until the whole song has been read, because whether a line
+  // of words is words at all depends on the song around it (assembleLines).
   const flush = () => {
-    if (current.lines.length > 0 || current.name) sections.push(current);
+    if (current.pending.length > 0 || current.name) sections.push(current);
   };
   const closeBlock = (at) => {
     if (block) {
@@ -177,7 +396,20 @@ export function parseSong(text, dialect) {
     if (RULE.test(raw)) {
       closeBlock(lineStart);
       flush();
-      current = { name: '', lines: [] };
+      current = { name: '', pending: [] };
+      continue;
+    }
+
+    // `[Intro]`, the way a cifra names its sections, with the chords of that
+    // section allowed on the same line after it.
+    const bracket = BRACKET_HEADING.exec(raw);
+    if (bracket && bracket[2] && !/^\d+$/.test(bracket[2])) {
+      closeBlock(lineStart);
+      flush();
+      current = { name: bracket[2], pending: [] };
+      if (bracket[3].trim() !== '') {
+        current.pending.push({ raw: bracket[3], lineStart: lineStart + bracket[1].length });
+      }
       continue;
     }
 
@@ -189,7 +421,7 @@ export function parseSong(text, dialect) {
       const voicings = voicingsHeading(name);
       if (voicings) {
         flush();
-        current = { name: '', lines: [] };
+        current = { name: '', pending: [] };
         const { tuning, label } = voicings;
         block = {
           tuning,
@@ -202,14 +434,14 @@ export function parseSong(text, dialect) {
       }
       if (TUNING_HEADING.test(name)) {
         flush();
-        current = { name: '', lines: [] };
+        current = { name: '', pending: [] };
         inTuning = true;
         legacyTuningRange = { start: lineStart, end: source.length };
         continue;
       }
 
       flush();
-      current = { name, lines: [] };
+      current = { name, pending: [] };
       continue;
     }
 
@@ -235,14 +467,33 @@ export function parseSong(text, dialect) {
       continue;
     }
 
-    const line = parseChartLine(raw, lineStart, dialect, seen, symbols, unknown, occurrences);
-    if (line) current.lines.push(line);
+    current.pending.push({ raw, lineStart });
   }
 
   closeBlock(source.length);
   flush();
 
-  return { sections, blocks, occurrences, symbols, unknown, problems, legacyTuning, legacyTuningRange };
+  const collect = { seen, symbols, unknown, occurrences };
+  const shapesBySection = sections.map((section) =>
+    section.pending.map((p) => lineShape(p.raw, dialect))
+  );
+  const sung = songIsSung(shapesBySection);
+  sections.forEach((section, i) => {
+    section.lines = assembleLines(section.pending, shapesBySection[i], sung, dialect, collect);
+    delete section.pending;
+  });
+  const kept = sections.filter((section) => section.lines.length > 0 || section.name);
+
+  return {
+    sections: kept,
+    blocks,
+    occurrences,
+    symbols,
+    unknown,
+    problems,
+    legacyTuning,
+    legacyTuningRange,
+  };
 }
 
 /** The voicings-block key for a symbol and index. Index 1 is the bare form. */
@@ -254,51 +505,6 @@ export function keyFor(symbol, index) {
 function splitKey(key) {
   const m = /^(.*?)(?:\[(\d+)\])?$/.exec(key);
   return { symbol: m[1], index: m[2] ? Number(m[2]) : 1 };
-}
-
-function parseChartLine(raw, lineStart, dialect, seen, symbols, unknown, occurrences) {
-  const measures = [];
-  let cursor = 0;
-
-  for (const chunk of raw.split('|')) {
-    const chunkStart = cursor;
-    cursor += chunk.length + 1;
-
-    const chords = [];
-    const wordRe = /\S+/g;
-    let match;
-    while ((match = wordRe.exec(chunk)) !== null) {
-      const tokenStart = lineStart + chunkStart + match.index;
-      const token = CHORD_TOKEN.exec(match[0]);
-      const symbol = token[1] || match[0];
-      const index = token[2] ? Number(token[2]) : 1;
-      const valid = Boolean(parseChord(symbol, dialect).chord);
-
-      if (!seen.has(symbol)) {
-        seen.add(symbol);
-        symbols.push(symbol);
-        if (!valid) unknown.push(symbol);
-      }
-
-      const chord = {
-        raw: match[0],
-        symbol,
-        index,
-        key: keyFor(symbol, index),
-        valid,
-        start: tokenStart,
-        end: tokenStart + match[0].length,
-      };
-      chords.push(chord);
-      occurrences.push(chord);
-    }
-
-    // An empty measure means a doubled or trailing bar — a typo, not a bar of
-    // silence — so it is dropped rather than rendered blank.
-    if (chords.length > 0) measures.push({ chords });
-  }
-
-  return measures.length > 0 ? { measures } : null;
 }
 
 // --- reading -----------------------------------------------------------------
@@ -534,13 +740,38 @@ function applyEdit(text, edit, tuning, dialect) {
   const edits = [];
   occurrences.forEach((c, i) => {
     const wanted = keyFor(c.symbol, slots[i]);
-    if (wanted !== c.raw) edits.push({ start: c.start, end: c.end, wanted });
+    if (wanted !== c.raw) edits.push({ start: c.start, end: c.end, wanted, sung: c.sung });
   });
   for (const e of edits.sort((a, b) => b.start - a.start)) {
     out = out.slice(0, e.start) + e.wanted + out.slice(e.end);
+    if (e.sung) out = realign(out, e.start + e.wanted.length, e.wanted.length - (e.end - e.start));
   }
 
   return writeBlocks(out, blocks, dialect);
+}
+
+/**
+ * Give back, or take up, the room a rewritten chord token just took.
+ *
+ * On a sung line a chord's column *is* the syllable it belongs over, so writing
+ * `Cm[2]` where `Cm` stood would slide every later chord three characters along
+ * and quietly re-sing the line. The width is taken out of the run of spaces
+ * that follows instead, leaving at least one so two chords never collide. Where
+ * the gap is too small to give it all back the rest of the line shifts, which
+ * is visible and fixable, unlike silently changing which word is sung to what.
+ *
+ * @param {string} text
+ * @param {number} at     just past the token that was written
+ * @param {number} grew   characters gained, or lost when negative
+ */
+function realign(text, at, grew) {
+  if (grew === 0) return text;
+  if (grew < 0) return text.slice(0, at) + ' '.repeat(-grew) + text.slice(at);
+
+  let spaces = 0;
+  while (text[at + spaces] === ' ') spaces += 1;
+  const take = Math.max(0, Math.min(grew, spaces - 1));
+  return take === 0 ? text : text.slice(0, at) + text.slice(at + take);
 }
 
 /**
@@ -579,9 +810,11 @@ function writeBlocks(text, blocks, dialect) {
 // --- merging -----------------------------------------------------------------
 
 /**
- * The chart alone, as a comparable string: section names and chord tokens,
- * with layout and voicings stripped. Two songs with equal keys are the same
- * arrangement written for possibly different instruments.
+ * The chart alone, as a comparable string: section names, chord tokens and any
+ * words sung to them, with layout and voicings stripped. Two songs with equal
+ * keys are the same arrangement written for possibly different instruments.
+ * The words have to be in it: without them two different songs that share a
+ * chord sequence would compare equal and be merged into one.
  */
 export function chartKey(text, dialect) {
   return parseSong(text, dialect)
@@ -589,7 +822,13 @@ export function chartKey(text, dialect) {
       (section) =>
         `${section.name}:` +
         section.lines
-          .map((line) => line.measures.map((m) => m.chords.map((c) => c.raw).join(' ')).join('|'))
+          .map((line) =>
+            line.measures
+              .map((m) =>
+                m.segments.map((seg) => `${seg.chord ? seg.chord.raw : ''}${seg.lyric}`).join(' ')
+              )
+              .join('|')
+          )
           .join('/')
     )
     .join('\n');

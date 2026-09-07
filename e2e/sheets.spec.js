@@ -101,6 +101,85 @@ test.describe('writing the chart as text', () => {
   });
 });
 
+const CIFRA = [
+  '[Intro] G  D  Em  C',
+  '',
+  '[Primeira Parte]',
+  'G           D',
+  'Quando eu te vi passar',
+  'Em            C',
+  'naquela tarde clara',
+].join('\n');
+
+test.describe('a song with words under the chords', () => {
+  test.beforeEach(async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+    await newSong(page, 'Cifra');
+    await setBody(page, CIFRA);
+  });
+
+  test('reads the words as words and the chords as chords', async ({ page }) => {
+    // None of it may be mistaken for a chord, which is what pasting one of
+    // these into the old parser did to every word of it.
+    await expect(page.locator('.ec-error')).toHaveCount(0);
+    await expect(page.locator('.ec-song-section-name')).toHaveText(['Intro', 'Primeira Parte']);
+
+    // The intro is a chart line: no words, so it keeps its columns.
+    const intro = page.locator('.ec-song-section').first();
+    await expect(intro.locator('.ec-song-line .ec-measure-chord')).toHaveText(['G', 'D', 'Em', 'C']);
+    await expect(intro.locator('.ec-song-sung')).toHaveCount(0);
+
+    // The verse is sung, and the words sit under the chord they belong to.
+    const verse = page.locator('.ec-song-section').nth(1);
+    await expect(verse.locator('.ec-song-sung')).toHaveCount(2);
+    await expect(verse.locator('.ec-song-sung').first().locator('.ec-sung-words')).toHaveText([
+      'Quando eu te',
+      ' vi passar',
+    ]);
+  });
+
+  test('a chord over the words can still be given a shape', async ({ page }) => {
+    const verse = page.locator('.ec-song-section').nth(1);
+    await verse.locator('.ec-measure-chord', { hasText: 'D' }).first().click();
+    await expect(page.locator('#voicing-dialog')).toBeVisible();
+    await page.locator('.ec-dialog-choice').first().click();
+
+    // Written into the text as a voicings block, exactly as for a chart.
+    const body = await page.locator('#sheet-body').inputValue();
+    expect(body).toContain('# Voicings: E2, A2, D3, G3, B3, E4');
+    // And the words are untouched.
+    expect(body).toContain('Quando eu te vi passar');
+  });
+
+  test('the printed sheet carries the words too', async ({ page }) => {
+    // A sheet is played from. A verse without its words is no use on a stand.
+    await page.evaluate(() => {
+      window.print = () => {};
+    });
+    await page.locator('#sheet-print').click();
+
+    const printRoot = page.locator('#print-root');
+    await expect(printRoot.locator('.ec-print-sung')).toHaveCount(2);
+    await expect(printRoot.locator('.ec-print-sung').first()).toContainText('Quando eu te');
+    await expect(printRoot.locator('.ec-print-sung').first()).toContainText('vi passar');
+    // The intro is still a chart, with its measures in columns.
+    await expect(printRoot.locator('.ec-print-line .ec-print-cell')).toHaveText([
+      'G',
+      'D',
+      'Em',
+      'C',
+    ]);
+  });
+
+  test('a plain chord chart is untouched by any of it', async ({ page }) => {
+    await setBody(page, '# Verse\nC  Am | F  G | C');
+    await expect(page.locator('.ec-song-sung')).toHaveCount(0);
+    await expect(page.locator('.ec-song-line')).toHaveCount(1);
+    await expect(page.locator('.ec-measure-chord')).toHaveText(['C', 'Am', 'F', 'G', 'C']);
+  });
+});
+
 test.describe('choosing voicings', () => {
   test.beforeEach(async ({ page }) => {
     await freshVisit(page);

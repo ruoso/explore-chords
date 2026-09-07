@@ -290,6 +290,54 @@ any line without counting. A measure with several chords splits its column
 between them, so a bar played two ways reads as two half-width cells under the
 bars around it.
 
+**A song may be written with its words.** A cifra is not a second format: its
+intro and solo sections *are* chart lines, and its verses are chart lines with
+the words underneath. So the two live in one document and are told apart line by
+line, by what is on them, since nothing marks a pasted cifra as one:
+
+- A line whose words are all chords is a chord line, bars or not, and it can
+  stand over a line of words.
+- A line of at least two words, half of which are not chords, is a line of
+  words. Both halves of that matter: `C  Am wobble G` is a chart line with a
+  typo in it, and so is a lone unknown word.
+- Anything else is a chart line, as every line was before this.
+
+**Words are only read at all when the song has some**, meaning a chord line
+standing directly over a line of words, or a line marked `>`. A song without
+that parses exactly as it did before any of this existed, which is the whole
+guarantee for every song already written. Where no rule can decide — a verse
+that really does read "A", against the chord of the same name — a leading `>`
+forces the line to be words. Bars force the other reading, since a line with a
+bar in it is always a chart line.
+
+A cifra names its sections in brackets, so `[Intro]` names one exactly as `#`
+does, with that section's chords allowed on the same line after it.
+
+**The segment is the unit, and it carries a chord, words, or both.** A measure
+is a group of segments, bars decide where measures start, chord columns decide
+where segments start, and each chord takes the words from its own column up to
+the next chord's — so a chord written inside a word divides that word, which is
+why it was written there. Words before the first chord are a segment with no
+chord. Because it is all one kind of segment, choosing a voicing, the footnote
+marker and the printed sheet work the same whether or not there are words, and
+**print cannot quietly lose them**, since it draws the same segments the screen
+does.
+
+Two things follow from putting words under chords. A chord is no longer centred
+in its cell: it marks the point in the words where it changes, so it sits at the
+start of its segment. And a sung line joins no column grid and wraps instead of
+scrolling, because a phone is narrower than a verse and two verses have no
+columns in common — where a chart line lines its measures up with the lines
+around it, which is the whole point of a chart.
+
+**A chord's column is the syllable it is sung on**, so writing a footnote marker
+into a sung line takes its width out of the run of spaces that follows rather
+than sliding every later chord along. Where the gap is too small to give it all
+back the rest of the line shifts, which is visible and fixable, unlike silently
+re-singing the line. A blank line between two sung lines is a stanza break and
+survives as one; everywhere else it is the breathing room in the text it has
+always been.
+
 **Voicings live in the text, not beside it.** Clicking any chord in the chart
 opens a picker and changes *that* occurrence; clicking a shape in the voicings
 panel changes it *everywhere it is used*, since re-voicing a chord across a

@@ -48,6 +48,49 @@
   margin-bottom: 0.5rem;
 }
 
+/* A sung section is too long to hold together: told not to break, a verse is
+   pushed whole onto the next page and leaves most of one empty. Its lines are
+   kept off page edges instead. */
+.ec-print-section:has(.ec-print-sung) {
+  break-inside: auto;
+}
+
+.ec-print-sung {
+  /* Looser than a chart line, which is scanned; these are read. */
+  line-height: 1.3;
+  margin: 0.1rem 0;
+  orphans: 2;
+  widows: 2;
+  break-inside: avoid;
+}
+
+.ec-print-segment {
+  display: inline-block;
+  vertical-align: top;
+  text-align: left;
+}
+
+.ec-print-segment.is-measure-start:not(:first-child) {
+  margin-left: 0.35rem;
+  padding-left: 0.35rem;
+  border-left: 1px solid var(--border);
+}
+
+.ec-print-segment-chord {
+  display: block;
+  font-weight: 650;
+  line-height: 1.1;
+}
+
+.ec-print-segment-words {
+  display: block;
+  white-space: pre-wrap;
+}
+
+.ec-print-break {
+  height: 0.5rem;
+}
+
 .ec-print-section-name {
   margin: 0;
   font-size: 0.95rem;

@@ -42,28 +42,62 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
     if (section.name) block.append(el('h2', { class: 'ec-print-section-name' }, section.name));
     // A table per section: measures line up in columns, as on a written chart,
     // and a measure with several chords splits its column between them.
-    const table = el('table', { class: 'ec-print-chart', role: 'presentation' });
-    const body = el('tbody');
-    for (const measures of layoutSection(section)) {
-      const row = el('tr', { class: 'ec-print-line' });
-      for (const cells of measures) {
-        cells.forEach(({ chord, span }, j) => {
-          row.append(
+    // The same segments the screen draws, so words come with them: a sheet is
+    // played from, and a verse without its words is not much use on a stand.
+    let table = null;
+    const closeTable = () => {
+      if (table) block.append(table.el);
+      table = null;
+    };
+
+    for (const row of layoutSection(section)) {
+      if (row.lyrics) {
+        closeTable();
+        if (row.blank) {
+          block.append(el('div', { class: 'ec-print-break' }));
+          continue;
+        }
+        const line = el('div', { class: 'ec-print-sung' });
+        for (const cells of row.measures) {
+          cells.forEach(({ segment }, j) => {
+            line.append(
+              el(
+                'span',
+                { class: `ec-print-segment${j === 0 ? ' is-measure-start' : ''}` },
+                segment.chord ? el('span', { class: 'ec-print-segment-chord' }, segment.chord.raw) : null,
+                el('span', { class: 'ec-print-segment-words' }, segment.lyric)
+              )
+            );
+          });
+        }
+        block.append(line);
+        continue;
+      }
+
+      if (!table) {
+        const node = el('table', { class: 'ec-print-chart', role: 'presentation' });
+        const body = el('tbody');
+        node.append(body);
+        table = { el: node, body };
+      }
+      const line = el('tr', { class: 'ec-print-line' });
+      for (const cells of row.measures) {
+        cells.forEach(({ segment, span }, j) => {
+          line.append(
             el(
               'td',
               {
                 class: `ec-print-cell${j === 0 ? ' is-measure-start' : ''}`,
                 colspan: span > 1 ? String(span) : null,
               },
-              chord ? chord.raw : ''
+              segment.chord ? segment.chord.raw : ''
             )
           );
         });
       }
-      body.append(row);
+      table.body.append(line);
     }
-    table.append(body);
-    block.append(table);
+    closeTable();
     article.append(block);
   }
 

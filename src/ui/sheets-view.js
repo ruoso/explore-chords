@@ -300,50 +300,84 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       // One table per section, a row per line and a column per measure, so the
       // measures line up the way they do on a hand-written chart. A measure
       // with several chords splits its column between them.
-      const table = el('table', { class: 'ec-song-chart', role: 'presentation' });
-      const body = el('tbody');
-      for (const measures of layoutSection(section)) {
-        const row = el('tr', { class: 'ec-song-line' });
-        for (const cells of measures) {
-          cells.forEach(({ chord, span }, j) => {
+      const chordButton = (chord) => {
+        const resolution = resolved.get(chord.key);
+        const source = resolution?.source ?? null;
+        const state =
+          source === 'chosen' ? ' is-voiced' : source === 'default' ? ' is-default' : '';
+        return el(
+          'button',
+          {
+            type: 'button',
+            class: `ec-measure-chord${chord.valid ? '' : ' is-invalid'}${state}`,
+            disabled: chord.valid ? null : true,
+            'aria-label': `${chord.symbol}${
+              chord.index > 1 ? t('editor.chordVoicing', { index: chord.index }) : ''
+            }${
+              source === 'chosen'
+                ? ''
+                : t(source === 'default' ? 'editor.chordDefault' : 'editor.chordUnvoiced')
+            }${t('editor.chordChoose')}`,
+            onClick: () => chooseFor(chord),
+          },
+          chord.symbol,
+          chord.index > 1 ? el('sup', { class: 'ec-footnote' }, String(chord.index)) : null
+        );
+      };
+
+      // A chart line is a table row, so its measures line up with the lines
+      // around it. A sung line flows and wraps instead, because a phone is
+      // narrower than a verse and two verses have no columns in common. Both
+      // are made of the same segments, which is why choosing a voicing, the
+      // footnote marker and the print sheet all work the same in either.
+      let table = null;
+      const closeTable = () => {
+        if (table) block.append(table.el);
+        table = null;
+      };
+
+      for (const row of layoutSection(section)) {
+        if (row.lyrics) {
+          closeTable();
+          if (row.blank) {
+            block.append(el('div', { class: 'ec-song-break' }));
+            continue;
+          }
+          const line = el('div', { class: 'ec-song-sung' });
+          for (const cells of row.measures) {
+            cells.forEach(({ segment }, j) => {
+              const part = el('span', {
+                class: `ec-sung-segment${j === 0 ? ' is-measure-start' : ''}`,
+              });
+              if (segment.chord) part.append(chordButton(segment.chord));
+              part.append(el('span', { class: 'ec-sung-words' }, segment.lyric));
+              line.append(part);
+            });
+          }
+          block.append(line);
+          continue;
+        }
+
+        if (!table) {
+          const node = el('table', { class: 'ec-song-chart', role: 'presentation' });
+          const body = el('tbody');
+          node.append(body);
+          table = { el: node, body };
+        }
+        const line = el('tr', { class: 'ec-song-line' });
+        for (const cells of row.measures) {
+          cells.forEach(({ segment, span }, j) => {
             const cell = el('td', {
               class: `ec-chord-cell${j === 0 ? ' is-measure-start' : ''}`,
               colspan: span > 1 ? String(span) : null,
             });
-            row.append(cell);
-            if (!chord) return;
-            const resolution = resolved.get(chord.key);
-            const source = resolution?.source ?? null;
-            const state =
-              source === 'chosen' ? ' is-voiced' : source === 'default' ? ' is-default' : '';
-            cell.append(
-              el(
-                'button',
-                {
-                  type: 'button',
-                  class: `ec-measure-chord${chord.valid ? '' : ' is-invalid'}${state}`,
-                  disabled: chord.valid ? null : true,
-                  'aria-label': `${chord.symbol}${
-                    chord.index > 1 ? t('editor.chordVoicing', { index: chord.index }) : ''
-                  }${
-                    source === 'chosen'
-                      ? ''
-                      : t(source === 'default' ? 'editor.chordDefault' : 'editor.chordUnvoiced')
-                  }${t('editor.chordChoose')}`,
-                  onClick: () => chooseFor(chord),
-                },
-                chord.symbol,
-                chord.index > 1
-                  ? el('sup', { class: 'ec-footnote' }, String(chord.index))
-                  : null
-              )
-            );
+            line.append(cell);
+            if (segment.chord) cell.append(chordButton(segment.chord));
           });
         }
-        body.append(row);
+        table.body.append(line);
       }
-      table.append(body);
-      block.append(table);
+      closeTable();
       chart.append(block);
     }
   }
