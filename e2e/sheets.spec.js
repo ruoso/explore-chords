@@ -120,8 +120,8 @@ test.describe('choosing voicings', () => {
     expect(body).toMatch(/^Cm\[2\] = \S+$/m);
 
     // Both appear in the voicings panel, labelled the way the chart refers.
-    await expect(page.locator('.ec-voicings .ec-card-chord')).toHaveCount(2);
-    await expect(page.locator('.ec-voicings .ec-card-chord').nth(1)).toHaveText('Cm[2]');
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default) .ec-card-chord')).toHaveCount(2);
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default) .ec-card-chord').nth(1)).toHaveText('Cm[2]');
     await expect(page.locator('.ec-footnote')).toHaveCount(1);
   });
 
@@ -136,7 +136,7 @@ test.describe('choosing voicings', () => {
     const body = await page.locator('#sheet-body').inputValue();
     expect(body.split('\n')[0]).toBe('A | Cm | A | Cm');
     expect(body).not.toContain('Cm[2]');
-    await expect(page.locator('.ec-voicings .ec-card-chord')).toHaveCount(1);
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default) .ec-card-chord')).toHaveCount(1);
   });
 
   test('clearing a choice removes it from the text', async ({ page }) => {
@@ -176,9 +176,9 @@ test.describe('choosing voicings', () => {
   test('voicings typed by hand are read back', async ({ page }) => {
     // The text is the whole state, so writing it directly must work.
     await setBody(page, 'A | Cm | A | Cm[2]\n\n# Voicings\nCm = x35543\nCm[2] = 8-10-10-8-8-8');
-    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(2);
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(2);
     await expect(page.locator('.ec-footnote')).toHaveText('2');
-    await expect(page.locator('.ec-voicings .ec-shorthand').first()).toHaveText('x35543');
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default) .ec-shorthand').first()).toHaveText('x35543');
   });
 
   test('a hand-written block in any order still displays sorted', async ({ page }) => {
@@ -248,13 +248,13 @@ test.describe('choosing voicings', () => {
     await page.locator('.ec-dialog-choice').first().click();
 
     // One entry, used three times.
-    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(1);
-    await expect(page.locator('.ec-used-in')).toHaveText('3\u00d7');
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(1);
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default) .ec-used-in')).toHaveText('3\u00d7');
     const before = await page.locator('#sheet-body').inputValue();
     const firstShape = /^Cm = (\S+)$/m.exec(before)[1];
 
     // Change the shape itself.
-    await page.locator('.ec-voicing-choice').click();
+    await page.locator('.ec-voicings .ec-card:not(.is-default) .ec-voicing-choice').click();
     await expect(page.locator('#voicing-dialog')).toContainText('Change Cm everywhere');
     await expect(page.locator('#voicing-dialog')).toContainText('in 3 places');
     await page.locator('.ec-dialog-choice').nth(2).click();
@@ -266,7 +266,7 @@ test.describe('choosing voicings', () => {
     // All three moved together, and no footnote was introduced.
     expect(after.split('\n')[0]).toBe('Cm | A | Cm | Cm');
     expect(after).not.toContain('Cm[2]');
-    await expect(page.locator('.ec-used-in')).toHaveText('3\u00d7');
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default) .ec-used-in')).toHaveText('3\u00d7');
   });
 
   test('changing one voicing everywhere leaves the other alone', async ({ page }) => {
@@ -295,14 +295,14 @@ test.describe('choosing voicings', () => {
     await setBody(page, 'Cm | A | Cm');
     await page.locator('.ec-measure-chord', { hasText: 'Cm' }).first().click();
     await page.locator('.ec-dialog-choice').first().click();
-    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(1);
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(1);
 
-    await page.locator('.ec-voicing-choice').click();
+    await page.locator('.ec-voicings .ec-card:not(.is-default) .ec-voicing-choice').click();
     await page.getByRole('button', { name: 'Clear everywhere' }).click();
 
     const after = await page.locator('#sheet-body').inputValue();
     expect(after).not.toContain('# Voicings');
-    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(0);
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(0);
   });
 
   test('the dialog can be dismissed without choosing', async ({ page }) => {
@@ -312,6 +312,93 @@ test.describe('choosing voicings', () => {
     await page.locator('#voicing-cancel').click();
     await expect(page.locator('#voicing-dialog')).toHaveCount(0);
     expect(await page.locator('#sheet-body').inputValue()).toBe(before);
+  });
+});
+
+test.describe('default voicings', () => {
+  test.beforeEach(async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+    await newSong(page, 'Defaults');
+  });
+
+  test('every chord has a shape before anything is chosen', async ({ page }) => {
+    await setBody(page, 'C | G | Am | F');
+    // Nothing in the text yet...
+    expect(await page.locator('#sheet-body').inputValue()).not.toContain('# Voicings');
+    // ...but every chord already has a diagram, marked as a default.
+    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(4);
+    await expect(page.locator('.ec-voicings .ec-card.is-default')).toHaveCount(4);
+    await expect(page.locator('.ec-badge-default')).toHaveCount(4);
+    await expect(page.locator('.ec-measure-chord.is-default')).toHaveCount(4);
+  });
+
+  test('the default is what the explorer shows first', async ({ page }) => {
+    await setBody(page, 'C');
+    const inSong = await page.locator('.ec-voicings .ec-shorthand').first().textContent();
+
+    await goToView(page, 'explore');
+    await page.fill('#chord-input', 'C');
+    await page.getByRole('button', { name: 'Show', exact: true }).click();
+    const inExplorer = await page.locator('.ec-results .ec-shorthand').first().textContent();
+    expect(inSong).toBe(inExplorer);
+  });
+
+  test('choosing a shape writes only that one into the text', async ({ page }) => {
+    await setBody(page, 'C | G');
+    await page.locator('.ec-measure-chord', { hasText: /^G$/ }).first().click();
+    await page.locator('.ec-dialog-choice').nth(1).click();
+
+    const body = await page.locator('#sheet-body').inputValue();
+    expect(body).toMatch(/^G = \S+$/m);
+    // C was never chosen, so it is not written: the text carries only choices.
+    expect(body).not.toMatch(/^C = /m);
+    await expect(page.locator('.ec-voicings .ec-card.is-default')).toHaveCount(1);
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(1);
+  });
+
+  test('clearing a choice falls back to the default', async ({ page }) => {
+    await setBody(page, 'C');
+    const defaultShape = await page.locator('.ec-voicings .ec-shorthand').first().textContent();
+
+    await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
+    await page.locator('.ec-dialog-choice').nth(2).click();
+    await expect(page.locator('.ec-voicings .ec-card.is-default')).toHaveCount(0);
+
+    await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
+    await page.locator('#voicing-clear').click();
+    await expect(page.locator('.ec-voicings .ec-card.is-default')).toHaveCount(1);
+    await expect(page.locator('.ec-voicings .ec-shorthand').first()).toHaveText(defaultShape);
+  });
+
+  test('the picker opens on the default, so you see what is in effect', async ({ page }) => {
+    await setBody(page, 'C');
+    await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
+    await expect(page.locator('.ec-dialog-choice.is-chosen')).toHaveCount(1);
+    // But nothing was chosen, so there is nothing to clear.
+    await expect(page.locator('#voicing-clear')).toHaveCount(0);
+  });
+
+  test('a chord that cannot be voiced says so rather than showing nothing', async ({ page }) => {
+    await page.locator('#sheet-back').click();
+    await addInstrument(page, { instrument: 'ukulele' });
+    await goToView(page, 'sheets');
+    await page.fill('#new-sheet-title', 'Uke');
+    await page.getByRole('button', { name: 'New song' }).click();
+    await setBody(page, 'C | C13#11');
+    await expect(page.locator('#sheet-missing')).toContainText('C13#11');
+    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(1);
+  });
+
+  test('defaults print like any other shape', async ({ page }) => {
+    await setBody(page, '# Verse\nC | G');
+    await page.evaluate(() => {
+      window.print = () => {};
+    });
+    await page.locator('#sheet-print').click();
+    await expect(page.locator('#print-root .ec-print-chord')).toHaveCount(2);
+    await expect(page.locator('#print-root svg.ec-diagram')).toHaveCount(2);
+    await expect(page.locator('#print-root .ec-badge-default')).toHaveCount(0);
   });
 });
 
@@ -398,7 +485,7 @@ test.describe('songs and instruments', () => {
     await setBody(page, '# Tuning\nE2, A2, D3, G3, B3, E4\n\n# Verse\nC | G');
     await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
     await page.locator('.ec-dialog-choice').first().click();
-    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(1);
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(1);
 
     await addInstrument(page, { instrument: 'ukulele' });
     await goToView(page, 'sheets');
@@ -431,12 +518,14 @@ test.describe('songs and instruments', () => {
     expect(body).toContain('G4, C4, E4, A4');
     expect(body).toContain('C | G | C');
     expect(body).not.toContain('# Voicings');
-    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(0);
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(0);
+    // The chart is not blank, though: every chord fell back to a default.
+    await expect(page.locator('.ec-voicings .ec-card.is-default')).toHaveCount(2);
 
     // And voicing it now works, on this instrument's strings.
     await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
     await page.locator('.ec-dialog-choice').first().click();
-    await expect(page.locator('.ec-voicings .ec-card')).toHaveCount(1);
+    await expect(page.locator('.ec-voicings .ec-card:not(.is-default)')).toHaveCount(1);
 
     // The guitar original survives.
     await page.locator('#sheet-back').click();

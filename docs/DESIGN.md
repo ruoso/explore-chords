@@ -241,7 +241,16 @@ sections and chords one at a time.
 opens a picker and changes *that* occurrence; clicking a shape in the voicings
 panel changes it *everywhere it is used*, since re-voicing a chord across a
 whole song is otherwise a click per bar. Either way the choice is written back
-as a footnote. The bare symbol is the
+as a footnote.
+
+**A chord nobody chose a shape for still has one.** The default is the shape
+the explorer would show first — open position if there is one, otherwise the
+easiest shape in the lowest position that has any — so a teacher only chooses
+voicings for the chords that are not obvious. Defaults are *derived at display
+time and never written into the text*: writing them in would fill `# Voicings`
+with shapes nobody chose and hide the ones somebody did. They are marked as
+defaults in the editor and printed plain, since on paper a student needs the
+shape, not its provenance. Clearing a choice falls back to the default. The bare symbol is the
 chord's default voicing and `[2]`, `[3]` … are the others, defined under a
 `# Voicings` heading. This is what lets one song play `Cm` two ways, and it
 means the sheet has no hidden state: what you read is what you have, and a

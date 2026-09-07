@@ -2,15 +2,16 @@
  * The printable song sheet (docs/DESIGN.md §2.5).
  *
  * A diagram legend at the top — each voicing the song uses, once, labelled the
- * way the chart refers to it — then the chart itself. Rendered into a container
+ * way the chart refers to it — then the chart itself. Defaults print like any
+ * other shape: on paper a student needs the shape, not its provenance. Rendered into a container
  * that is hidden on screen and shown when printing, so the print layout is part
  * of the app rather than a separate page that can silently rot.
  */
 
 import { el, clear } from './dom.js';
 import { parseChord } from '../core/notation/parse.js';
-import { parseSong, songLegend } from '../core/song.js';
-import { fingeringFromFrets } from '../core/search.js';
+import { parseSong, compareVoicings } from '../core/song.js';
+import { resolveSongVoicings } from '../core/voicings.js';
 import { renderDiagram } from '../render/index.js';
 
 export function renderSheetPrint(container, { store, sheet, instrument }) {
@@ -26,14 +27,20 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
     el('p', { class: 'ec-print-instrument' }, instrument.label)
   );
 
-  const legend = songLegend(song);
+  const resolved = resolveSongVoicings(song, instrument, dialect);
+  const legend = [...resolved.entries()]
+    .map(([key, r]) => {
+      const occurrence = song.occurrences.find((c) => c.key === key);
+      return { key, symbol: occurrence.symbol, index: occurrence.index, fingering: r.fingering };
+    })
+    .sort(compareVoicings);
+
   if (legend.length > 0) {
     const list = el('ul', { class: 'ec-print-legend', 'aria-label': 'Chord shapes used' });
     for (const entry of legend) {
       const chord = parseChord(entry.symbol, dialect).chord;
       if (!chord) continue;
-      const fingering = fingeringFromFrets(entry.frets, chord, instrument);
-      if (!fingering) continue;
+      const { fingering } = entry;
       list.append(
         el(
           'li',

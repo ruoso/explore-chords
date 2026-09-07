@@ -25,6 +25,9 @@ export function openVoicingDialog({
   chordText,
   instrument,
   chosen,
+  // What the chart is actually showing, which may be a default rather than
+  // a choice. The picker highlights this so it opens on the shape in effect.
+  current = chosen,
   onChoose,
   scope = 'occurrence',
   usedIn = 1,
@@ -99,7 +102,7 @@ export function openVoicingDialog({
           },
           renderItem: (fingering) => {
             const isChosen =
-              Array.isArray(chosen) && chosen.join(',') === fingering.frets.join(',');
+              Array.isArray(current) && current.join(',') === fingering.frets.join(',');
             return el(
               'li',
               {},

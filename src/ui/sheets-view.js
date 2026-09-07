@@ -13,6 +13,10 @@
  * The voicings panel is the complement: clicking a shape there changes it
  * everywhere it is used, because re-voicing a chord across a whole song is
  * otherwise a click per bar.
+ *
+ * A chord nobody has chosen a voicing for still gets one: the shape the
+ * explorer would show first. So only the non-obvious chords need choosing, and
+ * the text carries only those choices.
  */
 
 import { el, clear } from './dom.js';
@@ -21,12 +25,12 @@ import {
   setVoicing,
   setVoicingForKey,
   countForKey,
-  songLegend,
   unvoicedKeys,
   measureCount,
+  compareVoicings,
 } from '../core/song.js';
+import { resolveSongVoicings, unvoiceableKeys } from '../core/voicings.js';
 import { parseChord } from '../core/notation/parse.js';
-import { fingeringFromFrets } from '../core/search.js';
 import { renderDiagram } from '../render/index.js';
 import { EXAMPLE_BODY } from '../state/sheets.js';
 import { openVoicingDialog } from './voicing-dialog.js';
@@ -78,7 +82,7 @@ export function renderSheetList(container, { store, onOpen, onChange, onBring })
     const list = el('ul', { class: 'ec-sheet-list' });
     for (const sheet of mine) {
       const song = parseSong(sheet.body, dialect);
-      const missing = unvoicedKeys(song).length;
+      const chosen = song.symbols.length - unvoicedKeys(song).length;
       const bars = measureCount(song);
 
       list.append(
@@ -92,8 +96,10 @@ export function renderSheetList(container, { store, onOpen, onChange, onBring })
             el(
               'p',
               { class: 'ec-sheet-meta' },
-              `${bars} measure${bars === 1 ? '' : 's'} · ${songLegend(song).length} voiced`,
-              missing > 0 ? ` · ${missing} still to choose` : ''
+              `${bars} measure${bars === 1 ? '' : 's'} · ${song.symbols.length} chord${
+                song.symbols.length === 1 ? '' : 's'
+              }`,
+              chosen > 0 ? ` · ${chosen} voicing${chosen === 1 ? '' : 's'} chosen` : ''
             )
           ),
           el(
@@ -215,6 +221,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
 
   const dialect = store.state.prefs.dialect;
   const song = parseSong(sheet.body, dialect);
+  const resolved = resolveSongVoicings(song, instrument, dialect);
   const page = el('div', { class: 'ec-page' });
 
   page.append(
@@ -306,6 +313,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       chordText: chord.symbol,
       instrument,
       chosen: song.voicings.get(chord.key) ?? null,
+      current: resolved.get(chord.key)?.fingering.frets ?? null,
       onChoose: (frets) => {
         const next = setVoicing(sheet.body, chord.start, frets, dialect);
         store.updateSheet(sheet.id, (s) => ({ ...s, body: next }));
@@ -331,19 +339,26 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
           if (i > 0) row.append(el('span', { class: 'ec-bar', 'aria-hidden': 'true' }, '|'));
           const bar = el('span', { class: 'ec-measure' });
           for (const chord of measure.chords) {
-            const voiced = song.voicings.has(chord.key);
+            const resolution = resolved.get(chord.key);
+            const source = resolution?.source ?? null;
+            const state =
+              source === 'chosen' ? ' is-voiced' : source === 'default' ? ' is-default' : '';
             bar.append(
               el(
                 'button',
                 {
                   type: 'button',
-                  class: `ec-measure-chord${chord.valid ? '' : ' is-invalid'}${
-                    voiced ? ' is-voiced' : ''
-                  }`,
+                  class: `ec-measure-chord${chord.valid ? '' : ' is-invalid'}${state}`,
                   disabled: chord.valid ? null : true,
                   'aria-label': `${chord.symbol}${
                     chord.index > 1 ? `, voicing ${chord.index}` : ''
-                  }${voiced ? '' : ', no voicing chosen'}. Choose a voicing.`,
+                  }${
+                    source === 'chosen'
+                      ? ''
+                      : source === 'default'
+                        ? ', using the default shape'
+                        : ', cannot be voiced'
+                  }. Choose a voicing.`,
                   onClick: () => chooseFor(chord),
                 },
                 chord.symbol,
@@ -364,30 +379,33 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
 
   // --- the voicings this song uses ----------------------------------------
 
-  const legend = songLegend(song);
-  const missing = unvoicedKeys(song);
+  const entries = [...resolved.entries()]
+    .map(([key, r]) => {
+      const occurrence = song.occurrences.find((c) => c.key === key);
+      return { key, symbol: occurrence.symbol, index: occurrence.index, ...r };
+    })
+    .sort(compareVoicings);
+  const missing = unvoiceableKeys(song, resolved);
+  const defaults = entries.filter((e) => e.source === 'default').length;
 
   const chordsPanel = el('section', { class: 'ec-panel', 'aria-labelledby': 'sheet-chords' });
   chordsPanel.append(
     el('h3', { class: 'ec-panel-title', id: 'sheet-chords' }, 'Voicings'),
-    legend.length > 0
+    entries.length > 0
       ? el(
           'p',
           { class: 'ec-help' },
-          'Click a shape to change it everywhere it is used.'
+          'Click a shape to change it everywhere it is used.' +
+            (defaults > 0
+              ? ' Shapes marked default are what the explorer would show first; choose only the ones that need it.'
+              : '')
         )
       : null
   );
 
-  if (legend.length === 0) {
+  if (entries.length === 0) {
     chordsPanel.append(
-      el(
-        'p',
-        { class: 'ec-help' },
-        missing.length > 0
-          ? 'None chosen yet. Click a chord in the chart above.'
-          : 'Write the song above and its chords appear here.'
-      )
+      el('p', { class: 'ec-help' }, 'Write the song above and its chords appear here.')
     );
   } else {
     const grid = el('ul', {
@@ -396,32 +414,31 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       'aria-label': 'Voicings used in this song',
     });
 
-    for (const entry of legend) {
+    for (const entry of entries) {
       const chord = parseChord(entry.symbol, dialect).chord;
-      const fingering = chord ? fingeringFromFrets(entry.frets, chord, instrument) : null;
-      if (!fingering) continue;
-
       const usedIn = countForKey(song, entry.key);
+      const isDefault = entry.source === 'default';
 
       grid.append(
         el(
           'li',
-          { class: 'ec-card' },
+          { class: `ec-card${isDefault ? ' is-default' : ''}` },
           el(
             'button',
             {
               type: 'button',
               class: 'ec-voicing-choice',
-              'aria-label': `Change ${entry.key} everywhere. Used in ${usedIn} place${
-                usedIn === 1 ? '' : 's'
-              }.`,
+              'aria-label': `${isDefault ? 'Choose' : 'Change'} ${entry.key} everywhere. ${
+                isDefault ? 'Using the default shape. ' : ''
+              }Used in ${usedIn} place${usedIn === 1 ? '' : 's'}.`,
               onClick: () =>
                 openVoicingDialog({
                   store,
                   chordText: entry.symbol,
                   label: entry.key,
                   instrument,
-                  chosen: entry.frets,
+                  chosen: isDefault ? null : entry.fingering.frets,
+                  current: entry.fingering.frets,
                   scope: 'all',
                   usedIn,
                   onChoose: (frets) => {
@@ -431,11 +448,16 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
                   },
                 }),
             },
-            el('span', { class: 'ec-card-chord' }, entry.key),
+            el(
+              'span',
+              { class: 'ec-card-chord' },
+              entry.key,
+              isDefault ? el('span', { class: 'ec-badge ec-badge-default' }, 'default') : null
+            ),
             el('span', {
               class: 'ec-card-diagram',
               html: renderDiagram(
-                fingering,
+                entry.fingering,
                 { chord, dialect, instrument },
                 { orientation: store.state.prefs.orientation, handed: store.state.prefs.handed }
               ),
@@ -443,12 +465,8 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
             el(
               'span',
               { class: 'ec-caption' },
-              el('span', { class: 'ec-shorthand' }, fingering.shorthand),
-              el(
-                'span',
-                { class: 'ec-used-in' },
-                `${usedIn}\u00d7`
-              )
+              el('span', { class: 'ec-shorthand' }, entry.fingering.shorthand),
+              el('span', { class: 'ec-used-in' }, `${usedIn}\u00d7`)
             )
           )
         )
@@ -461,8 +479,9 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
     chordsPanel.append(
       el(
         'p',
-        { class: 'ec-help', id: 'sheet-missing' },
-        `Still to choose: ${missing.join(', ')}.`
+        { class: 'ec-error', role: 'alert', id: 'sheet-missing' },
+        `No playable shape on ${instrument.label} for: ${missing.join(', ')}. ` +
+          'Its voicing rules may be too strict.'
       )
     );
   }

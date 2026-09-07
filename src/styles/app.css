@@ -1174,3 +1174,26 @@ body {
     padding-bottom: 9rem;
   }
 }
+
+/* --- default voicings ---------------------------------------------------- */
+
+/* A chord nobody chose a shape for still has one — the explorer's first pick —
+   shown lighter, so the chosen ones stand out as the deliberate ones. */
+.ec-measure-chord.is-default {
+  border-style: dotted;
+  color: var(--muted);
+}
+
+.ec-voicings .ec-card.is-default {
+  border-style: dashed;
+}
+
+.ec-badge-default {
+  margin-left: 0.35rem;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
