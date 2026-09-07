@@ -70,6 +70,8 @@ function nextInstanceId() {
  * @param {string|import('./pitch.js').Pitch[]} options.strings
  * @param {number} [options.fretCount]
  * @param {object} [options.heuristics]
+ * @param {string} [options.preset]  a named preset to start from, when there
+ *   are no heuristics to carry over; how you play is asked at setup (§2.1)
  */
 export function instrumentInstance({
   id,
@@ -78,6 +80,7 @@ export function instrumentInstance({
   strings,
   fretCount,
   heuristics,
+  preset,
 } = {}) {
   const pitches = typeof strings === 'string' ? parseTuning(strings) : strings;
   if (!Array.isArray(pitches) || pitches.length === 0) {
@@ -92,7 +95,7 @@ export function instrumentInstance({
     label: label ?? entry?.name ?? 'Custom instrument',
     strings: pitches,
     fretCount: resolvedFretCount,
-    heuristics: heuristics ?? presetConfig(defaultPresetFor(catalogId)),
+    heuristics: heuristics ?? presetConfig(preset ?? defaultPresetFor(catalogId)),
   };
 
   if (!heuristics) {
@@ -125,7 +128,7 @@ export function hasBassRegister(instrument) {
  * every preset. Use this rather than presetConfig() wherever an instrument is
  * in hand.
  */
-export function configFor(instrument, presetId = 'standard') {
+export function configFor(instrument, presetId = 'strumming') {
   const config = presetConfig(presetId);
   config.rootInBass = config.rootInBass && hasBassRegister(instrument);
   return config;
@@ -138,7 +141,7 @@ export function configFor(instrument, presetId = 'standard') {
  */
 export function defaultPresetFor(catalogId) {
   if (catalogId === '4bass' || catalogId === '5bass') return 'bassFriendly';
-  return 'standard';
+  return 'strumming';
 }
 
 /** Build an instance from a catalog entry and one of its named tunings. */

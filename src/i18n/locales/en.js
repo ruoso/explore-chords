@@ -196,6 +196,9 @@ export default {
     tuning: 'Tuning',
     strings: 'Strings',
     stringsHelp: 'Lowest string first. Any comma-separated pitch list works, including re-entrant tunings.',
+    style: 'How you play',
+    styleHelp:
+      'It sets which shapes you are offered: fingerstyle allows a muted string in the middle of a chord, strumming does not. The instrument screen can change it later.',
     name: 'Name',
     nameHelp: 'Shown in the switcher. Give custom tunings names you will recognise.',
     frets: 'Frets',
@@ -239,7 +242,8 @@ export default {
     custom: 'Custom',
     presets: {
       beginner: 'Beginner',
-      standard: 'Standard',
+      strumming: 'Strumming',
+      fingerstyle: 'Fingerstyle',
       jazz: 'Jazz',
       bassFriendly: 'Bass-friendly',
     },
@@ -472,6 +476,30 @@ export default {
             'On screen and in print, the measures of a section sit in columns, the way a ' +
             'hand-written chart does, and the printed sheet leads with the chart and keeps ' +
             'the shapes small below it.',
+        },
+      ],
+    },
+    '0.4.0': {
+      title: 'What changed in 0.4',
+      sections: [
+        {
+          heading: 'Strumming or fingerstyle',
+          text:
+            'The rules that used to be called Standard are now Strumming, and Fingerstyle sits ' +
+            'beside them. A picking hand can simply not pick the string in the middle of a ' +
+            'chord, so fingerstyle allows shapes strumming cannot reach. Setting up an ' +
+            'instrument now asks which you play, and the instrument screen changes it later.',
+        },
+        {
+          heading: 'No more shapes muted for nothing',
+          text:
+            'A shape is no longer offered when the same shape with one of its muted strings ' +
+            'ringing is on offer too and the fingers that fill it go down easily. G minor gives ' +
+            'you 3x0333, where the D string rings, instead of 3xx333, where it is damped for ' +
+            'no reason, and open C is offered whole rather than as fragments of itself. A ' +
+            'reach or a barre still counts as work, so the shapes that need one are all still ' +
+            'there. A muted string in the middle also stopped counting against how hard a shape ' +
+            'is: played fingerstyle, a string you do not pick costs you nothing.',
         },
       ],
     },

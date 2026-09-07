@@ -10,7 +10,7 @@ import { chordTones, bassNote, hasDistinctBass } from './chord.js';
 import { pitchClass } from './pitch.js';
 import { midiAt, openMidis } from './instrument.js';
 import { assignFingers } from './fingers.js';
-import { scoreFingering, difficultyBucket } from './score.js';
+import { scoreFingering, difficultyBucket, STRETCH_SPAN } from './score.js';
 import { optionalRoles } from './heuristics.js';
 import { shorthandOf } from './fretstring.js';
 
@@ -192,6 +192,147 @@ function candidateProblem(frets, instrument, chord, config, req) {
 }
 
 /**
+ * Score a shape from its frets alone.
+ *
+ * Which roles a shape leaves out, and whether its lowest note is the root, are
+ * derived here rather than passed in, so every shape is scored by exactly the
+ * same path whether it came from a search or from a song someone wrote.
+ */
+function scoreOf(frets, hand, instrument, chord, config, tones) {
+  const midis = frets.map((f, i) => (f === 'x' ? null : midiAt(instrument, i, f)));
+  const sounding = midis.filter((m) => m !== null);
+  const soundingPcs = new Set(sounding.map((m) => ((m % 12) + 12) % 12));
+  const omittedRoles = tones
+    .filter((t) => !soundingPcs.has(t.pitchClass))
+    .map((t) => t.role);
+  const lowest = Math.min(...sounding);
+
+  return {
+    midis,
+    omittedRoles,
+    score: scoreFingering({
+      frets,
+      hand,
+      omittedRoles,
+      bassIsRoot: (((lowest % 12) + 12) % 12) === pitchClass(chord.root),
+      bassRequested: hasDistinctBass(chord),
+      config,
+    }),
+  };
+}
+
+/**
+ * Drop shapes that mute a string for no reason (docs/DESIGN.md §5.2).
+ *
+ * Damping a string is something a player does because the alternative is a
+ * wrong note, never because it saves effort: fingerstyle, a string that could
+ * ring is a string that should. So a shape goes when the same shape with one of
+ * its muted strings sounding is on offer too and the fingers that fill it go
+ * down easily — 3xx333 to 3x0333, whose open D string needs no finger at all,
+ * and x3x0x0 to x32010, which is two ordinary fingers away.
+ *
+ * **Easily** means the hand does not have to do anything it was not already
+ * doing. Fingers are free: this rule exists to say that putting one down beats
+ * damping a string. A *reach* is not, and neither is a *barre*, because both
+ * change what the hand is doing rather than merely how much of it. That line is
+ * what keeps the open chords: xx0232 can be filled, by fretting the A string at
+ * the fifth to give x50232, but that shape spans four frets where the open D
+ * spans two, and nobody plays it. The small F, xx3211, survives the F barre for
+ * the same reason.
+ *
+ * Difficulty deliberately does not come into it. Whether the fuller shape
+ * scores better is a question about weights that are still guesses (§11), and
+ * answering it that way kept x3x0x0 — a fragment of open C — on the grounds
+ * that a fragment is easier than the chord. It is. It is also not worth
+ * offering.
+ *
+ * A fuller shape that renames the bass is never a reason to mute: it voices a
+ * different chord. x02210 against 002210 is A minor against its first
+ * inversion, and where the rules admit both, both are worth showing. Dropping
+ * the same bass by an octave, as x07555 does to xx7555, renames nothing.
+ *
+ * Only shapes the search actually found count as an alternative, so a shape is
+ * only ever dropped for one the user could otherwise have seen.
+ */
+function dropUnjustifiedMutes(results) {
+  // One entry per shape: which strings sound, as a bit per string, how far the
+  // hand spans, and where the bass is. Comparing two shapes then starts with a
+  // single mask test, which is what keeps this affordable over a few thousand
+  // candidates.
+  const entries = results.map((f) => {
+    let mask = 0;
+    let sounding = 0;
+    let bass = Infinity;
+    for (let i = 0; i < f.frets.length; i += 1) {
+      if (f.frets[i] === 'x') continue;
+      mask |= 1 << i;
+      sounding += 1;
+      if (f.midis[i] < bass) bass = f.midis[i];
+    }
+    return {
+      f,
+      mask,
+      sounding,
+      span: spanOf(f.frets),
+      bassPc: ((bass % 12) + 12) % 12,
+      full: sounding === f.frets.length,
+    };
+  });
+
+  // Grouped by bass note and ordered widest first, so the scan for a fuller
+  // shape can stop once the rest can no longer be one.
+  const byBass = new Map();
+  for (const e of entries) {
+    if (!byBass.has(e.bassPc)) byBass.set(e.bassPc, []);
+    byBass.get(e.bassPc).push(e);
+  }
+  for (const list of byBass.values()) list.sort((a, b) => b.sounding - a.sounding);
+
+  const kept = [];
+  for (const e of entries) {
+    if (e.full) {
+      kept.push(e.f);
+      continue;
+    }
+    let displaced = false;
+    for (const other of byBass.get(e.bassPc)) {
+      if (other.sounding <= e.sounding) break;
+      // Sounds everything this one does, and at least one string more.
+      if ((other.mask & e.mask) !== e.mask) continue;
+      // A reach or a barre the shape did not already ask for is not "easily".
+      if (other.span >= STRETCH_SPAN && e.span < STRETCH_SPAN) continue;
+      if (other.f.barre && !e.f.barre) continue;
+      if (fretsAgree(e.f.frets, other.f.frets, e.mask)) {
+        displaced = true;
+        break;
+      }
+    }
+    if (!displaced) kept.push(e.f);
+  }
+  return kept;
+}
+
+/** How many frets a shape covers, 0 when nothing is fretted. */
+function spanOf(frets) {
+  let lowest = Infinity;
+  let highest = 0;
+  for (const f of frets) {
+    if (typeof f !== 'number' || f === 0) continue;
+    if (f < lowest) lowest = f;
+    if (f > highest) highest = f;
+  }
+  return lowest === Infinity ? 0 : highest - lowest + 1;
+}
+
+/** Do two shapes fret every sounding string in `mask` identically? */
+function fretsAgree(a, b, mask) {
+  for (let i = 0; i < a.length; i += 1) {
+    if (mask & (1 << i) && a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/**
  * Search for fingerings of a chord on an instrument.
  *
  * @param {import('./chord.js').Chord} chord
@@ -210,7 +351,7 @@ export function searchFingerings(chord, instrument, config, options = {}) {
 
   const seen = new Set();
   /** @type {Fingering[]} */
-  const results = [];
+  let results = [];
   let nodesExhausted = false;
 
   const maxLo = Math.max(1, instrument.fretCount - config.maxSpan + 1);
@@ -236,25 +377,14 @@ export function searchFingerings(chord, instrument, config, options = {}) {
       const hand = assignFingers(frets, config);
       if (!hand) continue;
 
-      const midis = frets.map((f, i) => (f === 'x' ? null : midiAt(instrument, i, f)));
-      const soundingPcs = new Set(
-        midis.filter((m) => m !== null).map((m) => (((m % 12) + 12) % 12))
-      );
-      const omittedRoles = req.tones
-        .filter((t) => !soundingPcs.has(t.pitchClass))
-        .map((t) => t.role);
-
-      const lowest = midis.filter((m) => m !== null).reduce((a, b) => Math.min(a, b));
-      const bassIsRoot = (((lowest % 12) + 12) % 12) === pitchClass(chord.root);
-
-      const score = scoreFingering({
+      const { midis, omittedRoles, score } = scoreOf(
         frets,
         hand,
-        omittedRoles,
-        bassIsRoot,
-        bassRequested: hasDistinctBass(chord),
+        instrument,
+        chord,
         config,
-      });
+        req.tones
+      );
 
       results.push({
         frets,
@@ -269,6 +399,11 @@ export function searchFingerings(chord, instrument, config, options = {}) {
       });
     }
   }
+
+  // Before ranking and grouping, because a shape and the fuller one that
+  // displaces it need not share a position: 3xx333 sits at the third fret while
+  // 3x0333, which has an open string, is an open-position shape.
+  results = dropUnjustifiedMutes(results);
 
   results.sort((a, b) => a.score.total - b.score.total || a.position - b.position);
 
@@ -320,25 +455,19 @@ export function fingeringFromFrets(frets, chord, instrument, config) {
 
   const hand = assignFingers(frets, config);
   if (!hand) return null;
+  if (frets.every((f) => f === 'x')) return null;
 
-  const midis = frets.map((f, i) => (f === 'x' ? null : midiAt(instrument, i, f)));
-  const sounding = midis.filter((m) => m !== null);
-  if (sounding.length === 0) return null;
-
-  const soundingPcs = new Set(sounding.map((m) => (((m % 12) + 12) % 12)));
-  const omittedRoles = chordTones(chord)
-    .filter((t) => !soundingPcs.has(t.pitchClass))
-    .map((t) => t.role);
-
-  const lowest = Math.min(...sounding);
-  const score = scoreFingering({
+  // Deliberately no mute-justification check (§5.2): a shape someone saved or
+  // wrote down stays exactly as they wrote it, even if the search would now
+  // prefer a fuller one.
+  const { midis, omittedRoles, score } = scoreOf(
     frets,
     hand,
-    omittedRoles,
-    bassIsRoot: (((lowest % 12) + 12) % 12) === pitchClass(chord.root),
-    bassRequested: hasDistinctBass(chord),
+    instrument,
+    chord,
     config,
-  });
+    chordTones(chord)
+  );
 
   return {
     frets,

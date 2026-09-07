@@ -7,7 +7,8 @@
  * to a broken app.
  */
 
-import { instrumentInstance, formatTuning } from '../core/instrument.js';
+import { instrumentInstance, formatTuning, configFor } from '../core/instrument.js';
+import { PRESETS, resolvePresetId } from '../core/heuristics.js';
 import { DEFAULT_DIALECT } from '../core/notation/dialects.js';
 
 export const VERSION = 'v2';
@@ -78,7 +79,7 @@ export function serialiseInstrument(instrument) {
 }
 
 export function deserialiseInstrument(data) {
-  return instrumentInstance({
+  const instrument = instrumentInstance({
     id: data.id,
     catalogId: data.catalogId,
     label: data.label,
@@ -86,6 +87,27 @@ export function deserialiseInstrument(data) {
     fretCount: data.fretCount,
     heuristics: data.heuristics,
   });
+  instrument.heuristics = refreshPreset(instrument, data.heuristics);
+  return instrument;
+}
+
+/**
+ * Bring a stored configuration up to date with the preset it names.
+ *
+ * A named preset *is* its rules: saying an instrument is on Fingerstyle says
+ * everything about its configuration, so there is nothing of the user's to lose
+ * by rebuilding it, and rebuilding is the only way a correction to a preset
+ * ever reaches someone who set their instrument up last year. A configuration
+ * the user has edited says `custom`, and that is kept exactly as written.
+ *
+ * It also carries renamed presets across: an instrument saved as Standard comes
+ * back as Strumming.
+ */
+function refreshPreset(instrument, stored) {
+  if (!stored?.preset) return instrument.heuristics;
+  const id = resolvePresetId(stored.preset);
+  if (!PRESETS[id]) return { ...stored, preset: stored.preset === id ? stored.preset : id };
+  return configFor(instrument, id);
 }
 
 export function loadInstruments() {

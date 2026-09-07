@@ -14,7 +14,7 @@ import { el, clear } from './dom.js';
 import { formatTuning, configFor, isReentrant } from '../core/instrument.js';
 import { PRESET_IDS, withOverrides } from '../core/heuristics.js';
 import { t } from '../i18n/index.js';
-import { renderInstrumentForm } from './instrument-form.js';
+import { renderInstrumentForm, presetLabel } from './instrument-form.js';
 
 /** Each rule, limit and weight is labelled by its key under `rules` in the translations. */
 const RULES = [
@@ -49,8 +49,6 @@ const WEIGHTS = [
   'openString',
   'nonAdjacentStretch',
 ];
-
-const presetLabel = (id) => t(id === 'custom' ? 'rules.custom' : `rules.presets.${id}`);
 
 /** The list of instruments. */
 export function renderInstrumentList(container, { store, onAdd, onEdit, onUse, onDelete }) {

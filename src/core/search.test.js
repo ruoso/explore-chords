@@ -33,7 +33,7 @@ const ukulele = () =>
     fretCount: 15,
   });
 
-const search = (symbol, instrument, preset = 'standard') =>
+const search = (symbol, instrument, preset = 'strumming') =>
   searchFingerings(parseChord(symbol).chord, instrument, configFor(instrument, preset));
 
 const shapes = (result) => allFingerings(result).map((f) => f.shorthand);
@@ -124,7 +124,7 @@ describe('slash chords', () => {
   it('puts the requested bass note lowest, always', () => {
     const chord = parseChord('C/E').chord;
     const instrument = guitar();
-    const result = searchFingerings(chord, instrument, configFor(instrument, 'standard'));
+    const result = searchFingerings(chord, instrument, configFor(instrument, 'strumming'));
     expect(result.count).toBeGreaterThan(0);
     const wanted = pitchClass(bassNote(chord));
     for (const f of allFingerings(result)) {
@@ -171,7 +171,7 @@ describe('every emitted hand is physically possible', () => {
 
   it('never exceeds the configured span', () => {
     const instrument = guitar();
-    const config = configFor(instrument, 'standard');
+    const config = configFor(instrument, 'strumming');
     const result = searchFingerings(parseChord('Cmaj7').chord, instrument, config);
     for (const f of allFingerings(result)) {
       const fretted = f.frets.filter((x) => typeof x === 'number' && x > 0);
@@ -203,7 +203,7 @@ describe('grouping and ranking', () => {
     // The group holds all of them so "Show more" can expand it (section 2.3);
     // displayCount is how many appear before the user asks for the rest.
     const instrument = guitar();
-    const config = configFor(instrument, 'standard');
+    const config = configFor(instrument, 'strumming');
     const result = searchFingerings(parseChord('C').chord, instrument, config);
     for (const group of result.groups) {
       expect(group.displayCount).toBeLessThanOrEqual(config.maxResultsPerGroup);
@@ -218,6 +218,35 @@ describe('grouping and ranking', () => {
   });
 });
 
+describe('strumming and fingerstyle', () => {
+  it('differ by whether a chord may have a hole in it', () => {
+    // The one rule the distinction rests on. A strumming hand crosses every
+    // string between the lowest and the highest; a picking hand can leave one
+    // out, so it can play shapes the other cannot reach.
+    const strumming = search('Gm', guitar(), 'strumming');
+    const fingerstyle = search('Gm', guitar(), 'fingerstyle');
+
+    expect(shapes(strumming)).not.toContain('3x0333');
+    expect(shapes(fingerstyle)).toContain('3x0333');
+    expect(fingerstyle.count).toBeGreaterThan(strumming.count);
+  });
+
+  it('offers the fingerstyle G minor before anything else in open position', () => {
+    const result = search('Gm', guitar(), 'fingerstyle');
+    expect(result.groups[0].fingerings[0].shorthand).toBe('3x0333');
+  });
+
+  it('agree on everything else', () => {
+    const strumming = configFor(guitar(), 'strumming');
+    const fingerstyle = configFor(guitar(), 'fingerstyle');
+    const differences = Object.keys(strumming).filter(
+      (key) => key !== 'preset' && key !== 'weights' && strumming[key] !== fingerstyle[key]
+    );
+    expect(differences).toEqual(['allowInnerMutes']);
+    expect(fingerstyle.weights).toEqual(strumming.weights);
+  });
+});
+
 describe('heuristics change the results', () => {
   it('finds no barre shapes for a beginner', () => {
     const result = search('F', guitar(), 'beginner');
@@ -227,7 +256,7 @@ describe('heuristics change the results', () => {
   });
 
   it('allows rootless voicings only in the jazz preset', () => {
-    const standard = search('Cmaj7', guitar(), 'standard');
+    const standard = search('Cmaj7', guitar(), 'strumming');
     for (const f of allFingerings(standard)) {
       expect(f.omittedRoles).not.toContain('root');
     }
@@ -240,12 +269,167 @@ describe('heuristics change the results', () => {
     // one that was asked for.
     const chord = parseChord('C+').chord;
     const instrument = guitar();
-    const result = searchFingerings(chord, instrument, configFor(instrument, 'standard'));
+    const result = searchFingerings(chord, instrument, configFor(instrument, 'strumming'));
     expect(result.count).toBeGreaterThan(0);
     for (const f of allFingerings(result)) {
       const pcs = new Set(f.midis.filter((m) => m !== null).map((m) => ((m % 12) + 12) % 12));
       expect(pcs.has(8)).toBe(true); // G#, the raised fifth of C
     }
+  });
+});
+
+describe('a muted string has to be forced', () => {
+  const withInnerMutes = (symbol, instrument) => search(symbol, instrument, 'fingerstyle');
+
+  it('mutes the D string of a G minor only when it cannot ring', () => {
+    // 3xx333 and 3x0333 are the same hand. The first damps a D string that
+    // would have sounded a D, which the chord wants; the second lets it ring.
+    // Nobody plays the first, and the app should not offer it.
+    const result = withInnerMutes('Gm', guitar());
+    expect(shapes(result)).toContain('3x0333');
+    expect(shapes(result)).not.toContain('3xx333');
+
+    // The A string is a different matter: it can sound nothing belonging to G
+    // minor without the hand leaving the shape, so damping it is forced.
+    const kept = allFingerings(result).find((f) => f.shorthand === '3x0333');
+    expect(kept.frets[1]).toBe('x');
+  });
+
+  it('never mutes a string that could have rung open', () => {
+    // The invariant behind the rule: at the default weights an open string
+    // costs no finger and nothing else, so a shape and the same shape with one
+    // of its open strings damped can never both be worth showing. Only a fill
+    // that renames the bass is exempt, so the comparison is limited to shapes
+    // whose lowest note agrees.
+    for (const symbol of ['C', 'D', 'G', 'Am', 'F', 'B7', 'Cmaj7', 'Gm']) {
+      const result = withInnerMutes(symbol, guitar());
+      const emitted = allFingerings(result);
+      const byFrets = new Map(emitted.map((f) => [f.frets.join(' '), f]));
+
+      for (const f of emitted) {
+        const bassOf = (x) => Math.min(...x.midis.filter((m) => m !== null)) % 12;
+        for (let i = 0; i < f.frets.length; i += 1) {
+          if (f.frets[i] !== 'x') continue;
+          const rung = f.frets.slice();
+          rung[i] = 0;
+          const fuller = byFrets.get(rung.join(' '));
+          if (!fuller || bassOf(fuller) !== bassOf(f)) continue;
+          throw new Error(`${symbol}: ${f.shorthand} damps an open string that ${fuller.shorthand} rings`);
+        }
+      }
+    }
+  });
+
+  it('drops a fragment the fuller shape covers for free', () => {
+    // x320xx is open C with the top two strings damped for nothing.
+    const result = search('C', guitar());
+    expect(shapes(result)).toContain('x32010');
+    expect(shapes(result)).not.toContain('x320xx');
+    expect(shapes(result)).not.toContain('x3201x');
+  });
+
+  it('drops a fragment whose fingers go down easily', () => {
+    // x3x0x0 sounds C, E and G and is easier than open C by every measure the
+    // app has: one finger, three open strings. It is still a fragment of a
+    // chord two ordinary fingers away, and not worth offering beside it.
+    const result = search('C', guitar(), 'fingerstyle');
+    expect(shapes(result)).toContain('x32010');
+    expect(shapes(result)).not.toContain('x3x0x0');
+    expect(shapes(result)).not.toContain('x320xx');
+    expect(shapes(result)).not.toContain('x3201x');
+  });
+
+  it('keeps an open shape when filling it means reaching', () => {
+    // Every mute can be filled somewhere: fretting the A string at the fifth
+    // turns xx0232 into x50232. That is not a reason to stop offering the open
+    // D chord. Fingers are free, a reach is not — x50232 spans four frets where
+    // the open D spans two, and nobody plays it.
+    const result = search('D', guitar(), 'fingerstyle');
+    const found = shapes(result);
+    expect(found).toContain('xx0232');
+    expect(found).toContain('x50232');
+  });
+
+  it('keeps a small shape when filling it means barring', () => {
+    // xx3211 is the F beginners actually play. Filling its two muted strings
+    // gives the full barre, which is not the same hand doing a little more.
+    const result = search('F', guitar(), 'fingerstyle');
+    expect(shapes(result)).toContain('xx3211');
+    expect(shapes(result)).toContain('133211');
+  });
+
+  it('keeps an inversion whose bass the fuller shape would rename', () => {
+    // 002210 is not A minor with a fuller voicing, it is A minor over E. Where
+    // the rules admit both, muting the low string is a real choice.
+    const result = search('Am', guitar(), 'jazz');
+    expect(shapes(result)).toContain('x02210');
+    expect(shapes(result)).toContain('002210');
+  });
+
+  it('leaves the standard open shapes alone', () => {
+    // The rule is aggressive, so this is the guard on it: the shapes every
+    // player knows all survive.
+    const cases = [
+      ['C', 'x32010'],
+      ['D', 'xx0232'],
+      ['E', '022100'],
+      ['G', '320003'],
+      ['A', 'x02220'],
+      ['Am', 'x02210'],
+      ['Dm', 'xx0231'],
+      ['F', '133211'],
+      ['B7', 'x21202'],
+      ['Cmaj7', 'x32000'],
+    ];
+    for (const [symbol, shorthand] of cases) {
+      expect(shapes(withInnerMutes(symbol, guitar()))).toContain(shorthand);
+    }
+    expect(shapes(search('C', ukulele()))).toContain('0003');
+    expect(shapes(search('F', ukulele()))).toContain('2010');
+  });
+
+  it('still rebuilds a shape somebody saved', () => {
+    // The search declines to offer 3xx333; a user who wrote it down still gets
+    // it back, because a stored pattern is rebuilt, not re-searched (§8.2).
+    const instrument = guitar();
+    const saved = fingeringFromFrets(
+      [3, 'x', 'x', 3, 3, 3],
+      parseChord('Gm').chord,
+      instrument,
+      configFor(instrument, 'fingerstyle')
+    );
+    expect(saved).not.toBeNull();
+    expect(saved.shorthand).toBe('3xx333');
+  });
+});
+
+describe('an inner mute is not a difficulty', () => {
+  it('costs nothing by default', () => {
+    // A mute that survives the search is a forced one, and a string you simply
+    // do not pick is free. Charging for it double-counted.
+    const result = search('Gm', guitar(), 'fingerstyle');
+    const f = allFingerings(result).find((x) => x.shorthand === '3x0333');
+    expect(f.frets[1]).toBe('x');
+    expect(f.score.parts.innerMutes).toBe(0);
+  });
+
+  it('can be priced back in by a strummer', () => {
+    // The weight stays in the panel, so someone whose picking hand has to cross
+    // the gap can make it cost again.
+    const instrument = guitar();
+    const config = configFor(instrument, 'fingerstyle');
+    const plain = allFingerings(searchFingerings(parseChord('Gm').chord, instrument, config)).find(
+      (f) => f.shorthand === '3x0333'
+    );
+    const strummed = allFingerings(
+      searchFingerings(parseChord('Gm').chord, instrument, {
+        ...config,
+        weights: { ...config.weights, innerMute: 3.0 },
+      })
+    ).find((f) => f.shorthand === '3x0333');
+
+    expect(strummed.score.parts.innerMutes).toBe(3.0);
+    expect(strummed.score.total).toBeGreaterThan(plain.score.total);
   });
 });
 
@@ -263,7 +447,7 @@ describe('performance', () => {
     const result = searchFingerings(
       parseChord('Cmaj7').chord,
       instrument,
-      configFor(instrument, 'standard'),
+      configFor(instrument, 'strumming'),
       { windowBudget: 20000 }
     );
     expect(result.nodesExhausted).toBe(false);
@@ -277,7 +461,7 @@ describe('performance', () => {
     const tight = searchFingerings(
       parseChord('C').chord,
       instrument,
-      configFor(instrument, 'standard'),
+      configFor(instrument, 'strumming'),
       { windowBudget: 400 }
     );
     expect(tight.nodesExhausted).toBe(true);

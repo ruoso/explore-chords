@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.js';
-import { freshVisit, completeSetup, appState } from './helpers.js';
+import { freshVisit, completeSetup, appState, searchChord } from './helpers.js';
 
 /**
  * First run is instrument setup (docs/DESIGN.md §2.1): the user lands in the
@@ -47,6 +47,36 @@ test.describe('first run', () => {
     await page.getByRole('button', { name: 'Start playing' }).click();
     await expect(page.locator('#chord-input')).toBeVisible();
     expect((await appState(page)).instrumentCount).toBe(1);
+  });
+
+  test('setup asks how you play, and the answer decides what you are shown', async ({ page }) => {
+    // Whether a chord may have a muted string in the middle is a question about
+    // the person, not the instrument, and nobody thinks to go looking for it
+    // afterwards. So it is asked once, here, where it costs one glance.
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar', style: 'fingerstyle' });
+    await searchChord(page, 'Gm');
+    // A picking hand can leave the A string out, which strumming cannot.
+    await expect(page.locator('.ec-results .ec-shorthand').first()).toHaveText('3x0333');
+  });
+
+  test('strumming is what you get if you do not choose', async ({ page }) => {
+    await freshVisit(page);
+    await expect(page.locator('#instrument-style')).toHaveValue('strumming');
+    await completeSetup(page, { instrument: '6guitar' });
+    await searchChord(page, 'Gm');
+    await expect(page.locator('.ec-results .ec-shorthand').first()).not.toHaveText('3x0333');
+  });
+
+  test('a bass is offered its own rules from the start', async ({ page }) => {
+    // Like the name, the style follows the instrument until the user picks.
+    await freshVisit(page);
+    await page.selectOption('#instrument-catalog', '4bass');
+    await expect(page.locator('#instrument-style')).toHaveValue('bassFriendly');
+
+    await page.selectOption('#instrument-style', 'fingerstyle');
+    await page.selectOption('#instrument-catalog', '6guitar');
+    await expect(page.locator('#instrument-style')).toHaveValue('fingerstyle');
   });
 
   test('the name follows the pickers until you write your own', async ({ page }) => {

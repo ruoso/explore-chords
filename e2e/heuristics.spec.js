@@ -33,8 +33,18 @@ test.describe('presets', () => {
     for (const label of labels) expect(label).not.toContain('barre');
   });
 
+  test('fingerstyle is a preset of its own, not a rule to go hunting for', async ({ page }) => {
+    // The rule that separates the two ways of playing, reachable by name.
+    await page.selectOption('#heuristics-preset', 'fingerstyle');
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Fingerstyle');
+    await expect(page.locator('#rule-allowInnerMutes')).toBeChecked();
+
+    await page.selectOption('#heuristics-preset', 'strumming');
+    await expect(page.locator('#rule-allowInnerMutes')).not.toBeChecked();
+  });
+
   test('editing one rule flips the preset to Custom', async ({ page }) => {
-    await expect(page.locator('.ec-panel-tag')).toHaveText('Standard');
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Strumming');
     await page.locator('#rule-allowInnerMutes').check();
     await expect(page.locator('.ec-panel-tag')).toHaveText('Custom');
   });
@@ -66,7 +76,7 @@ test.describe('rules follow the instrument', () => {
     await page.locator('.ec-chip-summary').click();
     await page.locator('.ec-chip-item', { hasText: 'Guitar' }).click();
     await editActiveInstrument(page);
-    await expect(page.locator('.ec-panel-tag')).toHaveText('Standard');
+    await expect(page.locator('.ec-panel-tag')).toHaveText('Strumming');
 
     // And the ukulele must have kept its own.
     await goToView(page, 'explore');

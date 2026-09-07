@@ -7,6 +7,14 @@
  */
 
 /**
+ * The span at which a shape stops being a hand position and becomes a reach.
+ *
+ * Named because two rules turn on it: the stretch cost below, and whether a
+ * fuller shape counts as an easy way to fill a muted string (core/search.js).
+ */
+export const STRETCH_SPAN = 4;
+
+/**
  * @param {object} args
  * @param {(number|'x')[]} args.frets
  * @param {import('./fingers.js').Hand} args.hand
@@ -52,7 +60,7 @@ export function scoreFingering({
   parts.muted = (w.mutedString ?? 0) * frets.filter((f) => f === 'x').length;
 
   // A four-fret reach is materially harder than a compact shape.
-  parts.stretch = hand.span >= 4 ? w.nonAdjacentStretch : 0;
+  parts.stretch = hand.span >= STRETCH_SPAN ? w.nonAdjacentStretch : 0;
 
   const total = Object.values(parts).reduce((a, b) => a + b, 0);
   return { total, parts };

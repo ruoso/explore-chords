@@ -2,9 +2,16 @@ import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import { freshVisit, completeSetup, dismissTutorial } from './helpers.js';
 import { latestReleaseOf } from '../src/state/announcements.js';
+import { ANNOUNCEMENTS } from '../src/data/announcements.js';
 
 /** The newest release note: what a returning user is shown. Never a pinned version. */
 const LATEST = latestReleaseOf().id;
+
+/** Every release note, oldest first, taken from the app rather than pinned. */
+const RELEASES = ANNOUNCEMENTS.filter((a) => a.kind === 'release').map((a) => a.id);
+
+/** What a release note calls itself: 0.3.0 is titled "What changed in 0.3". */
+const shortVersion = (id) => id.replace(/\.0$/, '');
 
 /**
  * The tutorial and "what changed" (docs/DESIGN.md §2.8).
@@ -100,12 +107,15 @@ test.describe('what changed', () => {
     await page.reload();
     await expect(dialog(page)).toBeVisible();
     await expect(dialog(page)).toHaveAttribute('data-announcement', LATEST);
-    // Two releases missed: both in the one dialog, newest first, each under its own title.
+    // Every release missed: all in the one dialog, newest first, each under its
+    // own title. Counted from the app's own list, so shipping a release does
+    // not break this test.
     await expect(dialog(page)).toContainText('What changed since your last visit');
     const releases = dialog(page).locator('.ec-announcement-release');
-    await expect(releases).toHaveCount(2);
-    await expect(releases.nth(0)).toContainText('0.3');
-    await expect(releases.nth(1)).toContainText('0.2');
+    await expect(releases).toHaveCount(RELEASES.length);
+    for (const [i, id] of [...RELEASES].reverse().entries()) {
+      await expect(releases.nth(i)).toContainText(shortVersion(id));
+    }
     await page.locator('#announcement-close').click();
 
     await page.reload();
@@ -116,10 +126,11 @@ test.describe('what changed', () => {
   test('one missed release is shown on its own, under its own title', async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page);
-    await setSeen(page, ['welcome', '0.2.0']);
+    // Everything but the newest, so exactly one release is left to show.
+    await setSeen(page, ['welcome', ...RELEASES.slice(0, -1)]);
     await page.reload();
     await expect(dialog(page)).toHaveAttribute('data-announcement', LATEST);
-    await expect(dialog(page)).toContainText('What changed in 0.3');
+    await expect(dialog(page)).toContainText(`What changed in ${shortVersion(LATEST)}`);
     await expect(dialog(page)).not.toContainText('since your last visit');
     await expect(dialog(page).locator('.ec-announcement-release')).toHaveCount(0);
   });

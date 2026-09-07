@@ -12,7 +12,14 @@
  */
 
 import { el, clear } from './dom.js';
-import { CATALOG, catalogEntry, parseTuning, formatTuning } from '../core/instrument.js';
+import {
+  CATALOG,
+  catalogEntry,
+  parseTuning,
+  formatTuning,
+  defaultPresetFor,
+} from '../core/instrument.js';
+import { PRESET_IDS } from '../core/heuristics.js';
 import { t, hasMessage, errorText } from '../i18n/index.js';
 
 const CUSTOM = '__custom__';
@@ -23,6 +30,9 @@ export function catalogName(entry) {
 }
 export function tuningName(name) {
   return hasMessage(['tuning', name]) ? t(['tuning', name]) : name;
+}
+export function presetLabel(id) {
+  return t(id === 'custom' ? 'rules.custom' : `rules.presets.${id}`);
 }
 
 /**
@@ -95,6 +105,30 @@ export function renderInstrumentForm(
     step: '1',
   });
 
+  // --- how it is played ---------------------------------------------------
+
+  // Asked when creating and not when editing, because the editor puts the same
+  // choice in the rules panel directly below this form, where the individual
+  // rules it sets are visible too (§2.5). Asking here is what stops the choice
+  // from being something you have to know to go looking for: whether a chord
+  // may have a muted string in the middle of it is a question about the person,
+  // not the instrument, and nobody thinks to change it after the fact.
+  const styleSelect = el('select', { id: 'instrument-style', name: 'style' });
+  for (const id of PRESET_IDS) {
+    styleSelect.append(el('option', { value: id }, presetLabel(id)));
+  }
+
+  // Like the name, it follows the instrument until the user picks for
+  // themselves: choosing a bass should still land on the bass rules.
+  let styleIsUsers = false;
+  styleSelect.addEventListener('change', () => {
+    styleIsUsers = true;
+  });
+
+  function refreshStyle() {
+    if (!styleIsUsers) styleSelect.value = defaultPresetFor(catalogSelect.value);
+  }
+
   // --- name ---------------------------------------------------------------
 
   const nameInput = el('input', {
@@ -137,6 +171,7 @@ export function renderInstrumentForm(
       fretsInput.value = String(entry.fretCount);
     }
     refreshName();
+    refreshStyle();
   }
 
   catalogSelect.addEventListener('change', () => fillPresets());
@@ -174,7 +209,9 @@ export function renderInstrumentForm(
 
   const error = el('p', { class: 'ec-error', id: 'instrument-error', role: 'alert', hidden: true });
 
-  form.append(
+  // A null slot is one field this mode does not ask for, dropped here rather
+  // than by append(), which would write the word "null" into the form.
+  const fields = [
     el(
       'div',
       { class: 'ec-field' },
@@ -198,6 +235,15 @@ export function renderInstrumentForm(
         t('form.stringsHelp')
       )
     ),
+    editing
+      ? null
+      : el(
+          'div',
+          { class: 'ec-field' },
+          el('label', { for: 'instrument-style' }, t('form.style')),
+          styleSelect,
+          el('p', { class: 'ec-help' }, t('form.styleHelp'))
+        ),
     el(
       'div',
       { class: 'ec-field' },
@@ -216,7 +262,8 @@ export function renderInstrumentForm(
       fretsInput
     ),
     error
-  );
+  ];
+  form.append(...fields.filter(Boolean));
 
   const actions = el('div', { class: 'ec-actions' });
   actions.append(
@@ -265,6 +312,9 @@ export function renderInstrumentForm(
       label: name,
       strings,
       fretCount: Number.isFinite(frets) && frets > 0 ? frets : catalogEntry(catalogSelect.value).fretCount,
+      // Only when creating: an edit must not quietly reset rules the user has
+      // since tuned by hand.
+      ...(editing ? {} : { preset: styleSelect.value }),
     });
   });
 

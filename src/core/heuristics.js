@@ -15,10 +15,14 @@ export const DEFAULT_WEIGHTS = {
   barre: 1.5,
   fullBarre: 1.0, // additional, when the barre spans every string
   perFinger: 0.3,
-  innerMute: 3.0, // a muted string between two sounding ones
-  // Every string not sounding is a thinner chord. Without this the search
-  // prefers three-string fragments to the full open shapes, because fewer
-  // fingers and fewer strings always score better.
+  // Zero, because a mute the search emits is a forced one: a string is muted
+  // only when nothing it could sound belongs to the chord (core/search.js).
+  // Damping it costs a fingerstyle player nothing, so it is not a difficulty.
+  // A strummer, whose picking hand crosses the gap, can raise this.
+  innerMute: 0,
+  // Every string not sounding is a thinner chord, which is a musical cost
+  // rather than a difficulty: it is what ranks a four-string voicing below the
+  // six-string one when a player could have either.
   mutedString: 0.6,
   positionPerFret: 0.1,
   omittedFifth: 0.8, // musical completeness, not difficulty
@@ -46,8 +50,17 @@ export const DEFAULT_WEIGHTS = {
  * @property {typeof DEFAULT_WEIGHTS} weights
  */
 
-/** @type {HeuristicConfig} */
-export const STANDARD = {
+/**
+ * The rules for a player whose picking hand hits several strings at once.
+ *
+ * This is the baseline every other preset is a variation on, and it is named
+ * for what it assumes rather than called "standard": the one rule that really
+ * separates it from fingerstyle is that a strummed chord cannot have a hole in
+ * the middle of it.
+ *
+ * @type {HeuristicConfig}
+ */
+export const STRUMMING = {
   maxSpan: 4,
   requireRoot: true,
   rootInBass: true,
@@ -61,6 +74,8 @@ export const STANDARD = {
   // strings; forbidding duplicates would reject the most common chord shape on
   // the instrument. It is an aesthetic preference, not a playability rule.
   allowDuplicatePitch: true,
+  // A strumming hand crosses every string between the lowest and the highest,
+  // so a gap in the middle is a string it has to damp deliberately.
   allowInnerMutes: false,
   allowBarre: true,
   minSoundingStrings: 3,
@@ -70,7 +85,7 @@ export const STANDARD = {
 
 export const PRESETS = {
   beginner: {
-    ...STANDARD,
+    ...STRUMMING,
     maxSpan: 3,
     allowBarre: false,
     allowInnerMutes: false,
@@ -78,17 +93,25 @@ export const PRESETS = {
     requireExtensions: false,
     weights: { ...DEFAULT_WEIGHTS, openString: -1.0, barre: 4.0 },
   },
-  standard: { ...STANDARD },
+  strumming: { ...STRUMMING },
+  // Fingerstyle differs by one rule, and it is the rule the whole distinction
+  // rests on: a hand that picks strings individually simply does not pick the
+  // one in the middle, so a chord may have a hole in it. Everything else it
+  // inherits, because the fretting hand does the same work either way.
+  fingerstyle: {
+    ...STRUMMING,
+    allowInnerMutes: true,
+  },
   jazz: {
-    ...STANDARD,
+    ...STRUMMING,
     allowRootless: true,
     allowInnerMutes: true,
     rootInBass: false,
     minSoundingStrings: 3,
-    weights: { ...DEFAULT_WEIGHTS, rootless: 0.2, innerMute: 1.0, nonRootBass: 0.2 },
+    weights: { ...DEFAULT_WEIGHTS, rootless: 0.2, nonRootBass: 0.2 },
   },
   bassFriendly: {
-    ...STANDARD,
+    ...STRUMMING,
     requireThird: false,
     requireExtensions: false,
     minSoundingStrings: 2,
@@ -99,18 +122,26 @@ export const PRESETS = {
 
 export const PRESET_IDS = Object.keys(PRESETS);
 
-export const PRESET_LABELS = {
-  beginner: 'Beginner',
-  standard: 'Standard',
-  jazz: 'Jazz',
-  bassFriendly: 'Bass-friendly',
-};
+/**
+ * Presets that have been renamed.
+ *
+ * "Standard" became "Strumming" once fingerstyle got a preset of its own:
+ * neither is the standard one, they are two ways of playing. Instruments saved
+ * under the old name, and links carrying it, still resolve.
+ */
+const RENAMED = { standard: 'strumming' };
+
+/** The current id for a preset, whatever it used to be called. */
+export function resolvePresetId(id) {
+  return RENAMED[id] ?? id;
+}
 
 /** A fresh, mutable copy of a named preset. */
-export function presetConfig(id = 'standard') {
-  const preset = PRESETS[id];
+export function presetConfig(id = 'strumming') {
+  const resolved = resolvePresetId(id);
+  const preset = PRESETS[resolved];
   if (!preset) throw new Error(`Unknown heuristics preset: ${id}`);
-  return { ...preset, preset: id, weights: { ...preset.weights } };
+  return { ...preset, preset: resolved, weights: { ...preset.weights } };
 }
 
 /** Merge overrides onto a preset, marking the result as custom if it differs. */
@@ -120,7 +151,7 @@ export function withOverrides(config, overrides = {}) {
     ...overrides,
     weights: { ...config.weights, ...(overrides.weights ?? {}) },
   };
-  const base = PRESETS[config.preset] ?? STANDARD;
+  const base = PRESETS[config.preset] ?? STRUMMING;
   merged.preset = differsFrom(merged, base) ? 'custom' : config.preset;
   return merged;
 }

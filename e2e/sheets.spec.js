@@ -241,7 +241,11 @@ test.describe('choosing voicings', () => {
   });
 
   test('a group in the picker expands the same way', async ({ page }) => {
-    await page.locator('.ec-measure-chord', { hasText: 'Cm' }).first().click();
+    // G, because a group only offers "Show all" when it holds more shapes than
+    // it displays, and G minor no longer has a position that crowded: the
+    // search stopped offering shapes that mute a string for nothing (§5.2).
+    await setBody(page, 'G | C');
+    await page.locator('.ec-measure-chord', { hasText: 'G' }).first().click();
     const dialog = page.locator('#voicing-dialog');
     // Whichever group overflows, for the same reason as the explorer test.
     const overflowing = dialog

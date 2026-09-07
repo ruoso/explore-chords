@@ -69,10 +69,17 @@ finger assigner.
 ### 2.1 The instrument is the app's identity
 
 **First run** is instrument setup, before anything else is shown: pick an
-instrument from the catalog, pick or edit a tuning, done. The user lands in the
-explorer already configured. There is no "choose an instrument" field sitting in
-the middle of the chord form — the instrument is ambient context, not a query
-parameter.
+instrument from the catalog, pick or edit a tuning, say how you play, done. The
+user lands in the explorer already configured. There is no "choose an
+instrument" field sitting in the middle of the chord form — the instrument is
+ambient context, not a query parameter.
+
+**"How you play" is asked here** and nowhere else in the flow, because it is a
+question about the person rather than the instrument, and because the answer
+changes what the app offers from the first chord onwards (§2.5). It follows the
+catalog until the user answers it, the way the name does, so choosing a bass
+lands on bass rules. The editor does not repeat the field: there the same choice
+sits in the rules panel, next to the individual rules it sets.
 
 **The header** always shows the active instrument as a chip:
 
@@ -199,10 +206,24 @@ permanently different rules — a global "Bass-friendly" mode you have to rememb
 to switch is the wrong model. Setting up a bass gives you bass-appropriate
 defaults forever.
 
-Each instrument instance carries a preset (`Beginner`, `Standard`, `Jazz`,
-`Bass-friendly`) plus any per-rule overrides, edited in an expert panel that
-exposes every rule as a toggle and every cost as a number. Changing anything
-switches the preset label to `Custom` for that instrument.
+Each instrument instance carries a preset (`Beginner`, `Strumming`,
+`Fingerstyle`, `Jazz`, `Bass-friendly`) plus any per-rule overrides, edited in an
+expert panel that exposes every rule as a toggle and every cost as a number.
+Changing anything switches the preset label to `Custom` for that instrument.
+
+**There is no "Standard".** Strumming and fingerstyle are two ways of playing,
+not a norm and a deviation from it, and the preset that used to be called
+Standard is Strumming — named for what it assumes. The two differ by exactly one
+rule, and it is the rule the whole distinction rests on: a strumming hand
+crosses every string between the lowest and the highest, so a strummed chord
+cannot have a hole in the middle of it, while a picking hand simply does not
+pick that string. Everything else they share, because the fretting hand does the
+same work either way.
+
+A preset *is* its rules, so an instrument that names one is rebuilt from it when
+it loads (§8.3). That is the only way a correction to a preset reaches somebody
+who set their instrument up a year ago, and there is nothing of theirs to lose:
+a configuration they edited says `Custom` and is kept exactly as written.
 
 ### 2.6 Song sheets
 
@@ -787,11 +808,11 @@ Which tones *must* sound is a function of the instrument's heuristics:
 | Root in bass | on, **where the instrument has a bass register** | lowest sounding pitch is the root, or the slash bass |
 | 3rd required | on | (off for sus/power chords, which have none) |
 | 5th omittable | on | perfect 5th may be dropped; altered 5ths never are |
-| Rootless allowed | off (Standard), on (Jazz) | root may be dropped entirely |
+| Rootless allowed | off, on (Jazz) | root may be dropped entirely |
 | Extensions required | on | a named extension must sound, else it is not that chord |
 | Doubling allowed | on | same pitch class on multiple strings |
 | Duplicate pitch allowed | **on** | the exact same pitch twice (reference forbids this) |
-| Inner mutes allowed | off (Standard), on (Jazz) | muted string between two sounding ones |
+| Inner mutes allowed | off (Strumming), on (Fingerstyle, Jazz) | muted string between two sounding ones |
 | Thumb-over allowed | *not in v1* | `T` on the lowest string — see §11 |
 
 For a slash chord the bass note is added as a required tone *and* constrained to
@@ -813,6 +834,41 @@ instrument:
   one. This is precisely why heuristics belong to the instrument (§2.4), and
   `configFor(instrument, preset)` reapplies the instrument's defaults on top of
   any preset so that switching to "Jazz" cannot silently re-break a ukulele.
+
+**A muted string has to be forced.** Whether a mute is *allowed* is the toggle
+above; whether it is *justified* is a separate rule, and not a toggle. Damping a
+string is something a player does because the alternative is a wrong note, never
+because it saves effort: played fingerstyle, a string that could ring is a
+string that should. So a shape is dropped when the same shape with one of its
+muted strings sounding is also on offer and the fingers that fill it go down
+easily. `3xx333` goes, because its muted D string plays an open D and gives
+`3x0333`. `x3x0x0` goes, because open C is two ordinary fingers away.
+
+**Easily** means the hand does not have to do anything it was not already doing.
+Fingers are free — the whole point of the rule is that putting one down beats
+damping a string — but a **reach** is not, and neither is a **barre**, because
+both change what the hand is doing rather than how much of it. That line is what
+keeps the open chords. `xx0232` can be filled, by fretting the A string at the
+fifth to give `x50232`, but that shape spans four frets where the open D spans
+two. `xx3211`, the F beginners actually play, survives the full barre for the
+same reason.
+
+Difficulty deliberately does not enter into it. Whether the fuller shape *scores*
+better is a question about weights that are still guesses (§11), and answering it
+that way keeps `x3x0x0`: a fragment of open C really is easier than open C. It is
+also not worth offering.
+
+The rule also **protects the bass**: a fuller shape that renames the lowest note
+voices a different chord, so `x02210` survives `002210`, which is A minor against
+its first inversion. Dropping the same bass by an octave renames nothing and is
+not protected, which is what removes `xx7555` in favour of `x07555`.
+
+Only shapes the search actually found count as an alternative, so a shape is
+only ever dropped for one the user could otherwise have seen. It runs before
+ranking and grouping, because the two need not share a position: `3xx333` sits
+at the third fret while `3x0333`, having an open string, is an open-position
+shape. Nothing filters a shape a user saved or wrote down (§8.2) — those are
+rebuilt as written.
 
 There is also **no cross-string pitch ordering rule at all**. The reference
 required sounding pitches to ascend strictly, which is roughly right for a
@@ -858,7 +914,8 @@ A weighted sum; every weight is exposed in the expert panel:
 | fret span | 1.0 × (span − 1) | a 4-fret stretch is much harder than 2 |
 | barre | 1.5 | full barre costs more than partial |
 | finger count | 0.4 each | |
-| inner muted string | 3.0 | requires deliberate damping |
+| inner muted string | 0 | see below |
+| each muted string | 0.6 | a thinner chord, a musical cost rather than a difficulty |
 | high position | 0.1 × position | above the 12th fret gets awkward |
 | omitted 5th | 0.3 | penalizes *musical* completeness, not difficulty |
 | rootless | 0.6 | |
@@ -869,6 +926,14 @@ A weighted sum; every weight is exposed in the expert panel:
 `total` sorts within each position group; groups are ordered by position (open
 first). The badge shows a bucketed label (Easy / Medium / Hard), not the raw
 number.
+
+**An inner mute costs nothing**, because by the time a shape is scored its mutes
+are forced ones (§5.2): the string is damped only where nothing it could sound
+belongs to the chord. For a fingerstyle player that is free — the string is
+simply not picked — so pricing it as difficulty was double-counting a shape the
+search had already decided was the best available. The weight stays in the panel
+at zero rather than being deleted, because a strummer, whose picking hand has to
+cross the gap, has every reason to raise it.
 
 ### 5.5 Truncation
 
@@ -1006,6 +1071,14 @@ ec:v1:sheets        [{ id, title, instrumentId, sections: [...], updated }]
 All keys versioned; a migration step runs on load when the version advances.
 Favorites and sheets are tagged by `instrumentId` and filtered to the active
 instrument by default.
+
+**An instrument that names a preset is rebuilt from it on load**, rather than
+restored from the rules that were stored beside it. A named preset *is* its
+rules, so the stored copy carries nothing of the user's, and rebuilding is the
+only way a change to a preset ever reaches an instrument set up before it was
+made. It also carries renamed presets across: one saved as `standard` comes back
+as `strumming`. A configuration the user edited says `custom` and is restored
+exactly as written, which is the whole point of the distinction.
 
 ---
 

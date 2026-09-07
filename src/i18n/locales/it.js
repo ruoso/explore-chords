@@ -198,6 +198,9 @@ export default {
     strings: 'Corde',
     stringsHelp:
       'Dalla corda più grave alla più acuta. Va bene qualsiasi elenco di note separate da virgole, comprese le accordature rientranti.',
+    style: 'Come suoni',
+    styleHelp:
+      'Decide quali forme ti vengono proposte: con il fingerstyle una corda stoppata in mezzo all\'accordo è ammessa, con lo strumming no. La schermata dello strumento lo cambia in seguito.',
     name: 'Nome',
     nameHelp: 'Compare nel selettore. Dai alle accordature personalizzate nomi che riconosci.',
     frets: 'Tasti',
@@ -241,7 +244,8 @@ export default {
     custom: 'Personalizzata',
     presets: {
       beginner: 'Principiante',
-      standard: 'Standard',
+      strumming: 'Strumming',
+      fingerstyle: 'Fingerstyle',
       jazz: 'Jazz',
       bassFriendly: 'Per basso',
     },
@@ -476,6 +480,31 @@ export default {
             'Sullo schermo e in stampa, le battute di una sezione stanno in colonne, come in uno ' +
             'schema scritto a mano, e il foglio stampato comincia dallo schema e tiene le forme ' +
             'piccole sotto.',
+        },
+      ],
+    },
+    '0.4.0': {
+      title: 'Cosa è cambiato nella 0.4',
+      sections: [
+        {
+          heading: 'Strumming o fingerstyle',
+          text:
+            'Le regole che si chiamavano Standard ora si chiamano Strumming, e accanto a loro ' +
+            'c’è Fingerstyle. Chi suona con le dita semplicemente non pizzica la corda in mezzo ' +
+            'all’accordo, quindi il fingerstyle ammette forme che lo strumming non raggiunge. ' +
+            'Quando configuri uno strumento la domanda te la fa, e la schermata dello strumento ' +
+            'la cambia in seguito.',
+        },
+        {
+          heading: 'Niente più corde stoppate per niente',
+          text:
+            'Una forma non viene più proposta quando esiste anche la stessa forma con una delle ' +
+            'sue corde stoppate che suona, e le dita che la riempiono scendono senza fatica. Sol ' +
+            'minore ti dà 3x0333, con il re che suona, invece di 3xx333, che lo stoppa senza ' +
+            'motivo, e il do a corde vuote arriva intero invece che a pezzi. Un allungo o un ' +
+            'barré contano ancora come lavoro, quindi le forme che ne hanno bisogno ci sono ' +
+            'tutte. E una corda stoppata in mezzo ha smesso di pesare sulla difficoltà: con le ' +
+            'dita, una corda che non pizzichi non costa nulla.',
         },
       ],
     },

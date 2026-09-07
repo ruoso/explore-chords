@@ -198,6 +198,9 @@ export default {
     strings: 'Cordas',
     stringsHelp:
       'Da corda mais grave para a mais aguda. Qualquer lista de notas separadas por vírgula serve, inclusive afinações reentrantes.',
+    style: 'Como você toca',
+    styleHelp:
+      'Define quais formas aparecem: no dedilhado uma corda abafada no meio do acorde é permitida, na batida não. A tela do instrumento muda isso depois.',
     name: 'Nome',
     nameHelp: 'Aparece no seletor. Dê a afinações personalizadas nomes que você reconheça.',
     frets: 'Casas',
@@ -241,7 +244,8 @@ export default {
     custom: 'Personalizada',
     presets: {
       beginner: 'Iniciante',
-      standard: 'Padrão',
+      strumming: 'Batida',
+      fingerstyle: 'Dedilhado',
       jazz: 'Jazz',
       bassFriendly: 'Para baixo',
     },
@@ -476,6 +480,30 @@ export default {
             'Na tela e na impressão, os compassos de uma seção ficam em colunas, como numa cifra ' +
             'escrita à mão, e a folha impressa começa pela cifra e mantém os desenhos pequenos ' +
             'abaixo dela.',
+        },
+      ],
+    },
+    '0.4.0': {
+      title: 'O que mudou na 0.4',
+      sections: [
+        {
+          heading: 'Batida ou dedilhado',
+          text:
+            'As regras que se chamavam Padrão agora se chamam Batida, e Dedilhado ficou ao ' +
+            'lado delas. Quem dedilha simplesmente não toca a corda do meio do acorde, então o ' +
+            'dedilhado permite formas que a batida não alcança. Ao configurar um instrumento a ' +
+            'pergunta aparece, e a tela do instrumento muda isso depois.',
+        },
+        {
+          heading: 'Nada de cordas abafadas à toa',
+          text:
+            'Uma forma deixa de aparecer quando a mesma forma com uma das cordas abafadas ' +
+            'soando também está disponível e os dedos que a preenchem descem sem esforço. Sol ' +
+            'menor traz 3x0333, com a corda ré soando, no lugar de 3xx333, que a abafa sem ' +
+            'motivo, e o dó solto aparece inteiro em vez de aos pedaços. Uma esticada ou uma ' +
+            'pestana continuam contando como trabalho, então as formas que precisam de uma ' +
+            'continuam aí. E uma corda abafada no meio deixou de pesar na dificuldade: no ' +
+            'dedilhado, uma corda que você não toca não custa nada.',
         },
       ],
     },

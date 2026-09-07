@@ -13,7 +13,7 @@
 import { instrumentInstance, catalogEntry } from '../core/instrument.js';
 import { formatTuning } from '../core/instrument.js';
 import { DIALECT_IDS } from '../core/notation/dialects.js';
-import { PRESET_IDS } from '../core/heuristics.js';
+import { PRESET_IDS, resolvePresetId } from '../core/heuristics.js';
 import { isView } from './views.js';
 import { t } from '../i18n/index.js';
 
@@ -34,7 +34,9 @@ export function readUrl(search = globalThis.location?.search ?? '') {
   const dialect = params.get('d');
   if (dialect && DIALECT_IDS.includes(dialect)) out.dialect = dialect;
 
-  const preset = params.get('h');
+  // Resolved, so a link written before a preset was renamed still opens on the
+  // rules it meant.
+  const preset = params.get('h') ? resolvePresetId(params.get('h')) : null;
   if (preset && PRESET_IDS.includes(preset)) out.preset = preset;
 
   const tuning = params.get('t');
@@ -81,7 +83,7 @@ export function writeUrl({
     if (instrument.label) params.set('l', instrument.label);
   }
   if (dialect) params.set('d', dialect);
-  if (preset && preset !== 'standard') params.set('h', preset);
+  if (preset && preset !== 'strumming') params.set('h', preset);
   if (orientation && orientation !== 'vertical') params.set('o', orientation);
   return params.toString();
 }

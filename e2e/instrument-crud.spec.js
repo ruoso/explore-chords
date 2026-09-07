@@ -31,6 +31,21 @@ test.describe('the same form creates and edits', () => {
     for (const field of fields) await expect(page.locator(field)).toBeVisible();
   });
 
+  test('how you play is asked when creating and lives in the rules when editing', async ({ page }) => {
+    // The one field the two modes do not share, and it is not missing from the
+    // editor: the rules panel offers the same choice next to the individual
+    // rules it sets, which is the better place for it once you have an
+    // instrument to change.
+    await freshVisit(page);
+    await expect(page.locator('#instrument-style')).toBeVisible();
+    await completeSetup(page, { instrument: '6guitar' });
+
+    await goToView(page, 'instrument');
+    await page.getByRole('button', { name: /^Edit/ }).first().click();
+    await expect(page.locator('#instrument-style')).toHaveCount(0);
+    await expect(page.locator('#heuristics-preset')).toBeVisible();
+  });
+
   test('an instrument can be renamed and retuned after the fact', async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page, { instrument: '6guitar' });

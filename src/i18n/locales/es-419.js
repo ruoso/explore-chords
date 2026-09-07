@@ -198,6 +198,9 @@ export default {
     strings: 'Cuerdas',
     stringsHelp:
       'De la cuerda más grave a la más aguda. Sirve cualquier lista de notas separadas por comas, incluidas las afinaciones reentrantes.',
+    style: 'Cómo tocas',
+    styleHelp:
+      'Define qué formas se ofrecen: con los dedos se permite una cuerda apagada en medio del acorde; al rasguear, no. La pantalla del instrumento lo cambia después.',
     name: 'Nombre',
     nameHelp: 'Aparece en el selector. Ponles a las afinaciones personalizadas nombres que reconozcas.',
     frets: 'Trastes',
@@ -241,7 +244,8 @@ export default {
     custom: 'Personalizado',
     presets: {
       beginner: 'Principiante',
-      standard: 'Estándar',
+      strumming: 'Rasgueo',
+      fingerstyle: 'Punteo',
       jazz: 'Jazz',
       bassFriendly: 'Para bajo',
     },
@@ -477,6 +481,30 @@ export default {
             'En pantalla y al imprimir, los compases de una sección quedan en columnas, como en un ' +
             'cifrado escrito a mano, y la hoja impresa empieza por el cifrado y deja las formas ' +
             'pequeñas debajo.',
+        },
+      ],
+    },
+    '0.4.0': {
+      title: 'Qué cambió en la 0.4',
+      sections: [
+        {
+          heading: 'Rasgueo o punteo',
+          text:
+            'Las reglas que se llamaban Estándar ahora se llaman Rasgueo, y Punteo quedó al ' +
+            'lado. Quien puntea sencillamente no toca la cuerda del medio del acorde, así que ' +
+            'el punteo permite formas que el rasgueo no alcanza. Al configurar un instrumento ' +
+            'se te pregunta cuál tocas, y la pantalla del instrumento lo cambia después.',
+        },
+        {
+          heading: 'Se acabaron las cuerdas apagadas porque sí',
+          text:
+            'Una forma deja de ofrecerse cuando la misma forma con una de sus cuerdas apagadas ' +
+            'sonando también está y los dedos que la completan bajan sin esfuerzo. Sol menor te ' +
+            'da 3x0333, con la cuerda re sonando, en lugar de 3xx333, que la apaga sin razón, y ' +
+            'el do al aire aparece entero en vez de a pedazos. Una estirada o una cejilla siguen ' +
+            'contando como trabajo, así que las formas que necesitan una siguen ahí. Y una ' +
+            'cuerda apagada en medio dejó de contar en la dificultad: al puntear, una cuerda que ' +
+            'no tocas no cuesta nada.',
         },
       ],
     },
