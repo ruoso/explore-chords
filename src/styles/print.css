@@ -45,18 +45,19 @@
 
 .ec-print-section {
   break-inside: avoid;
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.5rem;
 }
 
 .ec-print-section-name {
-  margin: 0 0 0.2rem;
+  margin: 0;
   font-size: 0.95rem;
+  line-height: 1.3;
 }
 
-.ec-print-progression {
+/* Lines sit close: a chart is scanned as a block, not read as prose. */
+.ec-print-line {
   margin: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.9rem;
+  line-height: 1.35;
 }
 
 @media print {
