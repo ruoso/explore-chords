@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshVisit, completeSetup, goToView, appState, addInstrument } from './helpers.js';
+import { freshVisit, completeSetup, goToView, appState, addInstrument, dismissTutorial } from './helpers.js';
 
 /**
  * Song sheets (docs/DESIGN.md §2.5, §8.2).
@@ -518,6 +518,7 @@ test.describe('sharing a song', () => {
     await other.goto('./');
     await other.selectOption('#instrument-catalog', 'ukulele');
     await other.getByRole('button', { name: 'Start playing' }).click();
+    await dismissTutorial(other);
     await other.goto(link);
 
     // The song carries its own instrument, so the viewing-as bar appears rather

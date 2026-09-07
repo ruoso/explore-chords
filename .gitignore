@@ -8,3 +8,6 @@ playwright-report/
 /test-results/
 /playwright-report/
 /blob-report/
+
+# Local agent worktrees are not part of the project.
+.claude/worktrees/

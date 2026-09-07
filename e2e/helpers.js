@@ -12,6 +12,21 @@ export async function freshVisit(page, query = '') {
   await page.goto(`./${query}`);
 }
 
+/**
+ * Close the tutorial if it is showing.
+ *
+ * It opens the first time the app proper renders, which for a fresh profile is
+ * right after setup. It is modal, so a test that wants to click anything else
+ * has to put it away first — exactly as a person would.
+ */
+export async function dismissTutorial(page) {
+  const dialog = page.locator('#announcement-dialog');
+  if ((await dialog.count()) > 0) {
+    await page.locator('#announcement-close').click();
+    await expect(dialog).toHaveCount(0);
+  }
+}
+
 /** Complete first-run setup with an instrument and tuning. */
 export async function completeSetup(page, { instrument = '6guitar', tuning, name } = {}) {
   await expect(page.getByRole('heading', { name: 'Choose your instrument' })).toBeVisible();
@@ -20,6 +35,7 @@ export async function completeSetup(page, { instrument = '6guitar', tuning, name
   if (name) await page.fill('#instrument-name', name);
   await page.getByRole('button', { name: 'Start playing' }).click();
   await expect(page.locator('#chord-input')).toBeVisible();
+  await dismissTutorial(page);
 }
 
 /** Add another instrument through the header switcher. */

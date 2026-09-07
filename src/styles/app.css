@@ -1197,3 +1197,57 @@ body {
   letter-spacing: 0.04em;
   vertical-align: middle;
 }
+
+/* --- announcements: the tutorial and what changed ----------------------- */
+
+.ec-announcement {
+  width: min(38rem, 92vw);
+}
+
+.ec-announcement-body {
+  margin-top: 0.5rem;
+}
+
+.ec-announcement-section + .ec-announcement-section {
+  margin-top: 0.9rem;
+}
+
+.ec-announcement-heading {
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.ec-announcement-text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.ec-announcement-actions {
+  justify-content: space-between;
+  margin-top: 1.1rem;
+}
+
+.ec-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ec-help {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.ec-help:hover {
+  color: var(--fg);
+  border-color: var(--accent);
+}

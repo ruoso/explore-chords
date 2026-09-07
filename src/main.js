@@ -30,15 +30,22 @@ import { encodeSheetLink, decodeSheetLink } from './state/codec.js';
 import { instrumentInstance } from './core/instrument.js';
 import { setupUpdates } from './ui/update-toast.js';
 import { setupInstallPrompt } from './ui/install-prompt.js';
+import { setupAnnouncements } from './ui/announcement-dialog.js';
 
 const store = createStore();
 let install = null;
+let announcements = null;
 const fromUrl = readUrl();
 
 const root = document.querySelector('#app');
 
 const nodes = {
   header: el('header', { class: 'ec-header' }),
+  help: el(
+    'button',
+    { type: 'button', class: 'ec-help', id: 'help-open', 'aria-label': 'Help and what changed' },
+    'Help'
+  ),
   chip: el('div', { class: 'ec-header-chip' }),
   nav: el('div', { class: 'ec-nav-slot' }),
   viewAs: el('div', { class: 'ec-viewas-slot', hidden: true }),
@@ -56,8 +63,9 @@ function mount() {
   clear(root);
   nodes.header.append(
     el('h1', { class: 'ec-title' }, 'Explore Chords'),
-    nodes.chip
+    el('div', { class: 'ec-header-actions' }, nodes.help, nodes.chip)
   );
+  nodes.help.addEventListener('click', () => announcements?.open('welcome'));
   root.append(
     nodes.header,
     nodes.nav,
@@ -422,6 +430,11 @@ function render() {
   nodes.chip.hidden = false;
   nodes.nav.hidden = false;
 
+  // The app proper is on screen: the first time that happens, say hello or
+  // say what changed. Not during setup — a tutorial about screens you cannot
+  // see yet would be noise.
+  announcements?.maybeShow();
+
   renderInstrumentChip(nodes.chip, {
     store,
     onSwitch: (id) => {
@@ -547,6 +560,11 @@ globalThis.__ec.updates = setupUpdates(nodes.toast);
 
 install = setupInstallPrompt(nodes.install, { store });
 globalThis.__ec.install = install;
+
+announcements = setupAnnouncements({ store });
+globalThis.__ec.announcements = announcements;
+// The initial render ran before the controller existed; give it its chance now.
+if (!store.needsSetup && !store.state.instrumentForm) announcements.maybeShow();
 
 applySharedSheet();
 

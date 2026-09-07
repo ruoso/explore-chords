@@ -310,6 +310,29 @@ triggers the §2.1 "viewing as" bar.
 
 ---
 
+### 2.8 The tutorial, and what changed
+
+The app says two things unprompted: how it works, once, and what changed, once
+per release. They are one mechanism — **announcements**, an ordered list in
+`data/announcements.js`, each with an id and a kind. The tutorial is the first
+entry; a release note is a later one whose id is the version. Adding an entry is
+the whole release process.
+
+On open, the rule is small enough to state whole. Nothing seen yet means a
+first open: show the tutorial, and count every current entry as seen, so a
+newcomer is not then told what changed in versions they never used. Otherwise
+show the newest release note not yet seen. Both are available at any time from
+**Help** in the header, and opening one that way changes nothing about what is
+counted as seen — only an announcement the app opened by itself is marked seen
+when closed.
+
+"First open" is the first time the app proper renders, not the setup screen: a
+tutorial describing screens you cannot see yet would be noise. Someone arriving
+by a shared link, which skips setup, sees it immediately.
+
+Content is structured — headed paragraphs — rather than HTML, so it renders
+through the same element helper as everything else and cannot smuggle in markup.
+
 ## 3. Architecture
 
 ### 3.1 Stack
