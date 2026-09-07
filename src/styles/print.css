@@ -55,23 +55,23 @@
 }
 
 /* A table per section, so measures sit in columns. Lines sit close: a chart
-   is scanned as a block, not read as prose. */
+   is scanned as a block, not read as prose. Borders stay separate so each
+   row's bar lines are its own rather than one rule down the section. */
 .ec-print-chart {
   max-width: 100%;
-  border-collapse: collapse;
-  line-height: 1.35;
+  border-collapse: separate;
+  border-spacing: 0 0.2rem;
+  margin: -0.2rem 0;
+  line-height: 1.15;
 }
 
-.ec-print-measure {
+.ec-print-cell {
   padding: 0 0.45rem;
+  text-align: center;
   vertical-align: top;
 }
 
-.ec-print-measure:first-child {
-  padding-left: 0;
-}
-
-.ec-print-measure + .ec-print-measure {
+.ec-print-cell.is-measure-start:not(:first-child) {
   border-left: 1px solid var(--border);
 }
 
@@ -98,7 +98,7 @@
     border-top-color: #000;
   }
 
-  .ec-print-measure + .ec-print-measure {
+  .ec-print-cell.is-measure-start {
     border-left-color: #000;
   }
 }

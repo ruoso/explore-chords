@@ -13,6 +13,7 @@
 import { el, clear } from './dom.js';
 import { parseChord } from '../core/notation/parse.js';
 import { parseSong, compareVoicings } from '../core/song.js';
+import { layoutSection } from '../core/chart-layout.js';
 import { resolveSongVoicings } from '../core/voicings.js';
 import { renderDiagram } from '../render/index.js';
 import { t } from '../i18n/index.js';
@@ -39,15 +40,25 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
   for (const section of song.sections) {
     const block = el('section', { class: 'ec-print-section' });
     if (section.name) block.append(el('h2', { class: 'ec-print-section-name' }, section.name));
-    // A table per section: measures line up in columns, as on a written chart.
+    // A table per section: measures line up in columns, as on a written chart,
+    // and a measure with several chords splits its column between them.
     const table = el('table', { class: 'ec-print-chart', role: 'presentation' });
     const body = el('tbody');
-    for (const line of section.lines) {
+    for (const measures of layoutSection(section)) {
       const row = el('tr', { class: 'ec-print-line' });
-      for (const measure of line.measures) {
-        row.append(
-          el('td', { class: 'ec-print-measure' }, measure.chords.map((c) => c.raw).join(' '))
-        );
+      for (const cells of measures) {
+        cells.forEach(({ chord, span }, j) => {
+          row.append(
+            el(
+              'td',
+              {
+                class: `ec-print-cell${j === 0 ? ' is-measure-start' : ''}`,
+                colspan: span > 1 ? String(span) : null,
+              },
+              chord ? chord.raw : ''
+            )
+          );
+        });
       }
       body.append(row);
     }

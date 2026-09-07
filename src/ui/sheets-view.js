@@ -37,6 +37,7 @@ import {
   normaliseTuning,
 } from '../core/song.js';
 import { formatTuning } from '../core/instrument.js';
+import { layoutSection } from '../core/chart-layout.js';
 import { resolveSongVoicings, unvoiceableKeys } from '../core/voicings.js';
 import { parseChord } from '../core/notation/parse.js';
 import { renderDiagram } from '../render/index.js';
@@ -296,20 +297,26 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
     for (const section of song.sections) {
       const block = el('div', { class: 'ec-song-section' });
       if (section.name) block.append(el('h4', { class: 'ec-song-section-name' }, section.name));
-      // One table per section, a row per line and a cell per measure, so the
-      // measures line up in columns the way they do on a hand-written chart.
+      // One table per section, a row per line and a column per measure, so the
+      // measures line up the way they do on a hand-written chart. A measure
+      // with several chords splits its column between them.
       const table = el('table', { class: 'ec-song-chart', role: 'presentation' });
       const body = el('tbody');
-      for (const line of section.lines) {
+      for (const measures of layoutSection(section)) {
         const row = el('tr', { class: 'ec-song-line' });
-        for (const measure of line.measures) {
-          const bar = el('td', { class: 'ec-measure' });
-          for (const chord of measure.chords) {
+        for (const cells of measures) {
+          cells.forEach(({ chord, span }, j) => {
+            const cell = el('td', {
+              class: `ec-chord-cell${j === 0 ? ' is-measure-start' : ''}`,
+              colspan: span > 1 ? String(span) : null,
+            });
+            row.append(cell);
+            if (!chord) return;
             const resolution = resolved.get(chord.key);
             const source = resolution?.source ?? null;
             const state =
               source === 'chosen' ? ' is-voiced' : source === 'default' ? ' is-default' : '';
-            bar.append(
+            cell.append(
               el(
                 'button',
                 {
@@ -331,8 +338,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
                   : null
               )
             );
-          }
-          row.append(bar);
+          });
         }
         body.append(row);
       }

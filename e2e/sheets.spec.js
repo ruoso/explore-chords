@@ -71,10 +71,14 @@ test.describe('writing the chart as text', () => {
     await expect(page.locator('.ec-song-section-name').nth(1)).toHaveText('Chorus');
     // Two lines in the verse, one in the chorus.
     await expect(page.locator('.ec-song-line')).toHaveCount(3);
-    // First line: two measures, the first holding two chords.
+    // First line: two measures, each holding two chords, one chord per cell.
     const firstLine = page.locator('.ec-song-line').first();
-    await expect(firstLine.locator('.ec-measure')).toHaveCount(2);
-    await expect(firstLine.locator('.ec-measure').first().locator('.ec-measure-chord')).toHaveCount(2);
+    await expect(firstLine.locator('.ec-chord-cell.is-measure-start')).toHaveCount(2);
+    await expect(firstLine.locator('.ec-chord-cell .ec-measure-chord')).toHaveCount(4);
+    // Second line: one chord per measure, so each spans its measure's columns.
+    const secondLine = page.locator('.ec-song-line').nth(1);
+    await expect(secondLine.locator('.ec-chord-cell')).toHaveCount(2);
+    await expect(secondLine.locator('.ec-chord-cell').first()).toHaveAttribute('colspan', '2');
   });
 
   test('a symbol that is not a chord is reported, not silently dropped', async ({ page }) => {
@@ -491,7 +495,7 @@ test.describe('printing', () => {
     await expect(printRoot.locator('.ec-print-chord')).toHaveCount(2);
     await expect(printRoot.locator('svg.ec-diagram')).toHaveCount(2);
     await expect(printRoot.locator('.ec-print-section-name')).toHaveText('Verse');
-    await expect(printRoot.locator('.ec-print-line .ec-print-measure')).toHaveText(['C', 'G']);
+    await expect(printRoot.locator('.ec-print-line .ec-print-cell')).toHaveText(['C', 'G']);
 
     // Under print media the song is what shows, and the app is not.
     await page.emulateMedia({ media: 'print' });

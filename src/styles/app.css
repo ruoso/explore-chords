@@ -871,22 +871,23 @@ body {
   overflow-x: auto;
 }
 
+/* Borders stay separate so each row's bar lines are its own: a bar that ran
+   unbroken down the section read as a column rule, not as bars. */
 .ec-song-chart {
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 0.3rem;
+  margin: -0.3rem 0;
 }
 
-.ec-measure {
-  padding: 0.15rem 0.4rem;
+.ec-chord-cell {
+  padding: 0 0.4rem;
+  text-align: center;
   white-space: nowrap;
   vertical-align: top;
 }
 
-.ec-measure + .ec-measure {
+.ec-chord-cell.is-measure-start:not(:first-child) {
   border-left: 1px solid var(--border);
-}
-
-.ec-measure-chord + .ec-measure-chord {
-  margin-left: 0.3rem;
 }
 
 .ec-measure-chord {
