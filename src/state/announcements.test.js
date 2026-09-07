@@ -23,9 +23,11 @@ describe('what to show on open', () => {
     expect(p.markSeen).toEqual(['0.2.0']);
   });
 
-  it('shows only the newest when several releases were missed', () => {
+  it('shows only the newest when several releases were missed, and counts the rest as seen', () => {
     const p = pendingAnnouncement(['welcome'], list);
     expect(p.announcement.id).toBe('0.2.0');
+    // Otherwise the older one would come up on the next open, out of order.
+    expect(p.markSeen).toEqual(['0.1.0', '0.2.0']);
   });
 
   it('shows nothing when everything has been seen', () => {

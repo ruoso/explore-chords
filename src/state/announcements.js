@@ -4,8 +4,10 @@
  * The rule is small enough to state whole. On a first open — nothing seen yet
  * — show the tutorial, and count everything current as seen, so a newcomer is
  * not then told what changed in versions they never used. Otherwise show the
- * newest release note not yet seen. Opening something by hand, from the Help
- * link, changes none of this.
+ * newest release note not yet seen, and count every older one as seen with it:
+ * someone who missed two releases is told about the latest, not walked back
+ * through each. Opening something by hand, from the Help link, changes none
+ * of this.
  */
 
 import { ANNOUNCEMENTS } from '../data/announcements.js';
@@ -42,7 +44,7 @@ export function pendingAnnouncement(seen = [], list = ANNOUNCEMENTS) {
 
   const unseen = list.filter((a) => a.kind === 'release' && !seenSet.has(a.id));
   const newest = unseen[unseen.length - 1];
-  if (newest) return { announcement: newest, markSeen: [newest.id] };
+  if (newest) return { announcement: newest, markSeen: unseen.map((a) => a.id) };
 
   return null;
 }

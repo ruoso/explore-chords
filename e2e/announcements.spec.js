@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { freshVisit, completeSetup, dismissTutorial } from './helpers.js';
+import { latestReleaseOf } from '../src/state/announcements.js';
+
+/** The newest release note: what a returning user is shown. Never a pinned version. */
+const LATEST = latestReleaseOf().id;
 
 /**
  * The tutorial and "what changed" (docs/DESIGN.md §2.8).
@@ -56,7 +60,7 @@ test.describe('the tutorial', () => {
 
     // The pending release note is still pending.
     await page.reload();
-    await expect(dialog(page)).toHaveAttribute('data-announcement', '0.2.0');
+    await expect(dialog(page)).toHaveAttribute('data-announcement', LATEST);
   });
 
   test('links to what changed, and back', async ({ page }) => {
@@ -65,7 +69,7 @@ test.describe('the tutorial', () => {
     await page.locator('#help-open').click();
 
     await page.locator('#announcement-switch').click();
-    await expect(dialog(page)).toHaveAttribute('data-announcement', '0.2.0');
+    await expect(dialog(page)).toHaveAttribute('data-announcement', LATEST);
     await expect(dialog(page)).toContainText('What changed');
 
     await page.locator('#announcement-switch').click();
@@ -90,12 +94,12 @@ test.describe('what changed', () => {
   test('a returning user sees a new release note once', async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page);
-    // As if they had last used the app before 0.2.0 existed.
+    // As if they had last used the app before the newest release existed.
     await setSeen(page, ['welcome']);
 
     await page.reload();
     await expect(dialog(page)).toBeVisible();
-    await expect(dialog(page)).toHaveAttribute('data-announcement', '0.2.0');
+    await expect(dialog(page)).toHaveAttribute('data-announcement', LATEST);
     await page.locator('#announcement-close').click();
 
     await page.reload();

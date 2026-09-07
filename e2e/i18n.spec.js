@@ -2,6 +2,12 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { freshVisit, completeSetup, searchChord } from './helpers.js';
 
+/** Submit a chord without the English button label the shared helper relies on. */
+async function searchChordByKeyboard(page, symbol) {
+  await page.fill('#chord-input', symbol);
+  await page.press('#chord-input', 'Enter');
+}
+
 /**
  * Languages (docs/DESIGN.md §2.9).
  *
@@ -26,7 +32,7 @@ test.describe('a Portuguese browser', () => {
     await page.locator('#announcement-close').click();
 
     await expect(page.locator('#nav-sheets')).toHaveText('Músicas');
-    await searchChord(page, 'C');
+    await searchChordByKeyboard(page, 'C');
     await expect(page.locator('.ec-group-title').first()).toContainText('Posição aberta');
     // Diagram descriptions are translated too, not only the visible text.
     const label = await page.locator('.ec-diagram').first().getAttribute('aria-label');
