@@ -160,12 +160,20 @@ no meaning without one.
 
 ### 2.4 Result view
 
-Fingerings arrive **ranked by difficulty** and **grouped by neck position**,
-where position is defined as the **lowest fretted fret** — group `Open`, then
-`Fret 1`, `Fret 3`, `Fret 5`, and so on, skipping empty groups. (Deliberately
-*not* CAGED-style roman numeral positions: those assume a guitar in standard
-tuning and mean nothing on a re-entrant ukulele or an 8-string.) Each group is a
-horizontally scrollable row of diagrams on phone, a wrapped grid on desktop.
+Fingerings arrive **ranked by difficulty** and **grouped by neck position** —
+where the hand is, which is what a player browses by. **Open position** is the
+textbook one: every fretted note within the first four frets and at least one
+open string. Everything else is grouped by its **lowest fretted fret**: `Open`,
+then `Fret 1`, `Fret 3`, `Fret 5`, and so on, skipping empty groups.
+
+The definition matters. "Uses an open string" is not it: a shape with the hand
+at fret 12 and one string ringing open belongs under fret 12, since the open
+string is incidental to where the hand sits. And the F barre at fret 1 is
+*fret 1*, not open — no open strings, the hand is doing something different.
+(Deliberately *not* CAGED-style roman numeral positions: those assume a guitar
+in standard tuning and mean nothing on a re-entrant ukulele or an 8-string.)
+Each group is a horizontally scrollable row of diagrams on phone, a wrapped grid
+on desktop.
 
 Each diagram shows:
 - dots with **finger numbers** (1–4, `T` for thumb), **barres drawn as a bar**

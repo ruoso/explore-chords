@@ -25,7 +25,18 @@ test.describe('grouping and ranking', () => {
 
   test('show more expands a group and can be collapsed again', async ({ page }) => {
     await searchChord(page, 'C');
-    const group = page.locator('.ec-group').first();
+    // Whichever group overflows. Open position is deliberately small — it is
+    // the handful of shapes at the nut, not everything with an open string —
+    // so it is no longer guaranteed to be the one with a "Show all".
+    const overflowing = page
+      .locator('.ec-group', { has: page.getByRole('button', { name: /Show all/ }) })
+      .first();
+    await expect(overflowing).toBeVisible();
+    // Pin it by its heading id. Once expanded its button reads "Show fewer",
+    // so a locator filtered on "Show all" would silently drift to the next
+    // group after the click and count that one instead.
+    const id = await overflowing.getAttribute('aria-labelledby');
+    const group = page.locator(`.ec-group[aria-labelledby="${id}"]`);
     const before = await group.locator('.ec-card').count();
 
     const button = group.getByRole('button', { name: /Show all/ });

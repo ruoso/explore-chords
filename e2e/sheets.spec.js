@@ -223,7 +223,14 @@ test.describe('choosing voicings', () => {
   test('a group in the picker expands the same way', async ({ page }) => {
     await page.locator('.ec-measure-chord', { hasText: 'Cm' }).first().click();
     const dialog = page.locator('#voicing-dialog');
-    const first = dialog.locator('.ec-group').first();
+    // Whichever group overflows, for the same reason as the explorer test.
+    const overflowing = dialog
+      .locator('.ec-group', { has: page.getByRole('button', { name: /Show all/ }) })
+      .first();
+    await expect(overflowing).toBeVisible();
+    // Pinned by heading id, for the same reason as the explorer test.
+    const id = await overflowing.getAttribute('aria-labelledby');
+    const first = dialog.locator(`.ec-group[aria-labelledby="${id}"]`);
     const before = await first.locator('.ec-dialog-choice').count();
 
     const more = first.getByRole('button', { name: /Show all/ });

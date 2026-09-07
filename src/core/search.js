@@ -125,6 +125,28 @@ function generateForWindow(chord, instrument, config, lo, hi, req, out, budget) 
   return exhausted;
 }
 
+/** Fretted notes no higher than this can be played with the hand at the nut. */
+export const OPEN_POSITION_LIMIT = 4;
+
+/**
+ * Where the hand is, which is what a player browses by.
+ *
+ * Open position is the textbook one: every fretted note within the first four
+ * frets, and at least one open string. So x32010, 320003 and xx0232 are open,
+ * while 133211 is fret 1 — no open strings, the hand is doing something else —
+ * and x-x-12-13-0-13 is fret 12. That last one is why "uses an open string" is
+ * not the definition: the open string is incidental to where the hand sits.
+ *
+ * @returns {number} 0 for open position, else the lowest fretted fret
+ */
+export function positionOf(frets, hand) {
+  const fretted = frets.filter((f) => typeof f === 'number' && f > 0);
+  const hasOpen = frets.includes(0);
+  const highest = fretted.length ? Math.max(...fretted) : 0;
+  if (hasOpen && highest <= OPEN_POSITION_LIMIT) return 0;
+  return hand.lowestFret;
+}
+
 /** Reject candidates that break a rule no amount of finger skill can fix. */
 function candidateProblem(frets, instrument, chord, config, req) {
   const sounding = [];
@@ -240,11 +262,7 @@ export function searchFingerings(chord, instrument, config, options = {}) {
         barre: hand.barre,
         midis,
         omittedRoles,
-        // A shape that uses open strings is in open position, whatever fret its
-        // fretted notes sit at: x32010 and 320003 are both "open" to a player,
-        // while 133211 is a barre at fret 1. Grouping on the lowest fretted
-        // fret alone would file the first two under fret 1 and fret 3.
-        position: frets.includes(0) ? 0 : hand.lowestFret,
+        position: positionOf(frets, hand),
         score,
         difficulty: difficultyBucket(score.total),
         shorthand: shorthandOf(frets),
@@ -328,7 +346,7 @@ export function fingeringFromFrets(frets, chord, instrument, config) {
     barre: hand.barre,
     midis,
     omittedRoles,
-    position: frets.includes(0) ? 0 : hand.lowestFret,
+    position: positionOf(frets, hand),
     score,
     difficulty: difficultyBucket(score.total),
     shorthand: shorthandOf(frets),

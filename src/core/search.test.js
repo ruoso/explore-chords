@@ -11,6 +11,7 @@ import {
   allFingerings,
   shorthandOf,
   fingeringFromFrets,
+  positionOf,
 } from './search.js';
 import { handProblem } from './fingers.js';
 import { pitchClass } from './pitch.js';
@@ -312,5 +313,49 @@ describe('rebuilding a fingering from stored frets', () => {
     const guitar = instrumentInstance({ catalogId: '6guitar', strings: 'E2, A2, D3, G3, B3, E4' });
     expect(fingeringFromFrets(null, chord, guitar)).toBeNull();
     expect(fingeringFromFrets([], chord, guitar)).toBeNull();
+  });
+});
+
+describe('position is where the hand is', () => {
+  const hand = (frets) => ({
+    lowestFret: Math.min(...frets.filter((f) => typeof f === 'number' && f > 0)),
+  });
+  const pos = (frets) => positionOf(frets, hand(frets));
+
+  it('calls the textbook open chords open', () => {
+    expect(pos(['x', 3, 2, 0, 1, 0])).toBe(0); // C
+    expect(pos([3, 2, 0, 0, 0, 3])).toBe(0); // G
+    expect(pos(['x', 'x', 0, 2, 3, 2])).toBe(0); // D
+    expect(pos([0, 2, 2, 1, 0, 0])).toBe(0); // E
+  });
+
+  it('does not call a barre at the nut open', () => {
+    // No open strings: the hand is doing something different from an open
+    // chord, even though it sits at fret 1.
+    expect(pos([1, 3, 3, 2, 1, 1])).toBe(1);
+  });
+
+  it('files a high shape by where the hand is, even with a string ringing open', () => {
+    // The complaint that prompted this: an open string is incidental to a hand
+    // sitting at the twelfth fret.
+    expect(pos(['x', 'x', 12, 13, 0, 13])).toBe(12);
+    expect(pos(['x', 0, 'x', 5, 5, 0])).toBe(5);
+  });
+
+  it('draws the line at the fourth fret', () => {
+    expect(pos([0, 0, 4, 4, 4, 'x'])).toBe(0);
+    expect(pos([0, 0, 5, 5, 5, 'x'])).toBe(5);
+  });
+
+  it('keeps a high open-string shape out of the open group in a real search', () => {
+    const instrument = guitar();
+    const result = searchFingerings(parseChord('B°').chord, instrument);
+    const open = result.groups.find((g) => g.position === 0);
+    for (const f of open?.fingerings ?? []) {
+      const fretted = f.frets.filter((x) => typeof x === 'number' && x > 0);
+      expect(Math.max(...fretted), f.shorthand).toBeLessThanOrEqual(4);
+    }
+    const high = allFingerings(result).find((f) => f.shorthand === 'x-x-12-13-0-13');
+    if (high) expect(high.position).toBe(12);
   });
 });
