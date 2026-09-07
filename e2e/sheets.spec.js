@@ -491,7 +491,7 @@ test.describe('printing', () => {
     await expect(printRoot.locator('.ec-print-chord')).toHaveCount(2);
     await expect(printRoot.locator('svg.ec-diagram')).toHaveCount(2);
     await expect(printRoot.locator('.ec-print-section-name')).toHaveText('Verse');
-    await expect(printRoot.locator('.ec-print-line')).toContainText('C  |  G');
+    await expect(printRoot.locator('.ec-print-line .ec-print-measure')).toHaveText(['C', 'G']);
 
     // Under print media the song is what shows, and the app is not.
     await page.emulateMedia({ media: 'print' });

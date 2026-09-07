@@ -865,21 +865,28 @@ body {
   letter-spacing: 0.04em;
 }
 
-.ec-song-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
-  margin: 0 0 0.3rem;
+/* A table per section, so measures sit in columns. A long line scrolls
+   sideways inside the section rather than wrapping out of its columns. */
+.ec-song-section {
+  overflow-x: auto;
+}
+
+.ec-song-chart {
+  border-collapse: collapse;
 }
 
 .ec-measure {
-  display: inline-flex;
-  gap: 0.3rem;
+  padding: 0.15rem 0.4rem;
+  white-space: nowrap;
+  vertical-align: top;
 }
 
-.ec-bar {
-  color: var(--muted);
+.ec-measure + .ec-measure {
+  border-left: 1px solid var(--border);
+}
+
+.ec-measure-chord + .ec-measure-chord {
+  margin-left: 0.3rem;
 }
 
 .ec-measure-chord {

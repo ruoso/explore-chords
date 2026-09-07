@@ -299,11 +299,14 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
     for (const section of song.sections) {
       const block = el('div', { class: 'ec-song-section' });
       if (section.name) block.append(el('h4', { class: 'ec-song-section-name' }, section.name));
+      // One table per section, a row per line and a cell per measure, so the
+      // measures line up in columns the way they do on a hand-written chart.
+      const table = el('table', { class: 'ec-song-chart', role: 'presentation' });
+      const body = el('tbody');
       for (const line of section.lines) {
-        const row = el('p', { class: 'ec-song-line' });
-        line.measures.forEach((measure, i) => {
-          if (i > 0) row.append(el('span', { class: 'ec-bar', 'aria-hidden': 'true' }, '|'));
-          const bar = el('span', { class: 'ec-measure' });
+        const row = el('tr', { class: 'ec-song-line' });
+        for (const measure of line.measures) {
+          const bar = el('td', { class: 'ec-measure' });
           for (const chord of measure.chords) {
             const resolution = resolved.get(chord.key);
             const source = resolution?.source ?? null;
@@ -335,9 +338,11 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
             );
           }
           row.append(bar);
-        });
-        block.append(row);
+        }
+        body.append(row);
       }
+      table.append(body);
+      block.append(table);
       chart.append(block);
     }
   }

@@ -256,7 +256,10 @@ not the same song yet.
 A `#` line names a section. Every other line is a line of the chart: a vertical
 bar separates measures, spaces separate chords inside one. That is how a
 musician writes a chart out, and it is far quicker than a form for adding
-sections and chords one at a time.
+sections and chords one at a time. It is also how the chart is shown, on screen
+and on paper: each section is a table with a row per line and a cell per
+measure, so the measures of a section line up in columns and the eye can find
+bar three of any line without counting.
 
 **Voicings live in the text, not beside it.** Clicking any chord in the chart
 opens a picker and changes *that* occurrence; clicking a shape in the voicings

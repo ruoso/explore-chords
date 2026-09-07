@@ -38,17 +38,20 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
   for (const section of song.sections) {
     const block = el('section', { class: 'ec-print-section' });
     if (section.name) block.append(el('h2', { class: 'ec-print-section-name' }, section.name));
+    // A table per section: measures line up in columns, as on a written chart.
+    const table = el('table', { class: 'ec-print-chart', role: 'presentation' });
+    const body = el('tbody');
     for (const line of section.lines) {
-      block.append(
-        el(
-          'p',
-          { class: 'ec-print-line' },
-          line.measures
-            .map((m) => m.chords.map((c) => c.raw).join('  '))
-            .join('  |  ')
-        )
-      );
+      const row = el('tr', { class: 'ec-print-line' });
+      for (const measure of line.measures) {
+        row.append(
+          el('td', { class: 'ec-print-measure' }, measure.chords.map((c) => c.raw).join(' '))
+        );
+      }
+      body.append(row);
     }
+    table.append(body);
+    block.append(table);
     article.append(block);
   }
 
