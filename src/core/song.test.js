@@ -177,6 +177,34 @@ describe('a song with words under the chords', () => {
     expect(song.symbols).toEqual(['G', 'D', 'Em', 'C']);
   });
 
+  it('takes a single word as words once the song is sung', () => {
+    // A verse that wraps often ends in one word. Two words are needed to
+    // *establish* that a song is sung, because a chart line with one typo in it
+    // looks the same; after that, one word is a line of words like any other.
+    const song = parseSong(
+      [
+        '         D#7M',
+        'Se rodopiando ao som dos',
+        '    Gm  Gm/F Em7/5- D#7M',
+        'bandolins',
+      ].join('\n'),
+      'brazilian'
+    );
+    expect(song.unknown).toEqual([]);
+    const lines = song.sections[0].lines;
+    expect(lines.map((l) => l.lyrics)).toEqual([true, true]);
+    expect(lines[1].measures[0].segments[0].lyric).toBe('band');
+    expect(lines[1].measures[0].segments[1].chord.symbol).toBe('Gm');
+  });
+
+  it('still leaves a single unknown word in a chart alone', () => {
+    // The other half of the same rule: nothing here is sung, so this is a
+    // chart with a typo in it and says so, exactly as it always did.
+    const song = parseSong('# Verse\nC Am F G\nwobble');
+    expect(song.unknown).toEqual(['wobble']);
+    for (const line of song.sections[0].lines) expect(line.lyrics).toBe(false);
+  });
+
   it('takes a marked line as words however it reads', () => {
     // "A" is a chord and a word, and no rule can tell which. The marker can.
     const plain = parseSong('G\nA\nG\nA');

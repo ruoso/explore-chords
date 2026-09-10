@@ -297,9 +297,12 @@ line, by what is on them, since nothing marks a pasted cifra as one:
 
 - A line whose words are all chords is a chord line, bars or not, and it can
   stand over a line of words.
-- A line of at least two words, half of which are not chords, is a line of
-  words. Both halves of that matter: `C  Am wobble G` is a chart line with a
-  typo in it, and so is a lone unknown word.
+- A line at least half of whose words are not chords is a line of words. That
+  `C  Am wobble G` is not one is the point: it is a chart line with a typo in it.
+- **Two** such words are needed to establish that a song is sung at all, because
+  a chart line with a single typo looks exactly like a chord line with one word
+  under it. Once a song is known to be sung, one word is a line of words like
+  any other — a verse that wraps often ends in one.
 - Anything else is a chart line, as every line was before this.
 
 **Words are only read at all when the song has some**, meaning a chord line

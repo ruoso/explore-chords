@@ -306,18 +306,24 @@ function lineShape(raw, dialect) {
   const body = forced ? stripLyricMarker(raw) : raw;
   const tokens = body.replace(/\|/g, ' ').match(/\S+/g) ?? [];
   // A bracket on its own is neither a chord nor a word: counting it as one
-  // would make a bracketed line of chords look half prose.
+  // would make a bracketed line of chords look a third prose.
   const words = tokens.filter((token) => splitMarks(token).chord !== '');
-  if (tokens.length === 0) return { kind: 'blank', body, forced };
-  if (forced) return { kind: 'words', body, forced };
-  if (words.length === 0) return { kind: 'chart', body, forced };
+
+  if (tokens.length === 0) return { kind: 'blank', body, forced, prose: false };
+  if (forced) return { kind: 'words', body, forced, prose: true };
+  if (words.length === 0) return { kind: 'chart', body, forced, prose: false };
 
   const chords = words.filter((w) => Boolean(parseChord(chordSymbolOf(w), dialect).chord)).length;
-  if (chords === words.length) return { kind: 'chords', body, forced };
-  if (words.length >= 2 && (words.length - chords) / words.length >= 0.5) {
-    return { kind: 'words', body, forced };
-  }
-  return { kind: 'chart', body, forced };
+  if (chords === words.length) return { kind: 'chords', body, forced, prose: false };
+
+  // Prose is a line at least half of whose words are not chords. Two of them
+  // make it *evidence* that the song is sung — see songIsSung, where one word
+  // is not enough, because a chart line with a single typo in it looks exactly
+  // the same. Once the song is known to be sung, one word is a line of words
+  // like any other: a verse that wraps often ends in one.
+  const prose = (words.length - chords) / words.length >= 0.5;
+  if (prose && words.length >= 2) return { kind: 'words', body, forced, prose };
+  return { kind: 'chart', body, forced, prose };
 }
 
 /** Blank the marker rather than remove it, so the columns still line up. */
@@ -359,7 +365,8 @@ function splitMarks(word) {
  * written safe.
  */
 function assembleLines(pending, shapes, sung, dialect, collect) {
-  const wordsUnder = (i) => shapes[i] && shapes[i].kind === 'words';
+  // In a song that is sung, any prose line is a line of words, however short.
+  const wordsUnder = (i) => Boolean(shapes[i] && (shapes[i].prose || shapes[i].forced));
   const out = [];
   let blanks = 0;
   let previousSung = false;
@@ -382,14 +389,14 @@ function assembleLines(pending, shapes, sung, dialect, collect) {
     // A stanza break only survives between two sung lines; anywhere else a
     // blank line is the breathing room in the text it has always been.
     const paired = shape.kind === 'chords' && wordsUnder(i + 1);
-    const sings = paired || shape.kind === 'words';
+    const sings = paired || wordsUnder(i);
     if (blanks > 0 && previousSung && sings) out.push(emptyLine());
     blanks = 0;
 
     if (paired) {
       out.push(sungLine(raw, lineStart, shapes[i + 1].body, dialect, collect));
       i += 1;
-    } else if (shape.kind === 'words') {
+    } else if (wordsUnder(i)) {
       out.push(wordsLine(shape.body));
     } else {
       const line = chartLine(raw, lineStart, dialect, collect);
