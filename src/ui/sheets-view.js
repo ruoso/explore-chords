@@ -215,9 +215,39 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
   const left = el('div', { class: 'ec-song-editor-main' });
   const right = el('div', { class: 'ec-song-editor-side' });
   layout.append(left, right);
+
   page.append(layout);
 
-  left.append(el('div', { class: 'ec-field' }, el('label', { for: 'sheet-title' }, t('editor.title')), title));
+  // The title and the two ways out of the page — share it, print it — on one
+  // row at the top of the editor. They used to sit under the voicings panel,
+  // which on a long song is a scroll away and reads as an afterthought to it.
+  left.append(
+    el(
+      'div',
+      { class: 'ec-song-header' },
+      el(
+        'div',
+        { class: 'ec-field' },
+        el('label', { for: 'sheet-title' }, t('editor.title')),
+        title
+      ),
+      el(
+        'div',
+        { class: 'ec-song-header-actions' },
+        el(
+          'button',
+          { type: 'button', class: 'ec-button', id: 'sheet-share', onClick: onShare },
+          t('editor.share')
+        ),
+        el(
+          'button',
+          { type: 'button', class: 'ec-button', id: 'sheet-print', onClick: onPrint },
+          t('editor.print')
+        )
+      )
+    ),
+    el('div', { class: 'ec-share-slot', id: 'sheet-share-out' })
+  );
 
   // --- the song, as text --------------------------------------------------
 
@@ -526,24 +556,6 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
     );
   }
   right.append(chordsPanel);
-
-  right.append(
-    el(
-      'div',
-      { class: 'ec-actions' },
-      el(
-        'button',
-        { type: 'button', class: 'ec-button ec-button-small', id: 'sheet-share', onClick: onShare },
-        t('editor.share')
-      ),
-      el(
-        'button',
-        { type: 'button', class: 'ec-button ec-button-small', id: 'sheet-print', onClick: onPrint },
-        t('editor.print')
-      )
-    ),
-    el('div', { class: 'ec-share-slot', id: 'sheet-share-out' })
-  );
 
   container.append(page);
   return page;

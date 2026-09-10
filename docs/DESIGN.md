@@ -430,7 +430,12 @@ the cap, because a chart already asks you to read down one column and back up
 the next, and doing that three times across a page is worse than a second sheet.
 
 Stored in localStorage; shared by compressing the whole sheet into a URL
-fragment. Printable via a dedicated print stylesheet — the chart, then a legend
+fragment. **Sharing and printing sit beside the title**, at the top of the editor, since
+they are the two ways out of the page. They used to sit under the voicings
+panel, which on a long song is a scroll away and reads as an afterthought to
+that panel rather than as something the song itself offers.
+
+Printable via a dedicated print stylesheet — the chart, then a legend
 of the voicings used, drawn small enough that a song's shapes fit in a row or
 two: the chart is read while playing, the shapes are looked up. Opening a sheet
 whose instrument is not the active one triggers the §2.1 "viewing as" bar.
