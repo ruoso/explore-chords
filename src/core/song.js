@@ -56,6 +56,8 @@ const VOICING_LINE = /^\s*([^\s=[\]]+)(?:\[(\d+)\])?\s*=\s*(\S+)\s*$/;
 const CHORD_TOKEN = /^(.*?)(?:\[(\d+)\])?$/;
 /** `[Intro]`, alone or with the chords of that section on the same line. */
 const BRACKET_HEADING = /^(\s*\[\s*([^\]]*?)\s*\]\s*)(.*)$/;
+/** `Intro: C  G`, the other way a cifra names a section. */
+const LABEL_HEADING = /^(\s*([^\s:|]+)\s*:\s*)(.*)$/;
 /** A leading `>` forces a line to be read as words. Kept in the text. */
 const LYRIC_MARKER = /^(\s*)>( ?)/;
 
@@ -288,6 +290,12 @@ function stripLyricMarker(raw) {
   return raw.replace(LYRIC_MARKER, (m, indent, space) => indent + ' ' + space);
 }
 
+/** Is this nothing but chords, so that what stands before it names a section? */
+function isChordRun(text, dialect) {
+  const words = text.replace(/\|/g, ' ').match(/\S+/g) ?? [];
+  return words.every((word) => Boolean(parseChord(chordSymbolOf(word), dialect).chord));
+}
+
 /** The chord symbol inside a token, footnote marker removed. */
 function chordSymbolOf(token) {
   const m = CHORD_TOKEN.exec(token);
@@ -464,6 +472,20 @@ export function parseSong(text, dialect) {
       }
       const index = match[2] ? Number(match[2]) : 1;
       block.voicings.set(keyFor(match[1], index), frets);
+      continue;
+    }
+
+    // `Intro: Fm  Fm/D#`, which a cifra writes as often as it writes
+    // `[Intro]`. The words after the colon have to be chords, or every line of
+    // a verse that happens to contain a colon would name a section.
+    const label = LABEL_HEADING.exec(raw);
+    if (label && label[2] && isChordRun(label[3], dialect)) {
+      closeBlock(lineStart);
+      flush();
+      current = { name: label[2], pending: [] };
+      if (label[3].trim() !== '') {
+        current.pending.push({ raw: label[3], lineStart: lineStart + label[1].length });
+      }
       continue;
     }
 

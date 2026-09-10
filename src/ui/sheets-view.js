@@ -344,12 +344,27 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
             continue;
           }
           const line = el('div', { class: 'ec-song-sung' });
+          // Words before the first chord have no chord of their own, and would
+          // otherwise ride up to where the chords are and sit a row above the
+          // rest of their line. They get an empty chord in its place, but only
+          // where the line has chords at all: a line that is only words wants
+          // no blank row over it.
+          const chorded = row.measures.some((cells) => cells.some((c) => c.segment.chord));
           for (const cells of row.measures) {
             cells.forEach(({ segment }, j) => {
               const part = el('span', {
                 class: `ec-sung-segment${j === 0 ? ' is-measure-start' : ''}`,
               });
               if (segment.chord) part.append(chordButton(segment.chord));
+              else if (chorded) {
+                part.append(
+                  el(
+                    'span',
+                    { class: 'ec-measure-chord is-blank', 'aria-hidden': 'true' },
+                    '\u00a0'
+                  )
+                );
+              }
               part.append(el('span', { class: 'ec-sung-words' }, segment.lyric));
               line.append(part);
             });

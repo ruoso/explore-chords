@@ -95,6 +95,28 @@ describe('a song with words under the chords', () => {
   const CIFRA =
     '[Intro] G  D  Em  C\n\n[Primeira Parte]\nG           D\nQuando eu te vi passar\n\nEm            C\nnaquela tarde clara\n';
 
+  it('names a section written as a label, chords on the same line and all', () => {
+    // `Intro: Fm  Fm/D#` is as common as the bracketed form in a cifra.
+    const song = parseSong('Intro: Fm  Fm/D#  Dm7/5-\n\nGm\nComo fosse um par', 'brazilian');
+    expect(song.sections[0].name).toBe('Intro');
+    expect(song.unknown).toEqual([]);
+    expect(song.sections[0].lines[0].measures[0].segments.map((seg) => seg.chord.symbol)).toEqual([
+      'Fm',
+      'Fm/D#',
+      'Dm7/5-',
+    ]);
+  });
+
+  it('only reads a label as a section when chords follow it', () => {
+    // Otherwise every sung line with a colon in it would name one.
+    const song = parseSong('Gm\nEla disse: vem comigo agora', 'brazilian');
+    expect(song.sections.map((sec) => sec.name)).toEqual(['']);
+    expect(song.sections[0].lines[0].lyrics).toBe(true);
+    expect(song.sections[0].lines[0].measures[0].segments[0].lyric).toBe(
+      'Ela disse: vem comigo agora'
+    );
+  });
+
   it('names a section written in brackets, chords on the same line and all', () => {
     const song = parseSong(CIFRA);
     expect(song.sections.map((s) => s.name)).toEqual(['Intro', 'Primeira Parte']);

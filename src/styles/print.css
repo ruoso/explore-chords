@@ -83,6 +83,14 @@
 }
 
 .ec-print-segment-words {
+  line-height: 1.1;
+}
+
+.ec-print-segment-chord.is-blank {
+  visibility: hidden;
+}
+
+.ec-print-segment-words {
   display: block;
   white-space: pre-wrap;
 }

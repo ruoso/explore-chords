@@ -311,7 +311,10 @@ forces the line to be words. Bars force the other reading, since a line with a
 bar in it is always a chart line.
 
 A cifra names its sections in brackets, so `[Intro]` names one exactly as `#`
-does, with that section's chords allowed on the same line after it.
+does, with that section's chords allowed on the same line after it. `Intro: Fm
+Fm/D#` names one too, since cifras write it both ways — but only when what
+follows the colon is chords, or every sung line with a colon in it would name a
+section.
 
 **The segment is the unit, and it carries a chord, words, or both.** A measure
 is a group of segments, bars decide where measures start, chord columns decide
@@ -322,6 +325,11 @@ chord. Because it is all one kind of segment, choosing a voicing, the footnote
 marker and the printed sheet work the same whether or not there are words, and
 **print cannot quietly lose them**, since it draws the same segments the screen
 does.
+
+Words before the first chord of a line are a segment with an *empty* chord
+rather than none, so they sit on the same row as the rest of the line they are
+sung on. A line that has no chords at all gets no such row, since there is
+nothing to leave space for.
 
 Two things follow from putting words under chords. A chord is no longer centred
 in its cell: it marks the point in the words where it changes, so it sits at the

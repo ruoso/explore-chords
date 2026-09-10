@@ -948,6 +948,16 @@ body {
 .ec-sung-segment .ec-measure-chord {
   display: block;
   width: fit-content;
+  /* Explicit, because a button takes the browser's default line height while
+     the empty span beside it inherits the line's, and the two boxes have to
+     come out the same height or the words below them step up and down. */
+  line-height: 1.2;
+}
+
+/* Holds the row open where a segment has no chord, so its words sit level
+   with the words either side rather than up where the chords are. */
+.ec-sung-segment .ec-measure-chord.is-blank {
+  visibility: hidden;
 }
 
 .ec-sung-words {

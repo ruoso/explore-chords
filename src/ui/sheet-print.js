@@ -58,13 +58,22 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
           continue;
         }
         const line = el('div', { class: 'ec-print-sung' });
+        // An empty chord where a segment has none, so words before the first
+        // chord stay on the same row as the rest of the line they are sung on.
+        const chorded = row.measures.some((cells) => cells.some((c) => c.segment.chord));
         for (const cells of row.measures) {
           cells.forEach(({ segment }, j) => {
             line.append(
               el(
                 'span',
                 { class: `ec-print-segment${j === 0 ? ' is-measure-start' : ''}` },
-                segment.chord ? el('span', { class: 'ec-print-segment-chord' }, segment.chord.raw) : null,
+                segment.chord || chorded
+                  ? el(
+                      'span',
+                      { class: `ec-print-segment-chord${segment.chord ? '' : ' is-blank'}` },
+                      segment.chord ? segment.chord.raw : '\u00a0'
+                    )
+                  : null,
                 el('span', { class: 'ec-print-segment-words' }, segment.lyric)
               )
             );
