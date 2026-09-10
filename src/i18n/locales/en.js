@@ -535,8 +535,9 @@ export default {
             'A song can now be written the way a cifra is: a line of chords over the line it ' +
             'is sung to, each chord above the syllable it falls on. Paste one in and it reads ' +
             'as one, with [Intro] and Intro: naming sections the way # already does. The words ' +
-            'come with it onto the printed sheet, and on a phone a verse wraps instead of ' +
-            'running off the side.',
+            'come with it onto the printed sheet, which now takes two columns where the song ' +
+            'is narrow enough — usually halving the pages. On a phone a verse wraps instead ' +
+            'of running off the side.',
         },
         {
           heading: 'Charts are untouched',

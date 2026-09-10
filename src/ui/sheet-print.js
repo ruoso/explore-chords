@@ -24,6 +24,71 @@ import { t } from '../i18n/index.js';
  */
 const PRINT_DIAGRAM_SIZE = 0.7;
 
+/** Columns the sheet may be broken into, at most. See fitColumns. */
+const MAX_PRINT_COLUMNS = 2;
+
+/**
+ * Give the sheet as many columns as the page can hold.
+ *
+ * A song with its words is narrow and tall — a sung line is about a third of
+ * the width of A4 and there are as many of them as the song has lines — so a
+ * single column wastes most of the paper and spends pages doing it. Two columns
+ * routinely turn two pages into one.
+ *
+ * How many fit is not ours to decide: the paper size and the margins are chosen
+ * in the print dialog, and the app never learns them. What the app *can* measure
+ * is how narrow a column the song could live in. So it measures that and sets
+ * `column-width`, and the browser fits as many as the real page allows, down to
+ * one when the song needs it.
+ *
+ * The measure is the longest line anyone sings, so no sung line wraps. Chart
+ * lines are left out of it: their measures sit in a grid and cannot wrap, and
+ * one four-chord intro is easily wider than a verse — enough to force a single
+ * column and cost a page for the sake of one row. Those sections span every
+ * column instead, the way a wide figure does in a magazine.
+ */
+function fitColumns(container, article) {
+  const inline = container.getAttribute('style');
+  // Laid out off-screen and unbounded, so every line can report the width it
+  // would rather have. Hidden rather than removed: it still has to have
+  // geometry to be measured.
+  container.setAttribute(
+    'style',
+    'display:block;position:absolute;visibility:hidden;left:-99999px;top:0;width:99999px'
+  );
+
+  const naturalWidth = (node) => {
+    const before = node.style.width;
+    node.style.width = 'max-content';
+    const width = node.getBoundingClientRect().width;
+    node.style.width = before;
+    return width;
+  };
+  const widest = (nodes) => (nodes.length === 0 ? 0 : Math.max(...nodes.map(naturalWidth)));
+
+  const sung = [...article.querySelectorAll('.ec-print-sung')];
+  const charts = [...article.querySelectorAll('.ec-print-chart')];
+  const column = sung.length > 0 ? widest(sung) : widest(charts);
+  const spanning = new Set();
+  if (column > 0) {
+    for (const chart of charts) {
+      if (naturalWidth(chart) > column) spanning.add(chart);
+    }
+  }
+
+  if (inline === null) container.removeAttribute('style');
+  else container.setAttribute('style', inline);
+
+  if (!(column > 0)) return;
+  article.style.columnWidth = `${Math.ceil(column)}px`;
+  // Two at most. A third column pays for itself on paper and not in the
+  // reading: a chart already asks you to go down one column and back up the
+  // next, and doing that three times across a page is worse than a second
+  // sheet. Where only one fits, the browser uses one.
+  article.style.columnCount = String(MAX_PRINT_COLUMNS);
+  for (const section of spanning) section.classList.add('is-full-width');
+}
+
 export function renderSheetPrint(container, { store, sheet, instrument }) {
   clear(container);
   if (!sheet || !instrument) return;
@@ -147,5 +212,6 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
   }
 
   container.append(article);
+  fitColumns(container, article);
   return article;
 }

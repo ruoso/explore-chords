@@ -541,8 +541,9 @@ export default {
             'Ora una canzone si può scrivere come una cifra: una riga di accordi sopra la riga ' +
             'su cui si canta, ogni accordo sopra la sillaba su cui cade. Incollane una e viene ' +
             'letta così, con [Intro] e Intro: che danno il nome alle sezioni come già fa #. Il ' +
-            'testo la segue sul foglio stampato, e sul telefono la strofa va a capo invece di ' +
-            'scappare di lato.',
+            'testo la segue sul foglio stampato, che ora esce su due colonne quando la canzone è ' +
+            'abbastanza stretta — di solito dimezzando le pagine. E sul telefono la strofa va a ' +
+            'capo invece di scappare di lato.',
         },
         {
           heading: 'Gli schemi di sempre restano uguali',

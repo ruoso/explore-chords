@@ -172,6 +172,49 @@ test.describe('a song with words under the chords', () => {
     ]);
   });
 
+  test('the printed sheet takes two columns when the song is narrow', async ({ page }) => {
+    // A sung line is about a third the width of a page and there is one per
+    // line of the song, so a single column spends pages on white space.
+    // A wide intro over narrow verses, which is what a real cifra looks like.
+    const verse = [
+      'Gm             Gm/F',
+      'Como fosse um par que',
+      '            Em7/5-',
+      'Nessa valsa triste',
+    ].join('\n');
+    await setBody(
+      page,
+      ['Intro: Fm  Fm/D#  Dm7/5-  C#7M  A#  F/A  D7', '', verse, '', verse, '', verse].join('\n')
+    );
+    await page.evaluate(() => {
+      window.print = () => {};
+    });
+    await page.locator('#sheet-print').click();
+
+    const article = page.locator('#print-root .ec-print');
+    // The width is measured from the song, so it is whatever the longest sung
+    // line needs; only that it was set can be asserted here.
+    await expect(article).toHaveAttribute('style', /column-width:\s*\d+px/);
+
+    // The intro is a chart, whose measures cannot wrap, and it is wider than a
+    // verse. It spans both columns rather than forcing the whole sheet into one.
+    await expect(page.locator('#print-root .ec-print-chart.is-full-width')).toHaveCount(1);
+
+    // Laid out at the width of A4 inside its margins, it really is two columns,
+    // and nothing has been squeezed until it overflows.
+    const measured = await page.evaluate(() => {
+      const root = document.getElementById('print-root');
+      root.style.cssText = 'display:block;position:absolute;left:-9999px;top:0;width:680px';
+      const count = getComputedStyle(root.querySelector('.ec-print')).columnCount;
+      const overflowing = [...root.querySelectorAll('.ec-print-sung, .ec-print-chart')].filter(
+        (e) => e.scrollWidth > e.clientWidth + 1
+      ).length;
+      root.style.cssText = '';
+      return { count, overflowing };
+    });
+    expect(measured).toEqual({ count: '2', overflowing: 0 });
+  });
+
   test('a plain chord chart is untouched by any of it', async ({ page }) => {
     await setBody(page, '# Verse\nC  Am | F  G | C');
     await expect(page.locator('.ec-song-sung')).toHaveCount(0);

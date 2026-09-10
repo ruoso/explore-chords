@@ -387,6 +387,23 @@ of adding a duplicate footnote, markers renumber from actual use so a chord that
 returns to one voicing loses its marker again, and entries nothing refers to are
 dropped.
 
+**The printed sheet takes as many columns as the page can hold**, up to two. A
+song with its words is narrow and tall — a sung line is about a third the width
+of A4 and there is one per line of the song — so a single column wastes most of
+the paper and spends pages doing it. Two columns routinely turn two pages into
+one.
+
+How many fit is not the app's decision: paper size and margins are chosen in the
+print dialog and never reach it. What the app can measure is how narrow a column
+the song could live in, so it measures that, sets `column-width`, and lets the
+browser fit what it can — one column when that is all there is room for. The
+measure is the longest *sung* line, so no sung line wraps. Chart lines are left
+out of it, because their measures sit in a grid and cannot wrap, and a single
+wide intro would otherwise force one column and cost a page for the sake of one
+row; those charts span every column instead, the way a wide figure does. Two is
+the cap, because a chart already asks you to read down one column and back up
+the next, and doing that three times across a page is worse than a second sheet.
+
 Stored in localStorage; shared by compressing the whole sheet into a URL
 fragment. Printable via a dedicated print stylesheet — the chart, then a legend
 of the voicings used, drawn small enough that a song's shapes fit in a row or

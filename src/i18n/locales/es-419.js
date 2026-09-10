@@ -541,8 +541,9 @@ export default {
             'Ahora una canción se puede escribir como un cifrado con letra: una línea de ' +
             'acordes sobre la línea que se canta, cada acorde encima de la sílaba en la que ' +
             'cae. Pega una y se lee así, con [Intro] e Intro: nombrando secciones como ya lo ' +
-            'hacía #. La letra va con ella a la hoja impresa, y en el teléfono la estrofa salta ' +
-            'de línea en vez de irse de lado.',
+            'hacía #. La letra va con ella a la hoja impresa, que ahora sale en dos columnas ' +
+            'cuando la canción es lo bastante angosta — normalmente a la mitad de páginas. Y en ' +
+            'el teléfono la estrofa salta de línea en vez de irse de lado.',
         },
         {
           heading: 'Los cifrados de siempre no cambian',

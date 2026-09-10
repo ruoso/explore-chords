@@ -539,8 +539,9 @@ export default {
             'Agora dá para escrever uma música como uma cifra de verdade: uma linha de acordes ' +
             'sobre a linha em que ela é cantada, cada acorde acima da sílaba em que cai. Cole ' +
             'uma e ela é lida assim, com [Intro] e Intro: dando nome às seções como o # já ' +
-            'fazia. A letra vai junto para a folha impressa, e no celular a estrofe quebra a ' +
-            'linha em vez de sumir para o lado.',
+            'fazia. A letra vai junto para a folha impressa, que agora sai em duas colunas ' +
+            'quando a música é estreita o bastante — normalmente pela metade das páginas. E no ' +
+            'celular a estrofe quebra a linha em vez de sumir para o lado.',
         },
         {
           heading: 'As cifras de sempre continuam iguais',
