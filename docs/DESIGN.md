@@ -316,6 +316,14 @@ Fm/D#` names one too, since cifras write it both ways — but only when what
 follows the colon is chords, or every sung line with a colon in it would name a
 section.
 
+**A bracket around a run of chords marks a repeat**, which a cifra writes as
+`( Cm  Cm/A#  Am7/5- )`. It annotates the run rather than any chord in it, so it
+is a mark of its own standing between chords: shown as written, never clickable,
+never a chord that failed to parse. A bracket written against a chord, `(Cm`,
+means the same thing and reads the same way. Round brackets only, since square
+ones are the footnote marker. Counting them as words would have made a bracketed
+line of chords look a third prose, so they are counted as neither.
+
 **The segment is the unit, and it carries a chord, words, or both.** A measure
 is a group of segments, bars decide where measures start, chord columns decide
 where segments start, and each chord takes the words from its own column up to
@@ -337,6 +345,11 @@ start of its segment. And a sung line joins no column grid and wraps instead of
 scrolling, because a phone is narrower than a verse and two verses have no
 columns in common — where a chart line lines its measures up with the lines
 around it, which is the whole point of a chart.
+
+Where the chords run on past the end of the words — a line that ends with two
+or three chords over nothing — the words are padded out to the chord line, so
+those trailing chords keep the spacing they were written with. Without it they
+have no words to give them width and end up jammed against one another.
 
 **A chord's column is the syllable it is sung on**, so writing a footnote marker
 into a sung line takes its width out of the run of spaces that follows rather

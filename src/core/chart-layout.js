@@ -47,7 +47,7 @@ export function layoutSection(section) {
       const count = measure.segments.length;
       if (line.lyrics) return measure.segments.map((segment) => ({ segment, span: 1 }));
       const width = widths[i];
-      if (count === 0) return [{ segment: { chord: null, lyric: '' }, span: width }];
+      if (count === 0) return [{ segment: { chord: null, mark: '', lyric: '' }, span: width }];
       const base = Math.floor(width / count);
       const remainder = width - base * count;
       return measure.segments.map((segment, j) => ({

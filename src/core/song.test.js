@@ -190,6 +190,85 @@ describe('a song with words under the chords', () => {
   });
 });
 
+describe('brackets marking a repeat', () => {
+  const REPEAT = 'Final:\n\n( Cm  Cm/A#  Am7/5-  G#7M )\n( Dm/C  Bm7/5-  A#7M  D )';
+  const segmentsOf = (song, line = 0) =>
+    song.sections[0].lines[line].measures.flatMap((m) => m.segments);
+
+  it('reads them as punctuation, not as chords', () => {
+    const song = parseSong(REPEAT, 'brazilian');
+    expect(song.unknown).toEqual([]);
+    expect(song.symbols).toEqual(['Cm', 'Cm/A#', 'Am7/5-', 'G#7M', 'Dm/C', 'Bm7/5-', 'A#7M', 'D']);
+  });
+
+  it('keeps a bracket a mark of its own, not part of a chord', () => {
+    // It brackets the run, so it belongs to no one chord in it.
+    const marks = segmentsOf(parseSong(REPEAT, 'brazilian')).map(
+      (seg) => seg.mark || seg.chord.symbol
+    );
+    expect(marks).toEqual(['(', 'Cm', 'Cm/A#', 'Am7/5-', 'G#7M', ')']);
+  });
+
+  it('reads one written against a chord the same way', () => {
+    const marks = segmentsOf(parseSong('(Cm  Dm)', 'brazilian')).map(
+      (seg) => seg.mark || seg.chord.symbol
+    );
+    expect(marks).toEqual(['(', 'Cm', 'Dm', ')']);
+  });
+
+  it('does not let a bracketed line of chords look like prose', () => {
+    // Two brackets among four chords is a third of the tokens on the line.
+    // Counted as words, the line would have been read as something sung.
+    expect(parseSong(REPEAT, 'brazilian').sections[0].lines[0].lyrics).toBe(false);
+  });
+
+  it('leaves the footnote marker alone', () => {
+    // Square brackets are the marker, not a repeat: Cm[2] is one chord.
+    const song = parseSong('Cm | A | Cm | Cm[2]');
+    expect(song.occurrences.map((c) => c.raw)).toEqual(['Cm', 'A', 'Cm', 'Cm[2]']);
+    expect(song.occurrences[3].index).toBe(2);
+  });
+
+  it('writes a marker without disturbing the brackets', () => {
+    const guitar = 'E2, A2, D3, G3, B3, E4';
+    let text = '( Cm  Dm )\n( Cm  Dm )';
+    const first = parseSong(text).occurrences.find((c) => c.symbol === 'Cm');
+    text = setVoicing(text, first.start, ['x', 3, 5, 5, 4, 3], { tuning: guitar });
+    const second = parseSong(text).occurrences.filter((c) => c.symbol === 'Cm')[1];
+    text = setVoicing(text, second.start, [8, 10, 10, 8, 8, 8], { tuning: guitar });
+    expect(text.split('\n')[1]).toBe('( Cm[2]  Dm )');
+  });
+});
+
+describe('chords that run past the end of the words', () => {
+  it('keep the spacing they were written with', () => {
+    // Otherwise the trailing chords have no words to give them width, and end
+    // up jammed against one another.
+    const song = parseSong(
+      '            Am       Am/G  F#m7/5-  F7M\nAo som dos bandolins',
+      'brazilian'
+    );
+    const segments = song.sections[0].lines[0].measures.flatMap((m) => m.segments);
+    expect(segments.map((seg) => seg.chord?.symbol ?? null)).toEqual([
+      null,
+      'Am',
+      'Am/G',
+      'F#m7/5-',
+      'F7M',
+    ]);
+    // The words run out after "bandolins"; the gaps in the chord line stand in.
+    expect(segments[1].lyric).toBe('andolins ');
+    expect(segments[2].lyric).toBe('      ');
+    expect(segments[3].lyric).toBe('         ');
+  });
+
+  it('leaves a line whose words outrun the chords alone', () => {
+    const song = parseSong('G           D\nQuando eu te vi passar', 'brazilian');
+    const segments = song.sections[0].lines[0].measures.flatMap((m) => m.segments);
+    expect(segments.map((seg) => seg.lyric)).toEqual(['Quando eu te', ' vi passar']);
+  });
+});
+
 describe('reading words never changes a song that has none', () => {
   // The guarantee: a song with no chord line standing over a line of words
   // parses exactly as it did before any of this existed.

@@ -132,11 +132,15 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
               el(
                 'span',
                 { class: `ec-print-segment${j === 0 ? ' is-measure-start' : ''}` },
-                segment.chord || chorded
+                segment.chord || segment.mark || chorded
                   ? el(
                       'span',
-                      { class: `ec-print-segment-chord${segment.chord ? '' : ' is-blank'}` },
-                      segment.chord ? segment.chord.raw : '\u00a0'
+                      {
+                        class: `ec-print-segment-chord${
+                          segment.chord || segment.mark ? '' : ' is-blank'
+                        }`,
+                      },
+                      segment.chord ? segment.chord.raw : segment.mark || '\u00a0'
                     )
                   : null,
                 el('span', { class: 'ec-print-segment-words' }, segment.lyric)
@@ -164,7 +168,7 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
                 class: `ec-print-cell${j === 0 ? ' is-measure-start' : ''}`,
                 colspan: span > 1 ? String(span) : null,
               },
-              segment.chord ? segment.chord.raw : ''
+              segment.chord ? segment.chord.raw : segment.mark
             )
           );
         });

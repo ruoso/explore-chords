@@ -311,6 +311,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       // One table per section, a row per line and a column per measure, so the
       // measures line up the way they do on a hand-written chart. A measure
       // with several chords splits its column between them.
+      const mark = (text) => (text ? el('span', { class: 'ec-chord-mark' }, text) : null);
       const chordButton = (chord) => {
         const resolution = resolved.get(chord.key);
         const source = resolution?.source ?? null;
@@ -366,16 +367,22 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
               const part = el('span', {
                 class: `ec-sung-segment${j === 0 ? ' is-measure-start' : ''}`,
               });
-              if (segment.chord) part.append(chordButton(segment.chord));
-              else if (chorded) {
-                part.append(
-                  el(
-                    'span',
-                    { class: 'ec-measure-chord is-blank', 'aria-hidden': 'true' },
-                    '\u00a0'
-                  )
-                );
-              }
+              const row = el(
+                'span',
+                { class: 'ec-sung-chord-row' },
+                segment.chord
+                  ? chordButton(segment.chord)
+                  : segment.mark
+                    ? mark(segment.mark)
+                    : chorded
+                      ? el(
+                          'span',
+                          { class: 'ec-measure-chord is-blank', 'aria-hidden': 'true' },
+                          '\u00a0'
+                        )
+                      : null
+              );
+              if (row.childNodes.length > 0) part.append(row);
               part.append(el('span', { class: 'ec-sung-words' }, segment.lyric));
               line.append(part);
             });
@@ -399,6 +406,7 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
             });
             line.append(cell);
             if (segment.chord) cell.append(chordButton(segment.chord));
+            else if (segment.mark) cell.append(mark(segment.mark));
           });
         }
         table.body.append(line);

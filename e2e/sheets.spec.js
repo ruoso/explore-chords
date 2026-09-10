@@ -215,6 +215,22 @@ test.describe('a song with words under the chords', () => {
     expect(measured).toEqual({ count: '2', overflowing: 0 });
   });
 
+  test('a bracketed repeat is shown, and none of it is a chord', async ({ page }) => {
+    await setBody(page, 'Final:\n\n( Cm  Cm/A#  Am7/5-  G#7M )');
+    await expect(page.locator('.ec-error')).toHaveCount(0);
+    await expect(page.locator('.ec-song-section-name')).toHaveText(['Final']);
+
+    // The brackets are on screen, and they are marks rather than buttons.
+    await expect(page.locator('.ec-chord-mark')).toHaveText(['(', ')']);
+    await expect(page.locator('.ec-measure-chord')).toHaveText([
+      'Cm',
+      'Cm/A#',
+      'Am7/5-',
+      'G#7M',
+    ]);
+    await expect(page.locator('.ec-measure-chord.is-invalid')).toHaveCount(0);
+  });
+
   test('a plain chord chart is untouched by any of it', async ({ page }) => {
     await setBody(page, '# Verse\nC  Am | F  G | C');
     await expect(page.locator('.ec-song-sung')).toHaveCount(0);

@@ -58,6 +58,14 @@ const CHORD_TOKEN = /^(.*?)(?:\[(\d+)\])?$/;
 const BRACKET_HEADING = /^(\s*\[\s*([^\]]*?)\s*\]\s*)(.*)$/;
 /** `Intro: C  G`, the other way a cifra names a section. */
 const LABEL_HEADING = /^(\s*([^\s:|]+)\s*:\s*)(.*)$/;
+/**
+ * Brackets around a run of chords, which a cifra uses to mark a repeat.
+ *
+ * They annotate the run, not the chords in it: a bracket is a mark of its own
+ * standing between chords, and a search for `(` would find nothing to play.
+ * Round brackets only — square ones are the footnote marker, `Cm[2]`.
+ */
+const CHORD_MARKS = /^(\(*)(.*?)(\)*)$/;
 /** A leading `>` forces a line to be read as words. Kept in the text. */
 const LYRIC_MARKER = /^(\s*)>( ?)/;
 
@@ -196,17 +204,25 @@ function scanChords(raw, lineStart, dialect, collect) {
     cursor += chunk.length + 1;
 
     const segments = [];
+    const add = (segment, column) => {
+      segments.push(segment);
+      tokens.push({ segment, column });
+    };
+
     const wordRe = /\S+/g;
     let match;
     while ((match = wordRe.exec(chunk)) !== null) {
-      const column = chunkStart + match.index;
-      const segment = { chord: makeChord(match[0], lineStart + column, dialect, collect), lyric: '' };
-      segments.push(segment);
-      tokens.push({ segment, column });
+      const start = chunkStart + match.index;
+      const { before, chord: word, after } = splitMarks(match[0]);
+
+      if (before) add({ chord: null, mark: before, lyric: '' }, start);
+      if (word) {
+        const column = start + before.length;
+        add({ chord: makeChord(word, lineStart + column, dialect, collect), mark: '', lyric: '' }, column);
+      }
+      if (after) add({ chord: null, mark: after, lyric: '' }, start + before.length + word.length);
     }
 
-    // An empty measure means a doubled or trailing bar — a typo, not a bar of
-    // silence — so it is dropped rather than rendered blank.
     if (segments.length > 0) measures.push({ segments });
   }
 
@@ -230,26 +246,40 @@ function chartLine(raw, lineStart, dialect, collect) {
 function sungLine(raw, lineStart, words, dialect, collect) {
   const { measures, tokens } = scanChords(raw, lineStart, dialect, collect);
 
+  // Where the chords run on past the end of the words, the words are padded out
+  // to the chord line, so those trailing chords keep the spacing they were
+  // written with instead of bunching up against each other.
+  const padded = words.length < raw.length ? words.padEnd(raw.length, ' ') : words;
+
   tokens.forEach(({ segment, column }, i) => {
     const next = tokens[i + 1];
-    segment.lyric = next ? words.slice(column, next.column) : words.slice(column);
-    segment.chord.sung = true;
+    segment.lyric = next ? padded.slice(column, next.column) : padded.slice(column);
+    if (segment.chord) segment.chord.sung = true;
   });
 
-  const lead = words.slice(0, tokens[0].column);
-  if (lead.trim() !== '') measures[0].segments.unshift({ chord: null, lyric: lead });
+  const lead = padded.slice(0, tokens[0].column);
+  if (lead.trim() !== '') {
+    measures[0].segments.unshift({ chord: null, mark: '', lyric: lead });
+  }
 
   return { measures, lyrics: true };
 }
 
 /** A line of words with no chords over it. */
 function wordsLine(words) {
-  return { measures: [{ segments: [{ chord: null, lyric: words }] }], lyrics: true };
+  return {
+    measures: [{ segments: [{ chord: null, mark: '', lyric: words }] }],
+    lyrics: true,
+  };
 }
 
 /** A stanza break: an empty sung line. */
 function emptyLine() {
-  return { measures: [{ segments: [{ chord: null, lyric: '' }] }], lyrics: true, blank: true };
+  return {
+    measures: [{ segments: [{ chord: null, mark: '', lyric: '' }] }],
+    lyrics: true,
+    blank: true,
+  };
 }
 
 /**
@@ -273,9 +303,13 @@ function emptyLine() {
 function lineShape(raw, dialect) {
   const forced = LYRIC_MARKER.test(raw);
   const body = forced ? stripLyricMarker(raw) : raw;
-  const words = body.replace(/\|/g, ' ').match(/\S+/g) ?? [];
-  if (words.length === 0) return { kind: 'blank', body, forced };
+  const tokens = body.replace(/\|/g, ' ').match(/\S+/g) ?? [];
+  // A bracket on its own is neither a chord nor a word: counting it as one
+  // would make a bracketed line of chords look half prose.
+  const words = tokens.filter((token) => splitMarks(token).chord !== '');
+  if (tokens.length === 0) return { kind: 'blank', body, forced };
   if (forced) return { kind: 'words', body, forced };
+  if (words.length === 0) return { kind: 'chart', body, forced };
 
   const chords = words.filter((w) => Boolean(parseChord(chordSymbolOf(w), dialect).chord)).length;
   if (chords === words.length) return { kind: 'chords', body, forced };
@@ -296,10 +330,22 @@ function isChordRun(text, dialect) {
   return words.every((word) => Boolean(parseChord(chordSymbolOf(word), dialect).chord));
 }
 
-/** The chord symbol inside a token, footnote marker removed. */
+/** The chord symbol inside a token, footnote marker and brackets removed. */
 function chordSymbolOf(token) {
-  const m = CHORD_TOKEN.exec(token);
+  const m = CHORD_TOKEN.exec(splitMarks(token).chord);
   return m[1] || token;
+}
+
+/**
+ * A chart token split into the brackets around it and the chord itself.
+ *
+ * `( Cm  Dm )` and `(Cm Dm)` both mark the same repeat, so a bracket may stand
+ * on its own or be written against a chord. Either way it becomes a mark of its
+ * own, because it brackets the run and not the chord it happens to touch.
+ */
+function splitMarks(word) {
+  const m = CHORD_MARKS.exec(word);
+  return { before: m[1], chord: m[2], after: m[3] };
 }
 
 /**
@@ -847,7 +893,9 @@ export function chartKey(text, dialect) {
           .map((line) =>
             line.measures
               .map((m) =>
-                m.segments.map((seg) => `${seg.chord ? seg.chord.raw : ''}${seg.lyric}`).join(' ')
+                m.segments
+                  .map((seg) => `${seg.mark}${seg.chord ? seg.chord.raw : ''}${seg.lyric}`)
+                  .join(' ')
               )
               .join('|')
           )

@@ -58,7 +58,7 @@ describe('layoutSection', () => {
 
   it('spans an empty measure across its position', () => {
     const rows = layoutSection(section([['C', 'Am']], [[]]));
-    expect(rows[1].measures[0]).toEqual([{ segment: { chord: null, lyric: '' }, span: 2 }]);
+    expect(rows[1].measures[0]).toEqual([{ segment: { chord: null, mark: '', lyric: '' }, span: 2 }]);
   });
 
   it('lets lines have different measure counts', () => {

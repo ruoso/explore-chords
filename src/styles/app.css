@@ -987,13 +987,27 @@ body {
   border-left: 1px solid var(--border);
 }
 
-.ec-sung-segment .ec-measure-chord {
+/* The chord and any bracket around it sit on one row above the words. */
+.ec-sung-chord-row {
   display: block;
-  width: fit-content;
+  white-space: nowrap;
   /* Explicit, because a button takes the browser's default line height while
      the empty span beside it inherits the line's, and the two boxes have to
      come out the same height or the words below them step up and down. */
   line-height: 1.2;
+}
+
+.ec-sung-segment .ec-measure-chord {
+  display: inline-block;
+  line-height: 1.2;
+}
+
+/* A bracket marking a repeat: shown as written, but it is not a chord and
+   nothing about it is clickable. */
+.ec-chord-mark {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
 }
 
 /* Holds the row open where a segment has no chord, so its words sit level
