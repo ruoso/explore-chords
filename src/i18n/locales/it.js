@@ -607,5 +607,26 @@ export default {
         },
       ],
     },
+    '0.7.0': {
+      title: 'Cosa è cambiato nella 0.7',
+      sections: [
+        {
+          heading: 'Salva tutto in un file',
+          text:
+            'Tutto quello che hai è tenuto in questo browser, che va bene finché non va bene ' +
+            'il dispositivo. La schermata dello strumento ora salva tutto in uno zip — i tuoi ' +
+            'strumenti e le loro regole, le impostazioni, le forme salvate e ogni canzone — e ' +
+            'lo ripristina qui o su un altro dispositivo.',
+        },
+        {
+          heading: 'Le tue canzoni sono file di testo',
+          text:
+            'Dentro lo zip ogni canzone è un file di testo che puoi leggere o modificare con ' +
+            'qualsiasi cosa. Mettine un altro nella cartella songs con qualunque programma di ' +
+            'zip e torna come canzone, col nome del suo file. Il backup è tuo da conservare, ' +
+            'non un formato che capisce solo questa app.',
+        },
+      ],
+    },
   },
 };

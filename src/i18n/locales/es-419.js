@@ -607,5 +607,26 @@ export default {
         },
       ],
     },
+    '0.7.0': {
+      title: 'Qué cambió en la 0.7',
+      sections: [
+        {
+          heading: 'Guarda todo en un archivo',
+          text:
+            'Todo lo que tienes se guarda en este navegador, lo cual sirve hasta que el ' +
+            'dispositivo no. La pantalla del instrumento ahora guarda todo en un zip — tus ' +
+            'instrumentos y sus reglas, tus ajustes, tus formas guardadas y cada canción — y ' +
+            'lo restaura aquí o en otro dispositivo.',
+        },
+        {
+          heading: 'Tus canciones son archivos de texto',
+          text:
+            'Dentro del zip cada canción es un archivo de texto que puedes leer o editar con ' +
+            'cualquier cosa. Pon otro en la carpeta songs con cualquier programa de zip y ' +
+            'vuelve como canción, con el nombre de su archivo. El respaldo es tuyo, no un ' +
+            'formato que solo esta app entiende.',
+        },
+      ],
+    },
   },
 };

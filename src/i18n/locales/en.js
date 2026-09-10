@@ -600,5 +600,26 @@ export default {
         },
       ],
     },
+    '0.7.0': {
+      title: 'What changed in 0.7',
+      sections: [
+        {
+          heading: 'Save everything to a file',
+          text:
+            'Everything you have is kept in this browser, which is fine until the device is ' +
+            'not. The instrument screen now saves the lot as one zip — your instruments and ' +
+            'their rules, your settings, your saved shapes and every song — and restores it ' +
+            'here or on another device.',
+        },
+        {
+          heading: 'Your songs are text files',
+          text:
+            'Inside the zip each song is a plain text file you can read or edit with anything. ' +
+            'Drop another one into the songs folder with any zip tool and it comes back as a ' +
+            'song, named after its file. A backup is yours to keep, not a format only this app ' +
+            'can make sense of.',
+        },
+      ],
+    },
   },
 };
