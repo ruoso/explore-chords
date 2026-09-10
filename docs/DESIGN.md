@@ -443,6 +443,24 @@ The reading page takes the whole width it is given and breaks into as many
 columns as fit. Print stops at two, because turning a page beats reading down a
 third column; on screen there is no page to turn.
 
+**It is broken into pages the size of the screen**, so that where the song runs
+past the end of a page is visible, and so that playing from a screen is a page
+turn rather than a scroll. The browser will fragment content into columns but it
+will not say what did not fit, and nothing can flow one element's overflow into
+another, so the pages are filled a line at a time: put a line on the page, ask
+the page whether it still fits, and if it does not, take the line back and start
+another. The browser still lays out *within* a page — the columns, the spanning
+charts — which is what keeps this a preview of print. An overlay of arrows turns
+the pages and says which one of how many you are on, and its middle puts the
+page you are on back where it belongs after a scroll by hand. The layout is
+redone when the window changes size, but only for a change worth the trouble: a
+phone hides its address bar as you scroll, and relaying the song out for that
+would move the page out from under whoever is reading it.
+
+**The header is not pinned.** On a screen the song is the thing, and a bar
+across the top of every page of it is a strip of the window spent on furniture.
+It scrolls away like everything else, and the pager stays put instead.
+
 **Sharing and printing sit beside the title**, on both pages, since
 they are the two ways out of the song. They used to sit under the voicings
 panel, which on a long song is a scroll away and reads as an afterthought to

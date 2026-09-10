@@ -366,6 +366,10 @@ export default {
     default: 'padrão',
     missing: 'Nenhum desenho tocável em {label} para: {list}. As regras de voicing podem estar rígidas demais.',
     share: 'Compartilhar link',
+    snapPage: 'Encaixar esta página',
+    previousPage: 'Página anterior',
+    nextPage: 'Página seguinte',
+    pageOf: 'Página {current} de {total}',
     print: 'Imprimir',
     shareLabel: 'Link para compartilhar esta música',
     shareHelp: 'Quem abrir este link vê a música como está escrita.',
@@ -552,6 +556,35 @@ export default {
             'linha poderia ser as duas coisas, uma barra vertical faz dela uma cifra e um > no ' +
             'começo faz dela letra — o único jeito de resolver uma estrofe que diz mesmo "A", ' +
             'contra o acorde de mesmo nome.',
+        },
+      ],
+    },
+    '0.6.0': {
+      title: 'O que mudou na 0.6',
+      sections: [
+        {
+          heading: 'A música abre para ser lida',
+          text:
+            'Agora cada música tem uma página própria que a mostra como ela vai sair no papel ' +
+            '— a letra embaixo dos acordes e os desenhos que você toca — em vez de abrir o ' +
+            'editor. O texto continua a um clique, e a lista oferece os dois caminhos.',
+        },
+        {
+          heading: 'Uma página por vez',
+          text:
+            'Essa página é dividida em páginas do tamanho da sua tela, então dá para ver onde ' +
+            'a música passa do fim de uma delas. As setas no canto viram as páginas e deixam ' +
+            'a página inteira à vista, o que transforma tocar olhando a tela em virar página ' +
+            'em vez de rolar. O meio delas reenquadra a página depois de uma rolagem à mão, e ' +
+            'a barra de cima não ocupa mais uma faixa da janela.',
+        },
+        {
+          heading: 'As cifras são lidas melhor',
+          text:
+            'Parênteses em volta de uma sequência de acordes marcam uma repetição e não são ' +
+            'mais lidos como acordes. Acordes que continuam depois do fim da letra mantêm o ' +
+            'espaçamento com que foram escritos. E uma estrofe que quebra numa linha de uma ' +
+            'palavra é lida como letra, não como um acorde que ninguém reconhece.',
         },
       ],
     },

@@ -367,6 +367,10 @@ export default {
     default: 'predeterminada',
     missing: 'No hay forma tocable en {label} para: {list}. Sus reglas de voicing pueden ser demasiado estrictas.',
     share: 'Compartir enlace',
+    snapPage: 'Encuadrar esta página',
+    previousPage: 'Página anterior',
+    nextPage: 'Página siguiente',
+    pageOf: 'Página {current} de {total}',
     print: 'Imprimir',
     shareLabel: 'Enlace para compartir esta canción',
     shareHelp: 'Quien abra este enlace ve la canción tal como está escrita.',
@@ -554,6 +558,36 @@ export default {
             'una línea podría ser las dos cosas, una barra vertical la hace cifrado y un > al ' +
             'principio la hace letra, que es la única manera de resolver una estrofa que de ' +
             'verdad dice "A", contra el acorde del mismo nombre.',
+        },
+      ],
+    },
+    '0.6.0': {
+      title: 'Qué cambió en la 0.6',
+      sections: [
+        {
+          heading: 'La canción abre para leerse',
+          text:
+            'Ahora cada canción tiene una página propia que la muestra como saldrá en papel — ' +
+            'la letra debajo de los acordes y las formas que tocas — en lugar de abrir el ' +
+            'editor. El texto sigue a un clic, y la lista ofrece los dos caminos.',
+        },
+        {
+          heading: 'Una página a la vez',
+          text:
+            'Esa página se divide en páginas del tamaño de tu pantalla, así se ve dónde la ' +
+            'canción pasa del final de una. Las flechas de la esquina las dan vuelta y dejan ' +
+            'la página entera a la vista, lo que convierte tocar mirando la pantalla en dar ' +
+            'vuelta la página en vez de desplazarse. Su centro vuelve a encuadrar la página ' +
+            'después de un desplazamiento a mano, y la barra de arriba ya no se lleva una ' +
+            'franja de la ventana.',
+        },
+        {
+          heading: 'Los cifrados se leen mejor',
+          text:
+            'Los paréntesis alrededor de una serie de acordes marcan una repetición y ya no se ' +
+            'leen como acordes. Los acordes que siguen después del final de la letra conservan ' +
+            'el espaciado con que se escribieron. Y una estrofa que salta a una línea de una ' +
+            'palabra se lee como letra, no como un acorde que nadie reconoce.',
         },
       ],
     },

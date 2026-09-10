@@ -328,6 +328,81 @@ test.describe('reading a song', () => {
     await expect(page.locator('#sheet-body')).toBeVisible();
   });
 
+  test('turns a page at a time, and puts it in the clear', async ({ page }) => {
+    // Playing from a screen wants the next page, not fourteen lines further
+    // down, so the arrows land a whole page below the header rather than
+    // scrolling by some amount and leaving you to find your place.
+    const verse = [
+      'Gm             Gm/F',
+      'Como fosse um par que',
+      '            Em7/5-',
+      'Nessa valsa triste',
+    ].join('\n');
+    // Long enough to spill over, even on a wide screen where a page holds
+    // several columns.
+    await setBody(page, ['[Verso]', ...Array.from({ length: 70 }, () => `${verse}\n`)].join('\n'));
+    await page.locator('#sheet-view').click();
+
+    const sheets = page.locator('.ec-song-page');
+    expect(await sheets.count()).toBeGreaterThan(1);
+    const total = await sheets.count();
+
+    const pager = page.locator('.ec-pager');
+    await expect(pager).toBeVisible();
+    await expect(page.locator('.ec-pager-count')).toHaveText(`1/${total}`);
+    await expect(page.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+
+    // The turn is animated, so wait for it to land: the page it turned to sits
+    // at the top of the window, not near it. Nothing is pinned over it — the
+    // header scrolls away like everything else.
+    const settledOn = (n) =>
+      page.waitForFunction((index) => {
+        const sheet = document.querySelectorAll('.ec-song-page')[index];
+        return Math.abs(sheet.getBoundingClientRect().top) <= 2;
+      }, n);
+
+    await page.getByRole('button', { name: 'Next page' }).click();
+    await settledOn(1);
+    await expect(page.locator('.ec-pager-count')).toHaveText(`2/${total}`);
+
+    await page.getByRole('button', { name: 'Previous page' }).click();
+    await settledOn(0);
+    await expect(page.locator('.ec-pager-count')).toHaveText(`1/${total}`);
+
+    // Scrolled by hand and left halfway: the middle of the pager puts the page
+    // back where it belongs.
+    await page.evaluate(() => window.scrollBy(0, 140));
+    await page.waitForFunction(
+      () => Math.abs(document.querySelectorAll('.ec-song-page')[0].getBoundingClientRect().top) > 50
+    );
+    await page.getByRole('button', { name: 'Line this page up' }).click();
+    await settledOn(0);
+  });
+
+  test('offers no pager for a song that fits on one page', async ({ page }) => {
+    await page.locator('#sheet-view').click();
+    await expect(page.locator('.ec-song-page')).toHaveCount(1);
+    await expect(page.locator('.ec-pager')).toHaveCount(0);
+  });
+
+  test('never leaves a page with more on it than fits', async ({ page }) => {
+    // The whole point of filling pages by hand: nothing may be cut off at the
+    // fold, on any page.
+    const verse = ['Gm             Gm/F', 'Como fosse um par que'].join('\n');
+    await setBody(page, ['[Verso]', ...Array.from({ length: 40 }, () => `${verse}\n`)].join('\n'));
+    await page.locator('#sheet-view').click();
+    await expect(page.locator('.ec-song-page').first()).toBeVisible();
+
+    const spilling = await page.evaluate(
+      () =>
+        [...document.querySelectorAll('.ec-song-page .ec-print-body')].filter(
+          (body) =>
+            body.scrollHeight > body.clientHeight + 1 || body.scrollWidth > body.clientWidth + 1
+        ).length
+    );
+    expect(spilling).toBe(0);
+  });
+
   test('can be shared and printed from the reading view', async ({ page }) => {
     await page.locator('#sheet-view').click();
     await page.locator('#sheet-share').click();

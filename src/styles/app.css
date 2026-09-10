@@ -99,10 +99,11 @@ body {
 
 /* --- header ---------------------------------------------------------- */
 
+/* Not pinned. On a screen the song is the thing, and a bar across the top of
+   every page of it is a strip of the window spent on furniture — worse on a
+   phone, and worst when reading a page at a time. It scrolls away like
+   anything else, and the pager stays put instead (.ec-pager). */
 .ec-header {
-  position: sticky;
-  top: 0;
-  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -872,25 +873,112 @@ body {
 }
 
 /* The song as it will come out on paper: the print sheet's own markup, drawn by
-   the same renderer, so this is the print preview and not a second opinion
-   about it. It takes the whole width it is given and breaks into as many
-   columns as that width allows — on paper the cap is two, because turning a
-   page beats reading down a third column, and on screen there is no page to
-   turn. Only the colours differ, since the print stylesheet forces black on
-   white once a printer is actually involved. */
+   the same renderer, and laid out on pages the size of the screen so that where
+   it runs out of page is visible too (ui/song-pages.js). Only the colours
+   differ, since the print stylesheet forces black on white once a printer is
+   actually involved. */
 .ec-song-view {
   margin-top: 1rem;
-  padding: 1.25rem 1.5rem;
-  border: 1px solid var(--border);
-  border-radius: 0.35rem;
-  background: var(--panel);
-  box-shadow: 0 2px 10px rgb(0 0 0 / 8%);
 }
 
-@media (max-width: 40rem) {
-  .ec-song-view {
-    padding: 1rem;
-  }
+.ec-song-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.ec-song-page {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1.5rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.2rem;
+  background: var(--panel);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 10%);
+}
+
+/* The song takes whatever the title leaves, and no more. Given `height: 100%`
+   instead, the first page's sections would hang below it by the height of the
+   title, clipped by the page and invisible to the page-filling loop, which
+   measures the box it is filling. */
+.ec-song-page .ec-print-body {
+  flex: 1;
+  min-height: 0;
+  /* Columns run to the bottom of the page rather than balancing across it:
+     what the page cannot hold has to *not fit*, so it can be measured. */
+  column-fill: auto;
+}
+
+/* A section may break across the columns of a page: it is the page that is
+   being filled here, not the section, and holding a verse together would
+   leave half of every page empty. */
+.ec-song-page .ec-print-section {
+  break-inside: auto;
+}
+
+/* Up and down, over the song. Playing from a screen wants the next page, not
+   fourteen lines further down. */
+.ec-pager {
+  position: fixed;
+  right: 1rem;
+  bottom: 1.25rem;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  background: var(--panel);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 16%);
+}
+
+.ec-pager-button {
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ec-pager-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ec-pager-button:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.45;
+}
+
+.ec-pager-count {
+  padding: 0.1rem 0.35rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.ec-pager-count:hover {
+  color: var(--accent);
+}
+
+/* The legend belongs to the sheet rather than to a column of it. */
+.ec-song-page .ec-print-legend {
+  column-span: all;
 }
 
 /* The title, and beside it the two ways out of the page. Wraps on a phone, so

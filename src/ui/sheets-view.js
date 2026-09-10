@@ -41,7 +41,7 @@ import { layoutSection } from '../core/chart-layout.js';
 import { resolveSongVoicings, unvoiceableKeys } from '../core/voicings.js';
 import { parseChord } from '../core/notation/parse.js';
 import { renderDiagram } from '../render/index.js';
-import { renderSheetPrint } from './sheet-print.js';
+import { renderSongPages } from './song-pages.js';
 import { EXAMPLE_BODY } from '../state/sheets.js';
 import { openVoicingDialog } from './voicing-dialog.js';
 import { t } from '../i18n/index.js';
@@ -239,13 +239,13 @@ export function renderSheetView(container, { store, sheet, onBack, onEdit, onSha
     el('div', { class: 'ec-share-slot', id: 'sheet-share-out' })
   );
 
-  // In the document first: the sheet measures itself to decide how many columns
-  // it can be broken into, and an element that is not on the page yet measures
-  // zero (sheet-print.js).
+  // In the document first: the sheet measures itself, both to size its columns
+  // and to find where it runs off the page, and an element that is not on the
+  // page yet measures zero.
   const sheetBox = el('div', { class: 'ec-song-view' });
   page.append(sheetBox);
   container.append(page);
-  renderSheetPrint(sheetBox, { store, sheet, instrument, maxColumns: null });
+  renderSongPages(sheetBox, { store, sheet, instrument });
 
   return page;
 }

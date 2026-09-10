@@ -364,6 +364,10 @@ export default {
     default: 'default',
     missing: 'No playable shape on {label} for: {list}. Its voicing rules may be too strict.',
     share: 'Share link',
+    snapPage: 'Line this page up',
+    previousPage: 'Previous page',
+    nextPage: 'Next page',
+    pageOf: 'Page {current} of {total}',
     print: 'Print',
     shareLabel: 'Share link for this song',
     shareHelp: 'Anyone opening this link sees the song as written.',
@@ -548,6 +552,35 @@ export default {
             'line could be either, a vertical bar makes it a chart and a leading > makes it ' +
             'words — which is the only way to settle a verse that really does read "A", ' +
             'against the chord of the same name.',
+        },
+      ],
+    },
+    '0.6.0': {
+      title: 'What changed in 0.6',
+      sections: [
+        {
+          heading: 'A song opens to be read',
+          text:
+            'A song now has a page of its own that shows it as it will come out on paper — ' +
+            'the words under the chords, and the shapes you play from — rather than opening ' +
+            'the editor. The text is still a button away, and the song list offers both.',
+        },
+        {
+          heading: 'One page at a time',
+          text:
+            'That page is broken into pages the size of your screen, so you can see where the ' +
+            'song runs past the end of one. The arrows in the corner turn them, and land a ' +
+            'whole page in the clear, which makes playing from a screen a page turn rather ' +
+            'than a scroll. Their middle straightens the page up again after a scroll by ' +
+            'hand, and the bar at the top no longer takes a strip of the window with it.',
+        },
+        {
+          heading: 'Cifras read better',
+          text:
+            'Brackets around a run of chords mark a repeat and are no longer read as chords. ' +
+            'Chords that carry on past the end of a line keep the spacing they were written ' +
+            'with. And a verse that wraps onto a line of one word is read as words, not as a ' +
+            'chord nobody recognises.',
         },
       ],
     },

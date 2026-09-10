@@ -367,6 +367,10 @@ export default {
     default: 'predefinita',
     missing: 'Nessuna forma suonabile su {label} per: {list}. Le sue regole di voicing potrebbero essere troppo rigide.',
     share: 'Condividi link',
+    snapPage: 'Allinea questa pagina',
+    previousPage: 'Pagina precedente',
+    nextPage: 'Pagina successiva',
+    pageOf: 'Pagina {current} di {total}',
     print: 'Stampa',
     shareLabel: 'Link per condividere questa canzone',
     shareHelp: 'Chi apre questo link vede la canzone così com’è scritta.',
@@ -554,6 +558,36 @@ export default {
             'Quando una riga potrebbe essere entrambe le cose, una barra verticale la rende ' +
             'schema e un > iniziale la rende testo: l’unico modo di risolvere una strofa che ' +
             'dice davvero "A", contro l’accordo con lo stesso nome.',
+        },
+      ],
+    },
+    '0.6.0': {
+      title: 'Cosa è cambiato nella 0.6',
+      sections: [
+        {
+          heading: 'La canzone si apre per essere letta',
+          text:
+            'Ora ogni canzone ha una pagina propria che la mostra come uscirà sulla carta — il ' +
+            'testo sotto gli accordi e le forme che suoni — invece di aprire l’editor. Il testo ' +
+            'resta a un clic, e la lista offre entrambe le strade.',
+        },
+        {
+          heading: 'Una pagina alla volta',
+          text:
+            'Quella pagina è divisa in pagine grandi come il tuo schermo, così si vede dove la ' +
+            'canzone va oltre la fine di una. Le frecce nell’angolo le girano e mettono una ' +
+            'pagina intera in chiaro, il che rende suonare guardando lo schermo un girare ' +
+            'pagina invece che uno scorrere. Il loro centro riallinea la pagina dopo uno ' +
+            'scorrimento a mano, e la barra in alto non si prende più una striscia di finestra.',
+        },
+        {
+          heading: 'Le cifre si leggono meglio',
+          text:
+            'Le parentesi attorno a una sequenza di accordi segnano una ripetizione e non ' +
+            'vengono più lette come accordi. Gli accordi che continuano oltre la fine del testo ' +
+            'mantengono la spaziatura con cui sono stati scritti. E una strofa che va a capo su ' +
+            'una riga di una parola viene letta come testo, non come un accordo che nessuno ' +
+            'riconosce.',
         },
       ],
     },
