@@ -41,6 +41,7 @@ import { layoutSection } from '../core/chart-layout.js';
 import { resolveSongVoicings, unvoiceableKeys } from '../core/voicings.js';
 import { parseChord } from '../core/notation/parse.js';
 import { renderDiagram } from '../render/index.js';
+import { renderSheetPrint } from './sheet-print.js';
 import { EXAMPLE_BODY } from '../state/sheets.js';
 import { openVoicingDialog } from './voicing-dialog.js';
 import { t } from '../i18n/index.js';
@@ -90,7 +91,8 @@ export function renderSheetList(container, { store, onOpen, onChange }) {
     // The starter body goes through createSheet so it gets the tuning written
     // into it; setting the body afterwards would overwrite that.
     const sheet = store.createSheet(input.value.trim() || t('sheets.untitled'), EXAMPLE_BODY);
-    onOpen(sheet.id);
+    // A new song has nothing in it yet, so it opens to be written.
+    onOpen(sheet.id, 'edit');
   });
   page.append(form);
 
@@ -132,10 +134,20 @@ export function renderSheetList(container, { store, onOpen, onChange }) {
               {
                 type: 'button',
                 class: 'ec-button ec-button-small',
-                'aria-label': t('sheets.openLabel', { title: sheet.title }),
-                onClick: () => onOpen(sheet.id),
+                'aria-label': t('sheets.viewLabel', { title: sheet.title }),
+                onClick: () => onOpen(sheet.id, 'view'),
               },
-              t('sheets.open')
+              t('sheets.view')
+            ),
+            el(
+              'button',
+              {
+                type: 'button',
+                class: 'ec-button ec-button-small',
+                'aria-label': t('sheets.editLabel', { title: sheet.title }),
+                onClick: () => onOpen(sheet.id, 'edit'),
+              },
+              t('sheets.edit')
             ),
             el(
               'button',
@@ -175,7 +187,73 @@ export function renderSheetList(container, { store, onOpen, onChange }) {
 }
 
 /** The editor for one sheet. */
-export function renderSheetEditor(container, { store, sheet, onChange, onBack, onShare, onPrint }) {
+/**
+ * A song as it will come out on paper (docs/DESIGN.md §2.6).
+ *
+ * The same renderer the printed sheet uses, so this *is* the print preview
+ * rather than a second opinion about it: same segments, same columns, same
+ * legend of shapes. Nothing here is clickable, because nothing here is a
+ * choice — the choices are made in the editor, one button away.
+ */
+export function renderSheetView(container, { store, sheet, onBack, onEdit, onShare, onPrint }) {
+  clear(container);
+  const instrument = store.effectiveInstrument;
+  if (!sheet || !instrument) return;
+
+  const page = el('div', { class: 'ec-page' });
+  page.append(
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'ec-button ec-button-small ec-back',
+        id: 'sheet-back',
+        onClick: onBack,
+      },
+      t('editor.back')
+    ),
+    el(
+      'div',
+      { class: 'ec-song-header' },
+      el('h2', { class: 'ec-page-title', id: 'sheet-heading' }, sheet.title),
+      el(
+        'div',
+        { class: 'ec-song-header-actions' },
+        el(
+          'button',
+          { type: 'button', class: 'ec-button', id: 'sheet-edit', onClick: onEdit },
+          t('sheets.edit')
+        ),
+        el(
+          'button',
+          { type: 'button', class: 'ec-button', id: 'sheet-share', onClick: onShare },
+          t('editor.share')
+        ),
+        el(
+          'button',
+          { type: 'button', class: 'ec-button', id: 'sheet-print', onClick: onPrint },
+          t('editor.print')
+        )
+      )
+    ),
+    el('div', { class: 'ec-share-slot', id: 'sheet-share-out' })
+  );
+
+  // In the document first: the sheet measures itself to decide how many columns
+  // it can be broken into, and an element that is not on the page yet measures
+  // zero (sheet-print.js).
+  const sheetBox = el('div', { class: 'ec-song-view' });
+  page.append(sheetBox);
+  container.append(page);
+  renderSheetPrint(sheetBox, { store, sheet, instrument, maxColumns: null });
+
+  return page;
+}
+
+export function renderSheetEditor(
+  container,
+  { store, sheet, onChange, onBack, onShare, onPrint, onView }
+) {
   clear(container);
   const instrument = store.effectiveInstrument;
   if (!sheet || !instrument) return;
@@ -234,6 +312,11 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       el(
         'div',
         { class: 'ec-song-header-actions' },
+        el(
+          'button',
+          { type: 'button', class: 'ec-button', id: 'sheet-view', onClick: onView },
+          t('sheets.view')
+        ),
         el(
           'button',
           { type: 'button', class: 'ec-button', id: 'sheet-share', onClick: onShare },

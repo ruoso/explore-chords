@@ -858,15 +858,39 @@ body {
   margin-bottom: 0.9rem;
 }
 
-.ec-song-header .ec-field {
+.ec-song-header .ec-field,
+.ec-song-header .ec-page-title {
   flex: 1 1 12rem;
   margin-bottom: 0;
 }
 
 .ec-song-header-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-left: auto;
+}
+
+/* The song as it will come out on paper: the print sheet's own markup, drawn by
+   the same renderer, so this is the print preview and not a second opinion
+   about it. It takes the whole width it is given and breaks into as many
+   columns as that width allows — on paper the cap is two, because turning a
+   page beats reading down a third column, and on screen there is no page to
+   turn. Only the colours differ, since the print stylesheet forces black on
+   white once a printer is actually involved. */
+.ec-song-view {
+  margin-top: 1rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--panel);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 8%);
+}
+
+@media (max-width: 40rem) {
+  .ec-song-view {
+    padding: 1rem;
+  }
 }
 
 /* The title, and beside it the two ways out of the page. Wraps on a phone, so

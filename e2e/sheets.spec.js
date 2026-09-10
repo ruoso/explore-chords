@@ -51,6 +51,11 @@ test.describe('the song list', () => {
     await newSong(page, 'Blackbird');
     await setBody(page, '# Verse\nG | Am7 | C');
     await page.reload();
+
+    // It comes back open for reading, which is what a song is usually open
+    // for; the text is a click away and unchanged.
+    await expect(page.locator('.ec-song-view .ec-print-title')).toHaveText('Blackbird');
+    await page.locator('#sheet-edit').click();
     await expect(page.locator('#sheet-title')).toHaveValue('Blackbird');
     await expect(page.locator('#sheet-body')).toHaveValue('# Verse\nG | Am7 | C');
   });
@@ -269,6 +274,70 @@ test.describe('a song with words under the chords', () => {
     await expect(page.locator('.ec-song-sung')).toHaveCount(0);
     await expect(page.locator('.ec-song-line')).toHaveCount(1);
     await expect(page.locator('.ec-measure-chord')).toHaveText(['C', 'Am', 'F', 'G', 'C']);
+  });
+});
+
+test.describe('reading a song', () => {
+  test.beforeEach(async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+    await newSong(page, 'Valsa');
+    await setBody(page, CIFRA);
+  });
+
+  test('shows the song as it prints, with nothing to click', async ({ page }) => {
+    // The reading view is the print preview: the same renderer draws both, so
+    // it cannot drift from what comes out of the printer.
+    await page.locator('#sheet-view').click();
+    await expect(page.locator('.ec-song-view')).toBeVisible();
+    await expect(page.locator('#sheet-body')).toHaveCount(0);
+    await expect(page.locator('.ec-measure-chord')).toHaveCount(0);
+
+    const view = page.locator('.ec-song-view');
+    await expect(view.locator('.ec-print-title')).toHaveText('Valsa');
+    await expect(view.locator('.ec-print-section-name')).toHaveText(['Intro', 'Primeira Parte']);
+    await expect(view.locator('.ec-print-sung')).toHaveCount(2);
+    await expect(view.locator('svg.ec-diagram')).toHaveCount(4);
+  });
+
+  test('breaks into columns the way the printed sheet does', async ({ page }) => {
+    await page.locator('#sheet-view').click();
+    // Measured from the song and set on the box that holds the sections, as in
+    // print. Without a cap here: on screen there is no page to turn.
+    await expect(page.locator('.ec-song-view .ec-print-body')).toHaveAttribute(
+      'style',
+      /column-width:\s*\d+px/
+    );
+  });
+
+  test('is where a song opens from the list, with editing a button away', async ({ page }) => {
+    await page.locator('#sheet-back').click();
+    await page.getByRole('button', { name: 'View Valsa' }).click();
+    await expect(page.locator('.ec-song-view')).toBeVisible();
+
+    await page.locator('#sheet-edit').click();
+    await expect(page.locator('#sheet-body')).toBeVisible();
+
+    await page.locator('#sheet-view').click();
+    await expect(page.locator('.ec-song-view')).toBeVisible();
+  });
+
+  test('opens straight into the editor when that is what was asked for', async ({ page }) => {
+    await page.locator('#sheet-back').click();
+    await page.getByRole('button', { name: 'Edit Valsa' }).click();
+    await expect(page.locator('#sheet-body')).toBeVisible();
+  });
+
+  test('can be shared and printed from the reading view', async ({ page }) => {
+    await page.locator('#sheet-view').click();
+    await page.locator('#sheet-share').click();
+    await expect(page.locator('.ec-share-link')).toHaveValue(/#s=/);
+
+    await page.evaluate(() => {
+      window.print = () => {};
+    });
+    await page.locator('#sheet-print').click();
+    await expect(page.locator('#print-root .ec-print-title')).toHaveText('Valsa');
   });
 });
 
@@ -727,7 +796,8 @@ test.describe('sharing a song', () => {
     expect(state.sheetCount).toBe(1);
     // The voicings travelled because they are part of the text.
     expect(state.body).toContain('Cm[2] = 8-10-10-8-8-8');
-    await expect(other.locator('#sheet-title')).toHaveValue('Shared song');
+    // A song arriving by link opens to be read, not to be edited.
+    await expect(other.locator('.ec-song-view .ec-print-title')).toHaveText('Shared song');
     await context.close();
   });
 });
@@ -771,7 +841,7 @@ test.describe('one song, every instrument', () => {
     // yet, it opens with every chord on its default.
     await expect(page.locator('.ec-sheet-row')).toHaveCount(1);
     await expect(page.locator('.ec-sheet-voiced')).toContainText('Guitar');
-    await page.getByRole('button', { name: 'Open Shared song' }).click();
+    await page.getByRole('button', { name: 'Edit Shared song' }).click();
     await expect(page.locator('.ec-voicings .ec-card.is-default')).toHaveCount(2);
 
     // Choosing here writes a second block, leaving the guitar one alone.

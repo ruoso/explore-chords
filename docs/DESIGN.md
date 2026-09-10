@@ -430,8 +430,21 @@ the cap, because a chart already asks you to read down one column and back up
 the next, and doing that three times across a page is worse than a second sheet.
 
 Stored in localStorage; shared by compressing the whole sheet into a URL
-fragment. **Sharing and printing sit beside the title**, at the top of the editor, since
-they are the two ways out of the page. They used to sit under the voicings
+fragment. **A song has two pages: reading it and editing it.** A song opens to be read,
+because that is what a song is usually open for, and the reading page *is* the
+print preview — the same renderer draws both, so it cannot drift from what comes
+out of the printer. Nothing on it is clickable, because nothing on it is a
+choice: the choices are made in the editor, one button away. The list offers
+both ways in side by side, a new song opens in the editor since it has nothing
+in it yet, and a song arriving by link opens to be read. Which of the two a song
+is open in is not persisted: coming back to the app lands on the reading page.
+
+The reading page takes the whole width it is given and breaks into as many
+columns as fit. Print stops at two, because turning a page beats reading down a
+third column; on screen there is no page to turn.
+
+**Sharing and printing sit beside the title**, on both pages, since
+they are the two ways out of the song. They used to sit under the voicings
 panel, which on a long song is a scroll away and reads as an afterthought to
 that panel rather than as something the song itself offers.
 

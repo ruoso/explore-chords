@@ -24,7 +24,14 @@ import { t } from '../i18n/index.js';
  */
 const PRINT_DIAGRAM_SIZE = 0.7;
 
-/** Columns the sheet may be broken into, at most. See fitColumns. */
+/**
+ * Columns a printed sheet may be broken into, at most.
+ *
+ * On paper, reading down one column and back up the next is work, and doing it
+ * three times across a page is worse than turning to a second sheet. On screen
+ * there is no page to turn, so the reading view lifts the cap and takes as many
+ * columns as the width allows — `maxColumns: null`.
+ */
 const MAX_PRINT_COLUMNS = 2;
 
 /**
@@ -47,7 +54,7 @@ const MAX_PRINT_COLUMNS = 2;
  * column and cost a page for the sake of one row. Those sections span every
  * column instead, the way a wide figure does in a magazine.
  */
-function fitColumns(container, body) {
+function fitColumns(container, body, maxColumns) {
   const inline = container.getAttribute('style');
   // Laid out off-screen and unbounded, so every line can report the width it
   // would rather have. Hidden rather than removed: it still has to have
@@ -81,15 +88,11 @@ function fitColumns(container, body) {
 
   if (!(column > 0)) return;
   body.style.columnWidth = `${Math.ceil(column)}px`;
-  // Two at most. A third column pays for itself on paper and not in the
-  // reading: a chart already asks you to go down one column and back up the
-  // next, and doing that three times across a page is worse than a second
-  // sheet. Where only one fits, the browser uses one.
-  body.style.columnCount = String(MAX_PRINT_COLUMNS);
+  if (maxColumns !== null) body.style.columnCount = String(maxColumns);
   for (const section of spanning) section.classList.add('is-full-width');
 }
 
-export function renderSheetPrint(container, { store, sheet, instrument }) {
+export function renderSheetPrint(container, { store, sheet, instrument, maxColumns }) {
   clear(container);
   if (!sheet || !instrument) return;
 
@@ -223,6 +226,6 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
   }
 
   container.append(article);
-  fitColumns(container, body);
+  fitColumns(container, body, maxColumns === undefined ? MAX_PRINT_COLUMNS : maxColumns);
   return article;
 }

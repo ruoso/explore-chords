@@ -23,7 +23,7 @@ import {
   renderInstrumentEditor,
 } from './ui/instrument-settings.js';
 import { confirmDialog } from './ui/confirm-dialog.js';
-import { renderSheetList, renderSheetEditor } from './ui/sheets-view.js';
+import { renderSheetList, renderSheetEditor, renderSheetView } from './ui/sheets-view.js';
 import { renderSheetPrint } from './ui/sheet-print.js';
 import { sheetForSharing, sheetFromSharing } from './state/sheets.js';
 import { encodeSheetLink, decodeSheetLink } from './state/codec.js';
@@ -287,8 +287,8 @@ function renderSheets() {
   if (!sheet) {
     renderSheetList(nodes.main, {
       store,
-      onOpen: (id) => {
-        store.setActiveSheet(id);
+      onOpen: (id, mode) => {
+        store.setActiveSheet(id, mode);
         navigate('sheets');
       },
       onChange: () => {
@@ -299,12 +299,39 @@ function renderSheets() {
     return;
   }
 
+  const redraw = () => {
+    clear(nodes.main);
+    renderSheets();
+  };
+  const toList = () => {
+    store.setActiveSheet(null);
+    navigate('sheets');
+  };
+
+  // Reading and editing are two pages over one song, and a song opens to be
+  // read (state/store.js). The editor is a page away in either direction.
+  if (store.state.sheetMode !== 'edit') {
+    renderSheetView(nodes.main, {
+      store,
+      sheet,
+      onBack: toList,
+      onEdit: () => {
+        store.set({ sheetMode: 'edit' });
+        redraw();
+      },
+      onShare: shareSheet,
+      onPrint: printSheet,
+    });
+    return;
+  }
+
   renderSheetEditor(nodes.main, {
     store,
     sheet,
-    onBack: () => {
-      store.setActiveSheet(null);
-      navigate('sheets');
+    onBack: toList,
+    onView: () => {
+      store.set({ sheetMode: 'view' });
+      redraw();
     },
     onChange: ({ keepFocus } = {}) => {
       // Editing the song rewrites the text, so the whole editor redraws. Focus

@@ -64,6 +64,9 @@ export function createStore(initial = {}) {
     favorites: initial.favorites ?? loadFavorites(),
     sheets: initial.sheets ?? loadSheets(),
     activeSheetId: null,
+    // A song opens to be read; editing it is the other of the two. Not
+    // persisted: coming back to the app lands on the sheet, ready to read.
+    sheetMode: 'view',
     view: initial.view ?? DEFAULT_VIEW,
     results: null,
     searching: false,
@@ -324,10 +327,10 @@ export function createStore(initial = {}) {
       });
     },
 
-    setActiveSheet(id) {
+    setActiveSheet(id, mode = 'view') {
       const sheet = state.sheets.find((s) => s.id === id) ?? null;
       saveActiveSheetId(sheet?.id ?? null);
-      return store.set({ activeSheetId: sheet?.id ?? null });
+      return store.set({ activeSheetId: sheet?.id ?? null, sheetMode: mode });
     },
 
     duplicateSheet(id) {
