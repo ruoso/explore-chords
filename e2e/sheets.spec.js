@@ -191,10 +191,12 @@ test.describe('a song with words under the chords', () => {
     });
     await page.locator('#sheet-print').click();
 
-    const article = page.locator('#print-root .ec-print');
-    // The width is measured from the song, so it is whatever the longest sung
-    // line needs; only that it was set can be asserted here.
-    await expect(article).toHaveAttribute('style', /column-width:\s*\d+px/);
+    // The sections sit in a box of their own, and that box is what is broken
+    // into columns; the title and the legend belong to the whole sheet. The
+    // width is measured from the song, so it is whatever the longest sung line
+    // needs; only that it was set can be asserted here.
+    const body = page.locator('#print-root .ec-print-body');
+    await expect(body).toHaveAttribute('style', /column-width:\s*\d+px/);
 
     // The intro is a chart, whose measures cannot wrap, and it is wider than a
     // verse. It spans both columns rather than forcing the whole sheet into one.
@@ -205,7 +207,7 @@ test.describe('a song with words under the chords', () => {
     const measured = await page.evaluate(() => {
       const root = document.getElementById('print-root');
       root.style.cssText = 'display:block;position:absolute;left:-9999px;top:0;width:680px';
-      const count = getComputedStyle(root.querySelector('.ec-print')).columnCount;
+      const count = getComputedStyle(root.querySelector('.ec-print-body')).columnCount;
       const overflowing = [...root.querySelectorAll('.ec-print-sung, .ec-print-chart')].filter(
         (e) => e.scrollWidth > e.clientWidth + 1
       ).length;
@@ -213,6 +215,37 @@ test.describe('a song with words under the chords', () => {
       return { count, overflowing };
     });
     expect(measured).toEqual({ count: '2', overflowing: 0 });
+  });
+
+  test('chords past the end of the words are not left touching', async ({ page }) => {
+    // The segment model exists so that neither screen nor paper needs a
+    // fixed-width font, which means no amount of typed spaces can be trusted to
+    // hold two chords apart. The gap has to come from the layout.
+    await setBody(page, '            Am       Am/G  F#m7/5-  F7M\nAo som dos bandolins');
+    await page.evaluate(() => {
+      window.print = () => {};
+    });
+    await page.locator('#sheet-print').click();
+    await page.emulateMedia({ media: 'print' });
+
+    const tight = await page.evaluate(() => {
+      const root = document.getElementById('print-root');
+      root.style.cssText = 'display:block;position:absolute;left:-9999px;top:0;width:680px';
+      // A chord with no words under it: its segment has to be wider than the
+      // chord itself, or the next chord starts where this one ended.
+      const touching = [...root.querySelectorAll('.ec-print-segment')]
+        .filter((seg) => seg.querySelector('.ec-print-segment-words').textContent === '')
+        .filter((seg) => {
+          const text = seg.querySelector('.ec-print-segment-chord').firstChild;
+          if (!text) return false;
+          const range = document.createRange();
+          range.selectNodeContents(text.parentNode);
+          return seg.getBoundingClientRect().width <= range.getBoundingClientRect().width + 1;
+        }).length;
+      root.style.cssText = '';
+      return touching;
+    });
+    expect(tight).toBe(0);
   });
 
   test('a bracketed repeat is shown, and none of it is a chord', async ({ page }) => {

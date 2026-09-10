@@ -1000,6 +1000,11 @@ body {
 .ec-sung-segment .ec-measure-chord {
   display: inline-block;
   line-height: 1.2;
+  /* Air to the right of every chord. It costs nothing where words are wider
+     than the chord above them, and it is the only thing keeping two chords
+     apart where the words have run out — at the end of a phrase, say, where
+     three chords sit over nothing. */
+  margin-right: 0.4em;
 }
 
 /* A bracket marking a repeat: shown as written, but it is not a chord and
@@ -1016,10 +1021,13 @@ body {
   visibility: hidden;
 }
 
+/* Set in the reading font, not a fixed-width one, because that is what the
+   printed sheet uses and the chart on screen is a preview of it. A segment
+   carries its own words, so nothing about the alignment depends on every
+   character being the same width. */
 .ec-sung-words {
   display: block;
   white-space: pre-wrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.9rem;
 }
 

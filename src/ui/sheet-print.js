@@ -47,7 +47,7 @@ const MAX_PRINT_COLUMNS = 2;
  * column and cost a page for the sake of one row. Those sections span every
  * column instead, the way a wide figure does in a magazine.
  */
-function fitColumns(container, article) {
+function fitColumns(container, body) {
   const inline = container.getAttribute('style');
   // Laid out off-screen and unbounded, so every line can report the width it
   // would rather have. Hidden rather than removed: it still has to have
@@ -66,8 +66,8 @@ function fitColumns(container, article) {
   };
   const widest = (nodes) => (nodes.length === 0 ? 0 : Math.max(...nodes.map(naturalWidth)));
 
-  const sung = [...article.querySelectorAll('.ec-print-sung')];
-  const charts = [...article.querySelectorAll('.ec-print-chart')];
+  const sung = [...body.querySelectorAll('.ec-print-sung')];
+  const charts = [...body.querySelectorAll('.ec-print-chart')];
   const column = sung.length > 0 ? widest(sung) : widest(charts);
   const spanning = new Set();
   if (column > 0) {
@@ -80,12 +80,12 @@ function fitColumns(container, article) {
   else container.setAttribute('style', inline);
 
   if (!(column > 0)) return;
-  article.style.columnWidth = `${Math.ceil(column)}px`;
+  body.style.columnWidth = `${Math.ceil(column)}px`;
   // Two at most. A third column pays for itself on paper and not in the
   // reading: a chart already asks you to go down one column and back up the
   // next, and doing that three times across a page is worse than a second
   // sheet. Where only one fits, the browser uses one.
-  article.style.columnCount = String(MAX_PRINT_COLUMNS);
+  body.style.columnCount = String(MAX_PRINT_COLUMNS);
   for (const section of spanning) section.classList.add('is-full-width');
 }
 
@@ -101,6 +101,13 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
     el('h1', { class: 'ec-print-title' }, sheet.title),
     el('p', { class: 'ec-print-instrument' }, instrument.label)
   );
+
+  // The sections go in a box of their own, because that box is what gets broken
+  // into columns. The title and the legend stay outside it: a spanning element
+  // at the very start of a multicol pushed everything after it to the next
+  // page, leaving a first page with nothing on it but the title.
+  const body = el('div', { class: 'ec-print-body' });
+  article.append(body);
 
   for (const section of song.sections) {
     const block = el('section', { class: 'ec-print-section' });
@@ -176,7 +183,7 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
       table.body.append(line);
     }
     closeTable();
-    article.append(block);
+    body.append(block);
   }
 
   const resolved = resolveSongVoicings(song, instrument, dialect);
@@ -216,6 +223,6 @@ export function renderSheetPrint(container, { store, sheet, instrument }) {
   }
 
   container.append(article);
-  fitColumns(container, article);
+  fitColumns(container, body);
   return article;
 }

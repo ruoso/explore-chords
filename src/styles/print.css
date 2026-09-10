@@ -22,17 +22,17 @@
 
 /* The column width is measured from the song and set inline (sheet-print.js);
    the browser decides how many of them fit the paper it is given. Balanced, so
-   the last page does not leave one full column beside an empty one. */
-.ec-print {
+   the last page does not leave one full column beside an empty one. Only the
+   sections are in here — the title and the legend belong to the whole sheet and
+   sit outside it, because a spanning element at the start of a multicol pushes
+   everything after it onto the next page. */
+.ec-print-body {
   column-gap: 1cm;
   column-fill: balance;
 }
 
-/* What belongs to the whole sheet rather than to one column of it: the title,
-   the legend of shapes, and any chart too wide to live in a column. */
-.ec-print-title,
-.ec-print-instrument,
-.ec-print-legend,
+/* A chart whose measures are wider than a column: it spans them all, the way a
+   wide figure does, rather than forcing the whole sheet into one column. */
 .ec-print-chart.is-full-width {
   column-span: all;
 }
@@ -97,6 +97,9 @@
   display: block;
   font-weight: 650;
   line-height: 1.1;
+  /* See the note in app.css: this is what keeps two chords apart where the
+     words beneath them have run out. */
+  padding-right: 0.4em;
 }
 
 .ec-print-segment-words {

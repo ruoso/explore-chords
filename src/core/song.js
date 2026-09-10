@@ -242,22 +242,23 @@ function chartLine(raw, lineStart, dialect, collect) {
  * chord written inside a word divides that word — which is the whole point of
  * writing it there. Words before the first chord become a segment with no
  * chord, and a bar divides the words exactly as it divides the chords.
+ *
+ * A chord past the end of the words gets no words at all, and no attempt is
+ * made to buy it width with spaces: the whole reason a segment carries its own
+ * words is that neither screen nor paper has to be set in a fixed-width font,
+ * and a space measured in a proportional one is nothing like the column it was
+ * typed as. Keeping those chords apart is the renderer's job (styles/app.css).
  */
 function sungLine(raw, lineStart, words, dialect, collect) {
   const { measures, tokens } = scanChords(raw, lineStart, dialect, collect);
 
-  // Where the chords run on past the end of the words, the words are padded out
-  // to the chord line, so those trailing chords keep the spacing they were
-  // written with instead of bunching up against each other.
-  const padded = words.length < raw.length ? words.padEnd(raw.length, ' ') : words;
-
   tokens.forEach(({ segment, column }, i) => {
     const next = tokens[i + 1];
-    segment.lyric = next ? padded.slice(column, next.column) : padded.slice(column);
+    segment.lyric = next ? words.slice(column, next.column) : words.slice(column);
     if (segment.chord) segment.chord.sung = true;
   });
 
-  const lead = padded.slice(0, tokens[0].column);
+  const lead = words.slice(0, tokens[0].column);
   if (lead.trim() !== '') {
     measures[0].segments.unshift({ chord: null, mark: '', lyric: lead });
   }

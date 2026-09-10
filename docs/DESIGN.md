@@ -346,10 +346,19 @@ scrolling, because a phone is narrower than a verse and two verses have no
 columns in common — where a chart line lines its measures up with the lines
 around it, which is the whole point of a chart.
 
-Where the chords run on past the end of the words — a line that ends with two
-or three chords over nothing — the words are padded out to the chord line, so
-those trailing chords keep the spacing they were written with. Without it they
-have no words to give them width and end up jammed against one another.
+Where the chords run on past the end of the words — a line ending with two or
+three chords over nothing — those chords get no words, and **no spaces are
+invented to give them width**. The reason a segment carries its own words is
+that neither the screen nor the paper has to be set in a fixed-width font, and a
+space measured in a proportional one is nothing like the column it was typed as:
+padding with spaces looked right on a monospaced preview and left the chords
+touching on paper. So the gap is layout — air to the right of every chord, which
+costs nothing where the words are wider and is the only thing separating two
+chords where there are none.
+
+For the same reason the words on screen are set in the **reading** font rather
+than a fixed-width one. The chart on screen is a preview of the printed sheet,
+and it should not disagree with it about where a chord lands.
 
 **A chord's column is the syllable it is sung on**, so writing a footnote marker
 into a sung line takes its width out of the run of spaces that follows rather

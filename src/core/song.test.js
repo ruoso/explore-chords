@@ -241,9 +241,10 @@ describe('brackets marking a repeat', () => {
 });
 
 describe('chords that run past the end of the words', () => {
-  it('keep the spacing they were written with', () => {
-    // Otherwise the trailing chords have no words to give them width, and end
-    // up jammed against one another.
+  it('are segments of their own with no words to show', () => {
+    // No spaces are invented to give them width. A space in a proportional
+    // font is nothing like the column it was typed as, and the printed sheet
+    // is set in one — keeping these chords apart is the renderer's job.
     const song = parseSong(
       '            Am       Am/G  F#m7/5-  F7M\nAo som dos bandolins',
       'brazilian'
@@ -256,10 +257,11 @@ describe('chords that run past the end of the words', () => {
       'F#m7/5-',
       'F7M',
     ]);
-    // The words run out after "bandolins"; the gaps in the chord line stand in.
-    expect(segments[1].lyric).toBe('andolins ');
-    expect(segments[2].lyric).toBe('      ');
-    expect(segments[3].lyric).toBe('         ');
+    // The words run out after "bandolins", so the rest carry none.
+    expect(segments[1].lyric).toBe('andolins');
+    expect(segments[2].lyric).toBe('');
+    expect(segments[3].lyric).toBe('');
+    expect(segments[4].lyric).toBe('');
   });
 
   it('leaves a line whose words outrun the chords alone', () => {
