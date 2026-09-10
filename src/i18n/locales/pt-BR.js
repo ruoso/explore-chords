@@ -314,8 +314,11 @@ export default {
     help: {
       sections: {
         term: 'Seções',
-        text: 'Uma linha começando com #, [Intro] ou Intro: dá nome a uma.',
-        example: '[Intro] G  D  Em  C',
+        text: 'Três jeitos de dar nome a uma: uma linha começando com #, um nome entre ' +
+          'colchetes, ou um nome com dois-pontos. As duas últimas podem trazer os acordes ' +
+          'da seção na mesma linha. Os dois-pontos só dão nome a uma seção quando o que ' +
+          'vem depois são acordes, então uma linha cantada com dois-pontos continua letra.',
+        example: '# Verso\n[Intro] G  D  Em  C\nSolo: Am  F  C  G',
       },
       chart: {
         term: 'Uma cifra',

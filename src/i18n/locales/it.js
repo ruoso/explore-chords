@@ -314,8 +314,12 @@ export default {
     help: {
       sections: {
         term: 'Sezioni',
-        text: 'Una riga che comincia con #, [Intro] o Intro: ne dà il nome.',
-        example: '[Intro] G  D  Em  C',
+        text: 'Tre modi per darle un nome: una riga che comincia con #, un nome tra parentesi ' +
+          'quadre, o un nome con i due punti. Le ultime due possono portare gli accordi ' +
+          'della sezione sulla stessa riga. I due punti danno il nome a una sezione solo ' +
+          'quando ciò che segue sono accordi, così una riga cantata con i due punti resta ' +
+          'testo.',
+        example: '# Strofa\n[Intro] G  D  Em  C\nSolo: Am  F  C  G',
       },
       chart: {
         term: 'Uno schema',

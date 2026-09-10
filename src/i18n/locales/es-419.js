@@ -314,8 +314,12 @@ export default {
     help: {
       sections: {
         term: 'Secciones',
-        text: 'Una línea que empieza con #, [Intro] o Intro: nombra una.',
-        example: '[Intro] G  D  Em  C',
+        text: 'Tres maneras de nombrar una: una línea que empieza con #, un nombre entre ' +
+          'corchetes, o un nombre con dos puntos. Las dos últimas pueden llevar los ' +
+          'acordes de la sección en la misma línea. Los dos puntos solo nombran una ' +
+          'sección cuando lo que sigue son acordes, así que una línea cantada con dos ' +
+          'puntos sigue siendo letra.',
+        example: '# Verso\n[Intro] G  D  Em  C\nSolo: Am  F  C  G',
       },
       chart: {
         term: 'Un cifrado',

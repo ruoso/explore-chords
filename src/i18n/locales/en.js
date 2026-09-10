@@ -312,8 +312,11 @@ export default {
     help: {
       sections: {
         term: 'Sections',
-        text: 'A line beginning with #, [Intro] or Intro: names one.',
-        example: '[Intro] G  D  Em  C',
+        text: 'Three ways to name one: a line beginning with #, a name in brackets, or a ' +
+          'name and a colon. The last two may carry that section’s chords on the same ' +
+          'line. A colon only names a section when chords follow it, so a sung line ' +
+          'with a colon in it stays a line of words.',
+        example: '# Verse\n[Intro] G  D  Em  C\nSolo: Am  F  C  G',
       },
       chart: {
         term: 'A chart',
