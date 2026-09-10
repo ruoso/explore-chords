@@ -312,10 +312,14 @@ export default {
     song: 'La canción',
     placeholder: '# Verso\nA | Cm | A | Cm',
     help:
-      'Una línea que empieza con # nombra una sección. Una barra vertical inicia un compás; ' +
-      'los espacios separan los acordes dentro de él. Los voicings van después de una línea ---, ' +
+      'Una línea que empieza con #, [Intro] o Intro: nombra una sección. La música se puede ' +
+      'escribir de dos maneras. Como cifrado: una barra vertical inicia un compás, los espacios ' +
+      'separan los acordes dentro de él. O con la letra debajo: una línea de acordes sobre la ' +
+      'línea que se canta, cada acorde encima de la sílaba en la que cae. Empieza una línea con ' +
+      '> para que se lea como letra donde se leería como acordes. ' +
+      'Los voicings van después de una línea ---, ' +
       'un bloque por afinación bajo un título que la nombra (la palabra es libre: "# Posiciones: ' +
-      'E2, A2, …" sirve), para que el mismo cifrado sirva en todos los instrumentos. Cuando ' +
+      'E2, A2, …" sirve), para que la misma canción sirva en todos los instrumentos. Cuando ' +
       'un acorde se toca de más de una manera, los voicings extra llevan una nota — Cm[2]. Un ' +
       'acorde para el que guardaste una forma recibe esa forma la primera vez que aparece.',
     notAChord: 'No es un acorde: {list}',
@@ -505,6 +509,28 @@ export default {
             'contando como trabajo, así que las formas que necesitan una siguen ahí. Y una ' +
             'cuerda apagada en medio dejó de contar en la dificultad: al puntear, una cuerda que ' +
             'no tocas no cuesta nada.',
+        },
+      ],
+    },
+    '0.5.0': {
+      title: 'Qué cambió en la 0.5',
+      sections: [
+        {
+          heading: 'Canciones con su letra',
+          text:
+            'Ahora una canción se puede escribir como un cifrado con letra: una línea de ' +
+            'acordes sobre la línea que se canta, cada acorde encima de la sílaba en la que ' +
+            'cae. Pega una y se lee así, con [Intro] e Intro: nombrando secciones como ya lo ' +
+            'hacía #. La letra va con ella a la hoja impresa, y en el teléfono la estrofa salta ' +
+            'de línea en vez de irse de lado.',
+        },
+        {
+          heading: 'Los cifrados de siempre no cambian',
+          text:
+            'Una canción sin letra debajo de los acordes se lee exactamente como antes. Cuando ' +
+            'una línea podría ser las dos cosas, una barra vertical la hace cifrado y un > al ' +
+            'principio la hace letra, que es la única manera de resolver una estrofa que de ' +
+            'verdad dice "A", contra el acorde del mismo nombre.',
         },
       ],
     },

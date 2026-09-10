@@ -310,10 +310,13 @@ export default {
     song: 'The song',
     placeholder: '# Verse\nA | Cm | A | Cm',
     help:
-      'A line beginning with # names a section. A vertical bar starts a new measure; ' +
-      'spaces separate chords inside one. Voicings sit after a --- rule, one block per ' +
-      'tuning under a heading that names it, so the same chart serves every instrument. ' +
-      'Where a chord is played more ' +
+      'A line beginning with #, [Intro] or Intro: names a section. The music can be ' +
+      'written either way. As a chart: a vertical bar starts a new measure, spaces ' +
+      'separate the chords inside one. Or with the words underneath: a line of chords ' +
+      'over the line it is sung to, each chord above the syllable it falls on. Begin a ' +
+      'line with > to have it read as words where it would otherwise read as chords. ' +
+      'Voicings sit after a --- rule, one block per tuning under a heading that names it, ' +
+      'so the same song serves every instrument. Where a chord is played more ' +
       'than one way, the extra voicings are footnoted — Cm[2]. A chord you have saved a ' +
       'shape for gets that shape when it first appears in the song.',
     notAChord: 'Not a chord: {list}',
@@ -500,6 +503,28 @@ export default {
             'reach or a barre still counts as work, so the shapes that need one are all still ' +
             'there. A muted string in the middle also stopped counting against how hard a shape ' +
             'is: played fingerstyle, a string you do not pick costs you nothing.',
+        },
+      ],
+    },
+    '0.5.0': {
+      title: 'What changed in 0.5',
+      sections: [
+        {
+          heading: 'Songs with their words',
+          text:
+            'A song can now be written the way a cifra is: a line of chords over the line it ' +
+            'is sung to, each chord above the syllable it falls on. Paste one in and it reads ' +
+            'as one, with [Intro] and Intro: naming sections the way # already does. The words ' +
+            'come with it onto the printed sheet, and on a phone a verse wraps instead of ' +
+            'running off the side.',
+        },
+        {
+          heading: 'Charts are untouched',
+          text:
+            'A song with no words under its chords reads exactly as it did before. Where a ' +
+            'line could be either, a vertical bar makes it a chart and a leading > makes it ' +
+            'words — which is the only way to settle a verse that really does read "A", ' +
+            'against the chord of the same name.',
         },
       ],
     },

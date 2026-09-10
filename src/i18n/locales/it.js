@@ -312,10 +312,14 @@ export default {
     song: 'La canzone',
     placeholder: '# Strofa\nA | Cm | A | Cm',
     help:
-      'Una riga che comincia con # dà il nome a una sezione. Una barra verticale apre una battuta; ' +
-      'gli spazi separano gli accordi al suo interno. I voicing stanno dopo una riga ---, un ' +
+      'Una riga che comincia con #, [Intro] o Intro: dà il nome a una sezione. La musica si può ' +
+      'scrivere in due modi. Come schema: una barra verticale apre una battuta, gli spazi ' +
+      'separano gli accordi al suo interno. Oppure con il testo sotto: una riga di accordi sopra ' +
+      'la riga su cui si canta, ogni accordo sopra la sillaba su cui cade. Comincia una riga con ' +
+      '> perché venga letta come testo dove verrebbe letta come accordi. ' +
+      'I voicing stanno dopo una riga ---, un ' +
       'blocco per accordatura sotto un titolo che la nomina (la parola è libera: "# Posizioni: ' +
-      'E2, A2, …" va bene), così lo stesso schema serve per tutti gli strumenti. Quando un ' +
+      'E2, A2, …" va bene), così la stessa canzone serve per tutti gli strumenti. Quando un ' +
       'accordo si suona in più di un modo, i voicing in più hanno una nota — Cm[2]. Un accordo ' +
       'per cui hai salvato una forma riceve quella forma la prima volta che compare.',
     notAChord: 'Non è un accordo: {list}',
@@ -505,6 +509,28 @@ export default {
             'barré contano ancora come lavoro, quindi le forme che ne hanno bisogno ci sono ' +
             'tutte. E una corda stoppata in mezzo ha smesso di pesare sulla difficoltà: con le ' +
             'dita, una corda che non pizzichi non costa nulla.',
+        },
+      ],
+    },
+    '0.5.0': {
+      title: 'Cosa è cambiato nella 0.5',
+      sections: [
+        {
+          heading: 'Canzoni con il testo',
+          text:
+            'Ora una canzone si può scrivere come una cifra: una riga di accordi sopra la riga ' +
+            'su cui si canta, ogni accordo sopra la sillaba su cui cade. Incollane una e viene ' +
+            'letta così, con [Intro] e Intro: che danno il nome alle sezioni come già fa #. Il ' +
+            'testo la segue sul foglio stampato, e sul telefono la strofa va a capo invece di ' +
+            'scappare di lato.',
+        },
+        {
+          heading: 'Gli schemi di sempre restano uguali',
+          text:
+            'Una canzone senza testo sotto gli accordi viene letta esattamente come prima. ' +
+            'Quando una riga potrebbe essere entrambe le cose, una barra verticale la rende ' +
+            'schema e un > iniziale la rende testo: l’unico modo di risolvere una strofa che ' +
+            'dice davvero "A", contro l’accordo con lo stesso nome.',
         },
       ],
     },

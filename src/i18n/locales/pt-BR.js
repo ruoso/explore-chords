@@ -312,10 +312,14 @@ export default {
     song: 'A música',
     placeholder: '# Verso\nA | Cm | A | Cm',
     help:
-      'Uma linha começando com # dá nome a uma seção. Uma barra vertical inicia um compasso; ' +
-      'espaços separam os acordes dentro dele. Os voicings ficam depois de uma linha ---, um ' +
+      'Uma linha começando com #, [Intro] ou Intro: dá nome a uma seção. A música pode ser ' +
+      'escrita das duas formas. Como cifra: uma barra vertical inicia um compasso, espaços ' +
+      'separam os acordes dentro dele. Ou com a letra embaixo: uma linha de acordes sobre a ' +
+      'linha em que é cantada, cada acorde acima da sílaba em que cai. Comece uma linha com > ' +
+      'para que ela seja lida como letra onde seria lida como acordes. ' +
+      'Os voicings ficam depois de uma linha ---, um ' +
       'bloco por afinação sob um título que a nomeia (a palavra é livre: "# Posições: E2, A2, …" ' +
-      'serve), para a mesma cifra servir a todos os instrumentos. Quando um acorde ' +
+      'serve), para a mesma música servir a todos os instrumentos. Quando um acorde ' +
       'é tocado de mais de um jeito, os voicings extras ganham uma nota — Cm[2]. Um acorde ' +
       'para o qual você salvou um desenho recebe esse desenho na primeira vez que aparece.',
     notAChord: 'Não é um acorde: {list}',
@@ -504,6 +508,28 @@ export default {
             'pestana continuam contando como trabalho, então as formas que precisam de uma ' +
             'continuam aí. E uma corda abafada no meio deixou de pesar na dificuldade: no ' +
             'dedilhado, uma corda que você não toca não custa nada.',
+        },
+      ],
+    },
+    '0.5.0': {
+      title: 'O que mudou na 0.5',
+      sections: [
+        {
+          heading: 'Músicas com a letra',
+          text:
+            'Agora dá para escrever uma música como uma cifra de verdade: uma linha de acordes ' +
+            'sobre a linha em que ela é cantada, cada acorde acima da sílaba em que cai. Cole ' +
+            'uma e ela é lida assim, com [Intro] e Intro: dando nome às seções como o # já ' +
+            'fazia. A letra vai junto para a folha impressa, e no celular a estrofe quebra a ' +
+            'linha em vez de sumir para o lado.',
+        },
+        {
+          heading: 'As cifras de sempre continuam iguais',
+          text:
+            'Uma música sem letra embaixo dos acordes é lida exatamente como antes. Quando uma ' +
+            'linha poderia ser as duas coisas, uma barra vertical faz dela uma cifra e um > no ' +
+            'começo faz dela letra — o único jeito de resolver uma estrofe que diz mesmo "A", ' +
+            'contra o acorde de mesmo nome.',
         },
       ],
     },
