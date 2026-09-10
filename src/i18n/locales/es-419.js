@@ -311,17 +311,33 @@ export default {
     title: 'Título',
     song: 'La canción',
     placeholder: '# Verso\nA | Cm | A | Cm',
-    help:
-      'Una línea que empieza con #, [Intro] o Intro: nombra una sección. La música se puede ' +
-      'escribir de dos maneras. Como cifrado: una barra vertical inicia un compás, los espacios ' +
-      'separan los acordes dentro de él. O con la letra debajo: una línea de acordes sobre la ' +
-      'línea que se canta, cada acorde encima de la sílaba en la que cae. Empieza una línea con ' +
-      '> para que se lea como letra donde se leería como acordes. ' +
-      'Los voicings van después de una línea ---, ' +
-      'un bloque por afinación bajo un título que la nombra (la palabra es libre: "# Posiciones: ' +
-      'E2, A2, …" sirve), para que la misma canción sirva en todos los instrumentos. Cuando ' +
-      'un acorde se toca de más de una manera, los voicings extra llevan una nota — Cm[2]. Un ' +
-      'acorde para el que guardaste una forma recibe esa forma la primera vez que aparece.',
+    help: {
+      sections: {
+        term: 'Secciones',
+        text: 'Una línea que empieza con #, [Intro] o Intro: nombra una.',
+        example: '[Intro] G  D  Em  C',
+      },
+      chart: {
+        term: 'Un cifrado',
+        text: 'Una barra vertical inicia un compás; los espacios separan los acordes dentro de él.',
+        example: '# Verso\nC  Am | F  G | C',
+      },
+      words: {
+        term: 'O con la letra debajo',
+        text: 'Una línea de acordes sobre la línea que se canta, cada acorde encima de la sílaba en la que cae.',
+        example: 'G         D\nCuando te vi pasar',
+      },
+      either: {
+        term: 'Cuando la línea podría ser las dos cosas',
+        text: 'Una barra vertical la hace cifrado. Un > al principio la hace letra, y es la única manera de resolver una línea que se lee como acorde.',
+        example: 'G\n> A',
+      },
+      voicings: {
+        term: 'Voicings',
+        text: 'Van después de una línea ---, un bloque por afinación bajo un título que la nombra, para que la misma canción sirva en todos los instrumentos. Un acorde que se toca de más de una manera lleva una nota. Un acorde para el que guardaste una forma recibe esa forma la primera vez que aparece.',
+        example: '---\n\n# Posiciones: E2, A2, D3, G3, B3, E4\nCm = x35543\nCm[2] = 8-10-10-8-8-8',
+      },
+    },
     notAChord: 'No es un acorde: {list}',
     badVoicingLines: 'No pude leer estas líneas de voicing: {list}',
     chart: 'El cifrado',

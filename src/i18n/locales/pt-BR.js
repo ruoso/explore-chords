@@ -311,17 +311,33 @@ export default {
     title: 'Nome',
     song: 'A música',
     placeholder: '# Verso\nA | Cm | A | Cm',
-    help:
-      'Uma linha começando com #, [Intro] ou Intro: dá nome a uma seção. A música pode ser ' +
-      'escrita das duas formas. Como cifra: uma barra vertical inicia um compasso, espaços ' +
-      'separam os acordes dentro dele. Ou com a letra embaixo: uma linha de acordes sobre a ' +
-      'linha em que é cantada, cada acorde acima da sílaba em que cai. Comece uma linha com > ' +
-      'para que ela seja lida como letra onde seria lida como acordes. ' +
-      'Os voicings ficam depois de uma linha ---, um ' +
-      'bloco por afinação sob um título que a nomeia (a palavra é livre: "# Posições: E2, A2, …" ' +
-      'serve), para a mesma música servir a todos os instrumentos. Quando um acorde ' +
-      'é tocado de mais de um jeito, os voicings extras ganham uma nota — Cm[2]. Um acorde ' +
-      'para o qual você salvou um desenho recebe esse desenho na primeira vez que aparece.',
+    help: {
+      sections: {
+        term: 'Seções',
+        text: 'Uma linha começando com #, [Intro] ou Intro: dá nome a uma.',
+        example: '[Intro] G  D  Em  C',
+      },
+      chart: {
+        term: 'Uma cifra',
+        text: 'Uma barra vertical inicia um compasso; espaços separam os acordes dentro dele.',
+        example: '# Verso\nC  Am | F  G | C',
+      },
+      words: {
+        term: 'Ou com a letra embaixo',
+        text: 'Uma linha de acordes sobre a linha em que é cantada, cada acorde acima da sílaba em que cai.',
+        example: 'G            D\nQuando eu te vi passar',
+      },
+      either: {
+        term: 'Quando a linha poderia ser as duas coisas',
+        text: 'Uma barra vertical faz dela uma cifra. Um > no começo faz dela letra, e é o único jeito de resolver uma linha que se lê como acorde.',
+        example: 'G\n> A',
+      },
+      voicings: {
+        term: 'Voicings',
+        text: 'Ficam depois de uma linha ---, um bloco por afinação sob um título que a nomeia, para a mesma música servir a todos os instrumentos. Um acorde tocado de mais de um jeito ganha uma nota. Um acorde para o qual você salvou um desenho recebe esse desenho na primeira vez que aparece.',
+        example: '---\n\n# Posições: E2, A2, D3, G3, B3, E4\nCm = x35543\nCm[2] = 8-10-10-8-8-8',
+      },
+    },
     notAChord: 'Não é um acorde: {list}',
     badVoicingLines: 'Não consegui ler estas linhas de voicing: {list}',
     chart: 'A cifra',

@@ -81,7 +81,7 @@ function renderHeaderActions() {
   clear(nodes.actions);
   const help = el(
     'button',
-    { type: 'button', class: 'ec-help', id: 'help-open', 'aria-label': t('header.helpLabel') },
+    { type: 'button', class: 'ec-help-button', id: 'help-open', 'aria-label': t('header.helpLabel') },
     t('header.help')
   );
   help.addEventListener('click', () => announcements?.open('welcome'));

@@ -311,17 +311,33 @@ export default {
     title: 'Titolo',
     song: 'La canzone',
     placeholder: '# Strofa\nA | Cm | A | Cm',
-    help:
-      'Una riga che comincia con #, [Intro] o Intro: dà il nome a una sezione. La musica si può ' +
-      'scrivere in due modi. Come schema: una barra verticale apre una battuta, gli spazi ' +
-      'separano gli accordi al suo interno. Oppure con il testo sotto: una riga di accordi sopra ' +
-      'la riga su cui si canta, ogni accordo sopra la sillaba su cui cade. Comincia una riga con ' +
-      '> perché venga letta come testo dove verrebbe letta come accordi. ' +
-      'I voicing stanno dopo una riga ---, un ' +
-      'blocco per accordatura sotto un titolo che la nomina (la parola è libera: "# Posizioni: ' +
-      'E2, A2, …" va bene), così la stessa canzone serve per tutti gli strumenti. Quando un ' +
-      'accordo si suona in più di un modo, i voicing in più hanno una nota — Cm[2]. Un accordo ' +
-      'per cui hai salvato una forma riceve quella forma la prima volta che compare.',
+    help: {
+      sections: {
+        term: 'Sezioni',
+        text: 'Una riga che comincia con #, [Intro] o Intro: ne dà il nome.',
+        example: '[Intro] G  D  Em  C',
+      },
+      chart: {
+        term: 'Uno schema',
+        text: 'Una barra verticale apre una battuta; gli spazi separano gli accordi al suo interno.',
+        example: '# Strofa\nC  Am | F  G | C',
+      },
+      words: {
+        term: 'Oppure con il testo sotto',
+        text: 'Una riga di accordi sopra la riga su cui si canta, ogni accordo sopra la sillaba su cui cade.',
+        example: 'G            D\nQuando ti ho vista passare',
+      },
+      either: {
+        term: 'Quando una riga potrebbe essere entrambe',
+        text: 'Una barra verticale la rende schema. Un > iniziale la rende testo, ed è l’unico modo di risolvere una riga che si legge come accordo.',
+        example: 'G\n> A',
+      },
+      voicings: {
+        term: 'Voicing',
+        text: 'Stanno dopo una riga ---, un blocco per accordatura sotto un titolo che la nomina, così la stessa canzone serve per tutti gli strumenti. Un accordo suonato in più di un modo ha una nota. Un accordo per cui hai salvato una forma riceve quella forma la prima volta che compare.',
+        example: '---\n\n# Posizioni: E2, A2, D3, G3, B3, E4\nCm = x35543\nCm[2] = 8-10-10-8-8-8',
+      },
+    },
     notAChord: 'Non è un accordo: {list}',
     badVoicingLines: 'Non riesco a leggere queste righe di voicing: {list}',
     chart: 'Lo schema',

@@ -309,16 +309,33 @@ export default {
     title: 'Title',
     song: 'The song',
     placeholder: '# Verse\nA | Cm | A | Cm',
-    help:
-      'A line beginning with #, [Intro] or Intro: names a section. The music can be ' +
-      'written either way. As a chart: a vertical bar starts a new measure, spaces ' +
-      'separate the chords inside one. Or with the words underneath: a line of chords ' +
-      'over the line it is sung to, each chord above the syllable it falls on. Begin a ' +
-      'line with > to have it read as words where it would otherwise read as chords. ' +
-      'Voicings sit after a --- rule, one block per tuning under a heading that names it, ' +
-      'so the same song serves every instrument. Where a chord is played more ' +
-      'than one way, the extra voicings are footnoted — Cm[2]. A chord you have saved a ' +
-      'shape for gets that shape when it first appears in the song.',
+    help: {
+      sections: {
+        term: 'Sections',
+        text: 'A line beginning with #, [Intro] or Intro: names one.',
+        example: '[Intro] G  D  Em  C',
+      },
+      chart: {
+        term: 'A chart',
+        text: 'A vertical bar starts a new measure; spaces separate the chords inside one.',
+        example: '# Verse\nC  Am | F  G | C',
+      },
+      words: {
+        term: 'Or the words underneath',
+        text: 'A line of chords over the line it is sung to, each chord above the syllable it falls on.',
+        example: 'G            D\nWhen I first saw you',
+      },
+      either: {
+        term: 'When a line could be either',
+        text: 'A vertical bar makes it a chart. A leading > makes it words, and is the only way to settle a line that reads as a chord.',
+        example: 'G\n> A',
+      },
+      voicings: {
+        term: 'Voicings',
+        text: 'They sit after a --- rule, one block per tuning under a heading that names it, so the same song serves every instrument. A chord played more than one way is footnoted. A chord you have saved a shape for gets that shape when it first appears.',
+        example: '---\n\n# Voicings: E2, A2, D3, G3, B3, E4\nCm = x35543\nCm[2] = 8-10-10-8-8-8',
+      },
+    },
     notAChord: 'Not a chord: {list}',
     badVoicingLines: 'Could not read these voicing lines: {list}',
     chart: 'The chart',

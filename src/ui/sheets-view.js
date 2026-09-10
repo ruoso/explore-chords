@@ -246,10 +246,21 @@ export function renderSheetEditor(container, { store, sheet, onChange, onBack, o
       { class: 'ec-field' },
       el('label', { for: 'sheet-body' }, t('editor.song')),
       body,
+      // A definition list, because that is what it is: each way of writing a
+      // line, said once and then shown. The examples are what people actually
+      // read — the prose beside them is for when an example is not enough.
       el(
-        'p',
-        { class: 'ec-help', id: 'song-help' },
-        t('editor.help')
+        'dl',
+        { class: 'ec-song-help', id: 'song-help' },
+        ...['sections', 'chart', 'words', 'either', 'voicings'].flatMap((key) => [
+          el('dt', {}, t(`editor.help.${key}.term`)),
+          el(
+            'dd',
+            {},
+            el('p', {}, t(`editor.help.${key}.text`)),
+            el('pre', {}, t(`editor.help.${key}.example`))
+          ),
+        ])
       )
     )
   );

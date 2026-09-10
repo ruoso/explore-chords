@@ -73,8 +73,9 @@ body {
   }
 }
 
-/* Readable measure for prose, independent of how wide the window is. */
-.ec-help,
+/* Readable measure for prose, independent of how wide the window is. A help
+   callout is exempt: it is a box, and a box that stops short of the column it
+   sits in reads as broken rather than as a measure. */
 .ec-setup-lead,
 .ec-note {
   max-width: 68ch;
@@ -287,8 +288,17 @@ body {
   font: inherit;
 }
 
-.ec-help {
-  margin: 0.3rem 0 0;
+/* Every help block is the same callout: a note beside the thing it explains,
+   filling its column. It used to be a pill, because it shared a class with the
+   Help button in the header — which also gave a paragraph a pointer cursor and
+   a hover state that promised something to click. */
+.ec-help,
+.ec-song-help {
+  margin: 0.4rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--panel);
   color: var(--muted);
   font-size: 0.8rem;
 }
@@ -838,6 +848,38 @@ body {
   width: 100%;
 }
 
+/* Each way of writing a line: named, said once, then shown. */
+.ec-song-help dt {
+  margin-top: 0.6rem;
+  color: var(--fg);
+  font-weight: 650;
+}
+
+.ec-song-help dt:first-child {
+  margin-top: 0;
+}
+
+.ec-song-help dd {
+  margin: 0.15rem 0 0;
+}
+
+.ec-song-help dd p {
+  margin: 0;
+}
+
+.ec-song-help pre {
+  margin: 0.25rem 0 0;
+  padding: 0.35rem 0.5rem;
+  overflow-x: auto;
+  border-radius: 0.35rem;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  tab-size: 4;
+}
+
 .ec-song-input {
   width: 100%;
   padding: 0.6rem 0.7rem;
@@ -1310,7 +1352,10 @@ body {
   gap: 0.5rem;
 }
 
-.ec-help {
+/* The button in the header. It used to share a class with every help
+   paragraph in the app, which is how a paragraph came to have a pointer
+   cursor, a pill border and a hover state that promised something to click. */
+.ec-help-button {
   padding: 0.3rem 0.6rem;
   border: 1px solid var(--border);
   border-radius: 2rem;
@@ -1321,7 +1366,7 @@ body {
   cursor: pointer;
 }
 
-.ec-help:hover {
+.ec-help-button:hover {
   color: var(--fg);
   border-color: var(--accent);
 }

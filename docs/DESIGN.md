@@ -346,6 +346,10 @@ re-singing the line. A blank line between two sung lines is a stanza break and
 survives as one; everywhere else it is the breathing room in the text it has
 always been.
 
+The note under the text area says all of this, each way of writing a line named
+once and then *shown*: the examples are what people read, and the prose beside
+them is for when an example is not enough.
+
 **Voicings live in the text, not beside it.** Clicking any chord in the chart
 opens a picker and changes *that* occurrence; clicking a shape in the voicings
 panel changes it *everywhere it is used*, since re-voicing a chord across a
