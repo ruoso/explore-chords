@@ -1239,11 +1239,25 @@ which song, so a title that had to be tidied to become a filename survives the
 trip; a zip somebody assembled by hand, with no manifest, still restores, and
 the filename becomes the title.
 
+**Adding a song is dropping a file in.** A backup opened with any zip tool,
+given another `songs/*.txt` and closed again, restores with that song in it,
+titled by its filename. Checked against `zip`, `7z`, extract-and-re-zip, and
+Python's `zipfile`; the directory entry that some of them add for `songs/` is
+not mistaken for a song.
+
 The zip is written and read in `state/zip.js` rather than by a library — a
 header per file, a directory at the end, and a CRC is a hundred lines, which is
 worth it to keep the promise that the app ships no runtime dependencies (§3.1).
 Entries are deflated where the browser has `deflate-raw` and stored plain where
-it does not, which is a valid zip either way.
+it does not, which is a valid zip either way. Names are written as UTF-8 with
+the flag that says so, which Python, 7-Zip and the browsers honour; Info-ZIP's
+`unzip` 6.0 never implemented that flag, so it mangles an accented filename on
+extraction — its limitation, and the reason the song's real title also lives in
+the manifest.
+
+No zip64, no encryption, no compression method but stored and deflated: none of
+it is reachable with a few text files. A damaged entry is refused rather than
+half-read, since every entry carries a CRC-32 and the reader checks it.
 
 **Restoring is replacing.** A backup is the state of a device, not a set of
 changes to merge into one, so it asks first and says what the file holds. The

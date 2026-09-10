@@ -99,6 +99,33 @@ describe('a backup', () => {
     expect(back.instruments).toEqual([]);
   });
 
+  it('picks up a song somebody added to the zip', () => {
+    // The point of keeping songs as files: drop one in with any zip tool and it
+    // is a song. The manifest does not list it, so its filename is its title.
+    const back = readBackup([
+      ...backupFiles(state()),
+      { name: 'songs/Águas de Março.txt', text: 'Em | B7\n' },
+    ]);
+    expect([...back.sheets].map((sheet) => sheet.title).sort()).toEqual([
+      'Coração / partido?',
+      'Valsa',
+      'Águas de Março',
+    ]);
+    expect(back.sheets.find((sheet) => sheet.title === 'Águas de Março').body).toBe('Em | B7\n');
+    // And the ones the manifest does list keep the titles it holds.
+    expect(back.sheets.find((sheet) => sheet.body === 'C | G\n').title).toBe('Coração / partido?');
+  });
+
+  it('ignores the directory entries a zip tool leaves behind', () => {
+    // Extracting a backup and re-zipping the folder adds an entry for the
+    // folder itself, which is not a song however much it looks like one.
+    const back = readBackup([
+      { name: 'songs/', text: '' },
+      { name: 'songs/Blackbird.txt', text: 'G | Am7\n' },
+    ]);
+    expect(back.sheets.map((sheet) => sheet.title)).toEqual(['Blackbird']);
+  });
+
   it('takes a backup with only some of its parts', () => {
     const files = backupFiles(state()).filter((f) => f.name !== CHORDS_FILE);
     const back = readBackup(files);
