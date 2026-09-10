@@ -324,7 +324,7 @@ export default {
       chart: {
         term: 'Un cifrado',
         text: 'Una barra vertical inicia un compás; los espacios separan los acordes dentro de él.',
-        example: '# Verso\nC  Am | F  G | C',
+        example: 'C  Am | F  G | C\nF     | G    | C',
       },
       words: {
         term: 'O con la letra debajo',

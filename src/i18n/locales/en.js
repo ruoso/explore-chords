@@ -321,7 +321,7 @@ export default {
       chart: {
         term: 'A chart',
         text: 'A vertical bar starts a new measure; spaces separate the chords inside one.',
-        example: '# Verse\nC  Am | F  G | C',
+        example: 'C  Am | F  G | C\nF     | G    | C',
       },
       words: {
         term: 'Or the words underneath',

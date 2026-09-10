@@ -324,7 +324,7 @@ export default {
       chart: {
         term: 'Uno schema',
         text: 'Una barra verticale apre una battuta; gli spazi separano gli accordi al suo interno.',
-        example: '# Strofa\nC  Am | F  G | C',
+        example: 'C  Am | F  G | C\nF     | G    | C',
       },
       words: {
         term: 'Oppure con il testo sotto',

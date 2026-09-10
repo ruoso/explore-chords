@@ -323,7 +323,7 @@ export default {
       chart: {
         term: 'Uma cifra',
         text: 'Uma barra vertical inicia um compasso; espaços separam os acordes dentro dele.',
-        example: '# Verso\nC  Am | F  G | C',
+        example: 'C  Am | F  G | C\nF     | G    | C',
       },
       words: {
         term: 'Ou com a letra embaixo',
