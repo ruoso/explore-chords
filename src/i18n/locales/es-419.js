@@ -212,6 +212,22 @@ export default {
     badTuning: 'No entiendo esa afinación: {reason}',
   },
 
+  backup: {
+    title: 'Respaldo',
+    help:
+      'Todo lo que tienes se guarda en este navegador, lo cual sirve hasta que el dispositivo ' +
+      'no. Un respaldo es un solo zip con tus instrumentos y ajustes, tus formas guardadas y ' +
+      'cada canción como un archivo de texto que puedes leer y editar en cualquier parte.',
+    save: 'Guardar un respaldo',
+    restore: 'Restaurar un respaldo',
+    confirmTitle: '¿Restaurar desde “{name}”?',
+    confirmBody:
+      'Todo en este dispositivo se reemplaza por lo que trae el archivo: {instruments} y {songs}.',
+    instruments: { one: '{count} instrumento', other: '{count} instrumentos' },
+    songs: { one: '{count} canción', other: '{count} canciones' },
+    confirmButton: 'Reemplazar todo',
+    failed: 'No pude leer ese respaldo: {reason}',
+  },
   instruments: {
     title: 'Instrumentos',
     help:

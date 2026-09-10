@@ -212,6 +212,22 @@ export default {
     badTuning: 'Non capisco quell’accordatura: {reason}',
   },
 
+  backup: {
+    title: 'Backup',
+    help:
+      'Tutto quello che hai è tenuto in questo browser, che va bene finché non va bene il ' +
+      'dispositivo. Un backup è un solo zip con i tuoi strumenti e le impostazioni, le forme ' +
+      'salvate e ogni canzone come file di testo che puoi leggere e modificare dove vuoi.',
+    save: 'Salva un backup',
+    restore: 'Ripristina un backup',
+    confirmTitle: 'Ripristinare da “{name}”?',
+    confirmBody:
+      'Tutto su questo dispositivo viene sostituito da ciò che contiene il file: {instruments} e {songs}.',
+    instruments: { one: '{count} strumento', other: '{count} strumenti' },
+    songs: { one: '{count} canzone', other: '{count} canzoni' },
+    confirmButton: 'Sostituisci tutto',
+    failed: 'Non riesco a leggere questo backup: {reason}',
+  },
   instruments: {
     title: 'Strumenti',
     help:

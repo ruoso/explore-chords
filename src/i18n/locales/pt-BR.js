@@ -212,6 +212,22 @@ export default {
     badTuning: 'Não entendi essa afinação: {reason}',
   },
 
+  backup: {
+    title: 'Backup',
+    help:
+      'Tudo o que você tem fica guardado neste navegador, o que serve até o aparelho não ' +
+      'servir mais. Um backup é um único zip com seus instrumentos e ajustes, seus desenhos ' +
+      'salvos e cada música como um arquivo de texto que você pode ler e editar em qualquer lugar.',
+    save: 'Salvar um backup',
+    restore: 'Restaurar um backup',
+    confirmTitle: 'Restaurar de “{name}”?',
+    confirmBody:
+      'Tudo neste aparelho é substituído pelo que o arquivo contém: {instruments} e {songs}.',
+    instruments: { one: '{count} instrumento', other: '{count} instrumentos' },
+    songs: { one: '{count} música', other: '{count} músicas' },
+    confirmButton: 'Substituir tudo',
+    failed: 'Não consegui ler esse backup: {reason}',
+  },
   instruments: {
     title: 'Instrumentos',
     help:

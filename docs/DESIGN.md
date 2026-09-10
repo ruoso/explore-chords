@@ -1218,6 +1218,41 @@ made. It also carries renamed presets across: one saved as `standard` comes back
 as `strumming`. A configuration the user edited says `custom` and is restored
 exactly as written, which is the whole point of the distinction.
 
+### 8.4 Backup
+
+Everything the app knows lives in this browser's storage, which is a fine place
+for it right up until the phone is replaced. So all of it goes into **one zip**,
+offered as a download and taken back the same way, from the instrument screen —
+the closest thing here to a settings page, and where most of what a backup holds
+is set.
+
+```
+settings.json        instruments and their rules, preferences, which one is in use
+saved-chords.json    the starred shapes
+songs/Valsa.txt      one song per file, as the text it already is
+```
+
+**A song is stored as a text file** because a song already *is* text: a backup
+you can open, read and edit anywhere is worth more than one only this app can
+make sense of. `settings.json` carries a small manifest saying which file is
+which song, so a title that had to be tidied to become a filename survives the
+trip; a zip somebody assembled by hand, with no manifest, still restores, and
+the filename becomes the title.
+
+The zip is written and read in `state/zip.js` rather than by a library — a
+header per file, a directory at the end, and a CRC is a hundred lines, which is
+worth it to keep the promise that the app ships no runtime dependencies (§3.1).
+Entries are deflated where the browser has `deflate-raw` and stored plain where
+it does not, which is a valid zip either way.
+
+**Restoring is replacing.** A backup is the state of a device, not a set of
+changes to merge into one, so it asks first and says what the file holds. The
+new state is written to storage and the page reloaded, so everything comes up
+through the same load path as any other visit — migrations, the preset refresh,
+all of it. The reload goes to a *bare* address: every bit of screen state lives
+in the query string (§8.1), so reloading with it would come up "viewing as" the
+instrument this device had a moment ago, which the backup has just replaced.
+
 ---
 
 ## 9. Testing

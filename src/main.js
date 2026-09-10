@@ -28,6 +28,17 @@ import { renderSheetPrint } from './ui/sheet-print.js';
 import { sheetForSharing, sheetFromSharing } from './state/sheets.js';
 import { encodeSheetLink, decodeSheetLink } from './state/codec.js';
 import { instrumentInstance } from './core/instrument.js';
+import { createZip, readZip } from './state/zip.js';
+import { backupFiles, backupFileName, readBackup } from './state/backup.js';
+import {
+  saveInstruments,
+  saveActiveId,
+  savePrefs,
+  saveFavorites,
+  deserialiseInstrument,
+  DEFAULT_PREFS,
+} from './state/persist.js';
+import { saveSheets } from './state/sheets.js';
 import { setupUpdates } from './ui/update-toast.js';
 import { setupInstallPrompt } from './ui/install-prompt.js';
 import { setupAnnouncements } from './ui/announcement-dialog.js';
@@ -367,6 +378,8 @@ function renderInstruments() {
   if (!editing) {
     renderInstrumentList(nodes.main, {
       store,
+      onSaveBackup: saveBackup,
+      onRestoreBackup: restoreBackup,
       onAdd: () => {
         store.set({ instrumentForm: { mode: 'create' } });
         render();
@@ -437,6 +450,80 @@ function showCreate({ firstRun }) {
           store.set({ instrumentForm: null });
           render();
         },
+  });
+}
+
+/**
+ * Everything the app knows, in one file the user keeps (§8.4).
+ *
+ * A blob and a link that clicks itself: there is nowhere to send it and nothing
+ * to ask a server for, which is the whole point of a browser holding the data.
+ */
+async function saveBackup(error) {
+  error.hidden = true;
+  try {
+    const at = new Date();
+    const blob = await createZip(backupFiles(store.state, at), at);
+    const url = URL.createObjectURL(blob);
+    const link = el('a', { href: url, download: backupFileName(at) });
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    error.textContent = t('backup.failed', { reason: errorText(e) });
+    error.hidden = false;
+  }
+}
+
+/**
+ * Put a backup back, over everything that is here.
+ *
+ * Restoring is replacing — a backup is the state of a device, not a set of
+ * changes to merge into one — so it asks first and says what the file holds.
+ * The new state is written to storage and the page reloaded, so that everything
+ * comes up through the same load path as any other visit: the migrations, the
+ * preset refresh, all of it.
+ */
+async function restoreBackup(file, error) {
+  error.hidden = true;
+  let backup;
+  try {
+    backup = readBackup(await readZip(await file.arrayBuffer()));
+  } catch (e) {
+    error.textContent = t('backup.failed', { reason: errorText(e) });
+    error.hidden = false;
+    return;
+  }
+
+  confirmDialog({
+    title: t('backup.confirmTitle', { name: file.name }),
+    message: t('backup.confirmBody', {
+      instruments: t('backup.instruments', { count: backup.instruments.length }),
+      songs: t('backup.songs', { count: backup.sheets.length }),
+    }),
+    confirmLabel: t('backup.confirmButton'),
+    onConfirm: () => {
+      const instruments = [];
+      for (const entry of backup.instruments) {
+        try {
+          instruments.push(deserialiseInstrument(entry));
+        } catch {
+          // One instrument whose tuning no longer parses must not take the
+          // rest of the backup with it.
+        }
+      }
+      saveInstruments(instruments);
+      saveActiveId(instruments.some((i) => i.id === backup.activeId) ? backup.activeId : null);
+      if (backup.prefs) savePrefs({ ...DEFAULT_PREFS, ...backup.prefs });
+      saveFavorites(backup.favorites);
+      saveSheets(backup.sheets);
+      // Reloaded onto a bare address, not the one we are on: every bit of
+      // screen state lives in the query string (§8.1), so reloading with it
+      // would come up "viewing as" the instrument this device had before the
+      // restore — one that the backup has just replaced.
+      globalThis.location.replace(globalThis.location.pathname);
+    },
   });
 }
 

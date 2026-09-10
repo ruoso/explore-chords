@@ -210,6 +210,22 @@ export default {
     badTuning: 'That tuning does not read: {reason}',
   },
 
+  backup: {
+    title: 'Backup',
+    help:
+      'Everything you have is kept in this browser, which is fine until the device is not. ' +
+      'A backup is one zip holding your instruments and settings, your saved shapes, and ' +
+      'every song as a plain text file you can read and edit anywhere.',
+    save: 'Save a backup',
+    restore: 'Restore a backup',
+    confirmTitle: 'Restore from “{name}”?',
+    confirmBody:
+      'Everything on this device is replaced by what the file holds: {instruments} and {songs}.',
+    instruments: { one: '{count} instrument', other: '{count} instruments' },
+    songs: { one: '{count} song', other: '{count} songs' },
+    confirmButton: 'Replace everything',
+    failed: 'That backup could not be read: {reason}',
+  },
   instruments: {
     title: 'Instruments',
     help:

@@ -51,7 +51,10 @@ const WEIGHTS = [
 ];
 
 /** The list of instruments. */
-export function renderInstrumentList(container, { store, onAdd, onEdit, onUse, onDelete }) {
+export function renderInstrumentList(
+  container,
+  { store, onAdd, onEdit, onUse, onDelete, onSaveBackup, onRestoreBackup }
+) {
   clear(container);
   const page = el('div', { class: 'ec-page' });
   page.append(
@@ -141,8 +144,59 @@ export function renderInstrumentList(container, { store, onAdd, onEdit, onUse, o
     )
   );
 
+  if (onSaveBackup && onRestoreBackup) page.append(backupPanel({ onSaveBackup, onRestoreBackup }));
+
   container.append(page);
   return page;
+}
+
+/**
+ * Saving everything to a file, and putting it back (§8.4).
+ *
+ * On this screen because it is the closest thing the app has to a settings
+ * page, and because what a backup holds is mostly what is set here.
+ */
+function backupPanel({ onSaveBackup, onRestoreBackup }) {
+  const panel = el('section', { class: 'ec-panel', 'aria-labelledby': 'backup-title' });
+  const error = el('p', { class: 'ec-error', id: 'backup-error', role: 'alert', hidden: true });
+
+  // The real control is the button; the input is machinery, kept out of the
+  // way of anything that reads or tabs through the page.
+  const file = el('input', {
+    type: 'file',
+    id: 'backup-file',
+    accept: '.zip,application/zip',
+    class: 'ec-visually-hidden',
+    tabindex: '-1',
+    'aria-hidden': 'true',
+    onChange: (event) => {
+      const chosen = event.target.files?.[0];
+      event.target.value = '';
+      if (chosen) onRestoreBackup(chosen, error);
+    },
+  });
+
+  panel.append(
+    el('h3', { class: 'ec-panel-title', id: 'backup-title' }, t('backup.title')),
+    el('p', { class: 'ec-help' }, t('backup.help')),
+    el(
+      'div',
+      { class: 'ec-actions' },
+      el(
+        'button',
+        { type: 'button', class: 'ec-button', id: 'backup-save', onClick: () => onSaveBackup(error) },
+        t('backup.save')
+      ),
+      el(
+        'button',
+        { type: 'button', class: 'ec-button', id: 'backup-restore', onClick: () => file.click() },
+        t('backup.restore')
+      )
+    ),
+    file,
+    error
+  );
+  return panel;
 }
 
 /** The editor for one instrument: the shared form, plus its voicing rules. */
