@@ -58,14 +58,6 @@ const CHORD_TOKEN = /^(.*?)(?:\[(\d+)\])?$/;
 const BRACKET_HEADING = /^(\s*\[\s*([^\]]*?)\s*\]\s*)(.*)$/;
 /** `Intro: C  G`, the other way a cifra names a section. */
 const LABEL_HEADING = /^(\s*([^\s:|]+)\s*:\s*)(.*)$/;
-/**
- * Brackets around a run of chords, which a cifra uses to mark a repeat.
- *
- * They annotate the run, not the chords in it: a bracket is a mark of its own
- * standing between chords, and a search for `(` would find nothing to play.
- * Round brackets only — square ones are the footnote marker, `Cm[2]`.
- */
-const CHORD_MARKS = /^(\(*)(.*?)(\)*)$/;
 /** A leading `>` forces a line to be read as words. Kept in the text. */
 const LYRIC_MARKER = /^(\s*)>( ?)/;
 
@@ -349,10 +341,45 @@ function chordSymbolOf(token) {
  * `( Cm  Dm )` and `(Cm Dm)` both mark the same repeat, so a bracket may stand
  * on its own or be written against a chord. Either way it becomes a mark of its
  * own, because it brackets the run and not the chord it happens to touch.
+ *
+ * Only a bracket that nothing closes, or one that nothing opened, is a mark. A
+ * chord may have brackets of its own — `Em7(b5)`, `A7(b13)` and `C7(9)` are how
+ * a good deal of the world writes an altered chord — and taking the last
+ * character off one of those left `Em7(b5` and a stray mark beside it.
  */
 function splitMarks(word) {
-  const m = CHORD_MARKS.exec(word);
-  return { before: m[1], chord: m[2], after: m[3] };
+  let before = '';
+  let chord = word;
+  let after = '';
+
+  while (!bracketsBalance(chord)) {
+    if (chord.startsWith('(')) {
+      before += '(';
+      chord = chord.slice(1);
+    } else if (chord.endsWith(')')) {
+      after = `)${after}`;
+      chord = chord.slice(0, -1);
+    } else {
+      // Unbalanced somewhere in the middle: not a repeat mark, and not ours to
+      // tidy. It goes to the chord parser as written and fails there.
+      break;
+    }
+  }
+
+  return { before, chord, after };
+}
+
+/** Does every bracket in here open before it closes, and close before the end? */
+function bracketsBalance(text) {
+  let depth = 0;
+  for (const character of text) {
+    if (character === '(') depth += 1;
+    else if (character === ')') {
+      depth -= 1;
+      if (depth < 0) return false;
+    }
+  }
+  return depth === 0;
 }
 
 /**

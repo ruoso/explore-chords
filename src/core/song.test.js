@@ -250,6 +250,48 @@ describe('brackets marking a repeat', () => {
     expect(parseSong(REPEAT, 'brazilian').sections[0].lines[0].lyrics).toBe(false);
   });
 
+  it('leaves a chord its own brackets', () => {
+    // Em7(b5), A7(b13), C7(9): how a good deal of the world writes an altered
+    // chord. Taking the last character off one of those as a repeat mark left
+    // `Em7(b5` and a stray bracket beside it.
+    const song = parseSong('Em7(b5) | A7(b13) | C7(9)', 'brazilian');
+    expect(song.unknown).toEqual([]);
+    expect(segmentsOf(song).map((seg) => seg.mark || seg.chord.raw)).toEqual([
+      'Em7(b5)',
+      'A7(b13)',
+      'C7(9)',
+    ]);
+  });
+
+  it('tells a repeat bracket from a chord’s own, even written tight', () => {
+    const spaced = parseSong('( Em7(b5)  A7(b13) )', 'brazilian');
+    expect(segmentsOf(spaced).map((seg) => seg.mark || seg.chord.raw)).toEqual([
+      '(',
+      'Em7(b5)',
+      'A7(b13)',
+      ')',
+    ]);
+
+    // Nothing closes the first bracket and nothing opened the last, which is
+    // what makes those two marks and the rest chords.
+    const tight = parseSong('(C7(9)  Am)', 'brazilian');
+    expect(tight.unknown).toEqual([]);
+    expect(segmentsOf(tight).map((seg) => seg.mark || seg.chord.raw)).toEqual([
+      '(',
+      'C7(9)',
+      'Am',
+      ')',
+    ]);
+  });
+
+  it('leaves a bracket in the middle of a token where it is', () => {
+    // Unbalanced, but not at either end: not a repeat mark, and not ours to
+    // tidy. The token reaches the chord parser as written — which, as it
+    // happens, shrugs at a stray bracket.
+    const song = parseSong('C)m | G', 'brazilian');
+    expect(segmentsOf(song).map((seg) => seg.mark || seg.chord.raw)).toEqual(['C)m', 'G']);
+  });
+
   it('leaves the footnote marker alone', () => {
     // Square brackets are the marker, not a repeat: Cm[2] is one chord.
     const song = parseSong('Cm | A | Cm | Cm[2]');

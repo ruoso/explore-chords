@@ -327,6 +327,13 @@ means the same thing and reads the same way. Round brackets only, since square
 ones are the footnote marker. Counting them as words would have made a bracketed
 line of chords look a third prose, so they are counted as neither.
 
+Only a bracket that **nothing closes**, or one that nothing opened, is a mark.
+A chord has brackets of its own — `Em7(b5)`, `A7(b13)`, `C7(9)` are how a good
+deal of the world writes an altered chord — and taking the last character off
+one of those as a repeat mark left `Em7(b5` and a stray bracket beside it. So
+`(C7(9)  Am)` comes apart correctly: the first bracket is closed by nothing and
+the last opened by nothing, while the pair inside the first chord belongs to it.
+
 **The segment is the unit, and it carries a chord, words, or both.** A measure
 is a group of segments, bars decide where measures start, chord columns decide
 where segments start, and each chord takes the words from its own column up to
