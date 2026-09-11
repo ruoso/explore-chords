@@ -144,6 +144,8 @@ export default {
     fingers: 'dedos {fingers}',
     muted: { one: '{count} cuerda sin tocar', other: '{count} cuerdas sin tocar' },
     rootOn: 'fundamental en la {ordinal} cuerda',
+    noRoot: 'sin fundamental',
+    voicedAs: 'suena como {chord}',
     toPlay: 'dificultad {difficulty}',
   },
 
@@ -682,6 +684,29 @@ export default {
             'así, no como un acorde que nadie reconoce. Se muestra tal como lo escribiste, ' +
             'sin convertirse en el acorde que representa, y no hay nada que elegir en él: el ' +
             'acorde que repite ya tiene su forma donde se escribió.',
+        },
+      ],
+    },
+    '0.10.0': {
+      title: 'Qué cambió en 0.10',
+      sections: [
+        {
+          heading: 'Todos los diagramas del mismo tamaño',
+          text:
+            'Una forma más arriba en el mástil lleva el número de traste, y el espacio para él ' +
+            'hacía ese diagrama más ancho que los demás, dejando la fila despareja y cada ' +
+            'cuadrícula descentrada bajo su nombre. Ahora todo diagrama reserva ese espacio, ' +
+            'lo necesite o no. El número de traste también es más grande, y los diagramas de ' +
+            'la hoja impresa igual: estaban demasiado chicos para leerlos desde el atril.',
+        },
+        {
+          heading: 'Lo que la forma suena de verdad',
+          text:
+            'El nombre del acorde dice cuál es la armonía. La forma decide cuál de sus notas ' +
+            'queda más grave, y si la fundamental suena. Cuando ambos difieren, el nombre ' +
+            'ahora lleva una nota discreta de lo que estás tomando en realidad: un Gm7 con la ' +
+            'tercera abajo aparece como Gm7/Bb. Importa más cuando otro instrumento hace el ' +
+            'bajo, porque entonces tomar otra inversión es el arreglo y no un accidente.',
         },
       ],
     },

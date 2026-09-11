@@ -5,8 +5,14 @@ import { describe, it, expect } from 'vitest';
 import axe from 'axe-core';
 import { parseChord } from '../core/notation/parse.js';
 import { instrumentInstance } from '../core/instrument.js';
-import { searchFingerings, allFingerings } from '../core/search.js';
-import { renderDiagram, renderChordBox, renderNeck, describeFingering } from './index.js';
+import { searchFingerings, allFingerings, fingeringFromFrets } from '../core/search.js';
+import {
+  renderDiagram,
+  renderChordBox,
+  renderNeck,
+  describeFingering,
+  voicedAsLabel,
+} from './index.js';
 import { diagramModel } from './diagram.js';
 
 const guitar = instrumentInstance({
@@ -21,6 +27,18 @@ function find(symbol, shorthand, instrument = guitar) {
   const result = searchFingerings(chord, instrument);
   const fingering = allFingerings(result).find((f) => f.shorthand === shorthand);
   if (!fingering) throw new Error(`${symbol} ${shorthand} not found`);
+  return { chord, fingering };
+}
+
+/**
+ * A shape read as written, rather than found by the search. The search drops a
+ * muted shape when a fuller one is no harder (§5.2), which is exactly what an
+ * arrangement for two guitars wants ignored.
+ */
+function shape(symbol, frets) {
+  const chord = parseChord(symbol, 'brazilian').chord;
+  const fingering = fingeringFromFrets(frets, chord, guitar);
+  if (!fingering) throw new Error(`${symbol} ${frets.join('-')} is unplayable`);
   return { chord, fingering };
 }
 
@@ -188,4 +206,56 @@ describe('axe finds no violations on a page of diagrams', () => {
     const violations = results.violations.map((v) => `${v.id}: ${v.description}`);
     expect(violations).toEqual([]);
   }, 20000);
+});
+
+
+/**
+ * The label beside a chord name, saying what the shape actually sounds
+ * (docs/DESIGN.md §6.2).
+ */
+describe('the voiced-as label', () => {
+  it('says nothing about a shape that sounds what it is called', () => {
+    const { chord, fingering } = shape('G', [3, 2, 0, 0, 0, 3]);
+    expect(voicedAsLabel(fingering, { chord })).toBe(null);
+  });
+
+  it('names the whole chord in full form, for a legend', () => {
+    // Bb D G D: the six-string's third under a seven-string's G.
+    const { chord, fingering } = shape('Gm', ['x', 1, 0, 0, 3, 'x']);
+    expect(voicedAsLabel(fingering, { chord, dialect: 'brazilian' })).toBe('Gm/Bb');
+  });
+
+  it('names only the bass in short form, for a list of one chord', () => {
+    const { chord, fingering } = shape('Gm', ['x', 1, 0, 0, 3, 'x']);
+    expect(voicedAsLabel(fingering, { chord, dialect: 'brazilian', full: false })).toBe('/Bb');
+  });
+
+  it('says nothing when a slash chord is played as written', () => {
+    // The chart asked for the F# underneath and this shape gives it.
+    const { chord, fingering } = shape('D7/F#', [2, 'x', 0, 2, 1, 2]);
+    expect(voicedAsLabel(fingering, { chord, dialect: 'brazilian' })).toBe(null);
+  });
+
+  it('drops the chart\'s own slash before adding the sounded one', () => {
+    // The chart says D7/F# because the other instrument plays the F#. This
+    // shape sounds A underneath, and D7/F#/A is not a chord.
+    const { chord, fingering } = shape('D7/F#', ['x', 0, 4, 5, 3, 'x']);
+    expect(voicedAsLabel(fingering, { chord, dialect: 'brazilian' })).toBe('D7/A');
+  });
+
+  it('mentions a missing root', () => {
+    // Bb D F Bb — a Gm7 with no G in it.
+    const { chord, fingering } = shape('Gm7', ['x', 'x', 8, 7, 6, 6]);
+    expect(voicedAsLabel(fingering, { chord, dialect: 'brazilian' })).toBe('Gm7/Bb, no root');
+  });
+
+  it('reaches the accessible description too', () => {
+    const { chord, fingering } = shape('Gm', ['x', 1, 0, 0, 3, 'x']);
+    const text = describeFingering(fingering, {
+      chord,
+      dialect: 'brazilian',
+      instrument: guitar,
+    });
+    expect(text).toContain('voiced as Gm/Bb');
+  });
 });

@@ -144,6 +144,8 @@ export default {
     fingers: 'dedos {fingers}',
     muted: { one: '{count} corda não tocada', other: '{count} cordas não tocadas' },
     rootOn: 'fundamental na {ordinal} corda',
+    noRoot: 'sem fundamental',
+    voicedAs: 'soa como {chord}',
     toPlay: 'dificuldade {difficulty}',
   },
 
@@ -679,6 +681,29 @@ export default {
             'lido assim, não como um acorde que ninguém reconhece. Aparece do jeito que você ' +
             'escreveu, sem virar o acorde que ele representa, e não há nada para escolher ' +
             'nele: o acorde que ele repete já tem o desenho dele onde foi escrito.',
+        },
+      ],
+    },
+    '0.10.0': {
+      title: 'O que mudou na 0.10',
+      sections: [
+        {
+          heading: 'Todo diagrama do mesmo tamanho',
+          text:
+            'Um desenho mais acima no braço traz o número da casa, e o espaço para ele deixava ' +
+            'aquele diagrama mais largo que os outros, desalinhando a fileira e tirando cada ' +
+            'grade do centro sob o seu nome. Agora todo diagrama reserva esse espaço, precise ' +
+            'dele ou não. O número da casa também ficou maior, e os diagramas na folha ' +
+            'impressa igualmente: estavam pequenos demais para ler da estante.',
+        },
+        {
+          heading: 'O que o desenho realmente soa',
+          text:
+            'O nome do acorde diz qual é a harmonia. O desenho decide qual das suas notas fica ' +
+            'mais grave, e se a fundamental soa. Quando os dois diferem, o nome agora traz uma ' +
+            'observação discreta do que você está pegando de fato: um Gm7 com a terça embaixo ' +
+            'aparece como Gm7/Bb. Importa mais quando outro instrumento faz o baixo, porque aí ' +
+            'escolher outra inversão é o arranjo, não um acidente.',
         },
       ],
     },

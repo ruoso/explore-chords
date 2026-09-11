@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.js';
-import { freshVisit, completeSetup, searchChord } from './helpers.js';
+import { freshVisit, completeSetup, searchChord, editActiveInstrument, goToView } from './helpers.js';
 
 /**
  * The result view (docs/DESIGN.md §2.3): ranked by difficulty, grouped by
@@ -118,5 +118,40 @@ test.describe('the empty state is honest', () => {
     await expect(page.getByRole('button', { name: 'Adjust voicing rules' })).toBeVisible();
     // Nothing approximate is offered in place of the chord that was asked for.
     await expect(page.locator('.ec-card')).toHaveCount(0);
+  });
+});
+
+/**
+ * Every card here is the same chord, so what tells the shapes apart is which
+ * note ended up underneath (docs/DESIGN.md §6.2).
+ */
+test.describe('what each shape sounds', () => {
+  test('a card says so when its bass is not the one the symbol asked for', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+    await searchChord(page, 'Gm7');
+
+    // Strumming keeps the root underneath, so there is nothing to remark on and
+    // the label stays out of the way.
+    await expect(page.locator('.ec-voiced-as')).toHaveCount(0);
+
+    // Jazz lets the bass go free, and then it is worth saying where it went.
+    await editActiveInstrument(page);
+    await page.selectOption('#heuristics-preset', 'jazz');
+    await goToView(page, 'explore');
+
+    const labelled = page.locator('.ec-card', { has: page.locator('.ec-voiced-as') });
+    await expect(labelled.first()).toBeVisible();
+
+    // Only the bass, never the chord name: repeating it on every card of one
+    // chord would say nothing.
+    for (const text of await page.locator('.ec-voiced-as').allInnerTexts()) {
+      expect(text).toMatch(/^\/[A-G][b#]?(, .+)?$/);
+    }
+
+    // It stays on one line with the shorthand and the difficulty badge.
+    const caption = labelled.first().locator('.ec-caption');
+    const box = await caption.boundingBox();
+    expect(box.height).toBeLessThan(30);
   });
 });

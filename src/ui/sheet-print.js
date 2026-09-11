@@ -15,7 +15,7 @@ import { parseChord } from '../core/notation/parse.js';
 import { parseSong, compareVoicings } from '../core/song.js';
 import { layoutSection } from '../core/chart-layout.js';
 import { resolveSongVoicings } from '../core/voicings.js';
-import { renderDiagram } from '../render/index.js';
+import { renderDiagram, voicedAsLabel } from '../render/index.js';
 import { t } from '../i18n/index.js';
 
 /**
@@ -205,11 +205,19 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
       const chord = parseChord(entry.symbol, dialect).chord;
       if (!chord) continue;
       const { fingering } = entry;
+      // What the shape sounds, where that is not what the chart wrote: the
+      // chart's name to the left, the sounded one to the right (§6.2).
+      const sounded = voicedAsLabel(fingering, { chord, dialect, full: true });
       list.append(
         el(
           'li',
           { class: 'ec-print-chord' },
-          el('p', { class: 'ec-print-chord-name' }, entry.key),
+          el(
+            'p',
+            { class: 'ec-print-chord-name' },
+            el('span', {}, entry.key),
+            sounded ? el('span', { class: 'ec-voiced-as' }, sounded) : null
+          ),
           el('div', {
             html: renderDiagram(
               fingering,

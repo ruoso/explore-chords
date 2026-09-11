@@ -399,6 +399,19 @@ body {
   color: var(--muted);
 }
 
+/* The chord as the shape actually sounds it (DESIGN.md 6.2). Italic and quiet,
+   because it is derived from the shape rather than typed by anyone: it should
+   read as a remark about the name beside it, not as a second name. */
+.ec-voiced-as {
+  font-style: italic;
+  color: var(--muted);
+}
+
+/* Next to the shape it describes, leaving the difficulty at the far edge. */
+.ec-caption .ec-voiced-as {
+  margin-right: auto;
+}
+
 /* The badge carries a word, never colour alone (DESIGN.md 6.1). */
 .ec-badge {
   padding: 0.05rem 0.4rem;

@@ -144,6 +144,8 @@ export default {
     fingers: 'dita {fingers}',
     muted: { one: '{count} corda non suonata', other: '{count} corde non suonate' },
     rootOn: 'fondamentale sulla {ordinal} corda',
+    noRoot: 'senza fondamentale',
+    voicedAs: 'suona come {chord}',
     toPlay: 'difficoltà {difficulty}',
   },
 
@@ -682,6 +684,29 @@ export default {
             'letto così, non come un accordo che nessuno riconosce. Si vede come l’hai ' +
             'scritto, senza diventare l’accordo che rappresenta, e non c’è niente da ' +
             'scegliere: l’accordo che ripete ha già la sua forma dove è stato scritto.',
+        },
+      ],
+    },
+    '0.10.0': {
+      title: 'Cosa è cambiato nella 0.10',
+      sections: [
+        {
+          heading: 'Ogni diagramma della stessa misura',
+          text:
+            'Una forma più su sul manico porta il numero del tasto, e lo spazio per quel ' +
+            'numero rendeva il diagramma più largo degli altri, lasciando la fila irregolare e ' +
+            'ogni griglia fuori centro sotto il suo nome. Ora ogni diagramma riserva quello ' +
+            'spazio, che serva o no. Anche il numero del tasto è più grande, e così i ' +
+            'diagrammi sul foglio stampato: erano troppo piccoli da leggere dal leggio.',
+        },
+        {
+          heading: 'Come suona davvero la forma',
+          text:
+            "Il nome dell'accordo dice qual è l'armonia. La forma decide quale delle sue note " +
+            'finisce più in basso, e se la fondamentale suona. Dove le due cose divergono, il ' +
+            'nome porta ora una nota discreta di quello che stai davvero tenendo: un Gm7 con ' +
+            'la terza sotto si legge Gm7/Bb. Conta di più quando un altro strumento fa il ' +
+            'basso, perché allora prendere un rivolto diverso è l\'arrangiamento e non un caso.',
         },
       ],
     },

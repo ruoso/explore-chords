@@ -9,6 +9,7 @@ import {
   hasDistinctBass,
   describeChordTones,
   sameChord,
+  voicedAs,
   QUALITIES,
 } from './chord.js';
 
@@ -175,5 +176,72 @@ describe('every declared quality is usable', () => {
       expect(t.pitchClass).toBeGreaterThanOrEqual(0);
       expect(t.pitchClass).toBeLessThan(12);
     }
+  });
+});
+
+/**
+ * The symbol says what the harmony is; the shape says what you hear. When
+ * another instrument has the bass, the difference between them is the
+ * arrangement (docs/DESIGN.md §6.2).
+ */
+describe('what a shape sounds, as against what the symbol says', () => {
+  // Midi numbers per string, low to high, null where a string is muted.
+  const gm7 = chord(n('G'), 'minor', [{ degree: 7, alter: -1 }]);
+
+  it('says nothing when the bass is the root', () => {
+    // G on the low E string at fret 3, so the shape sounds what it is called.
+    const v = voicedAs(chord(n('G')), [43, 47, 50, 55, 59, 67]);
+    expect(v.asWritten).toBe(true);
+    expect(v.rootless).toBe(false);
+    expect(formatNote(v.bass)).toBe('G');
+  });
+
+  it('says nothing when a slash chord puts its own bass lowest', () => {
+    // C/E asked for E underneath and got it. Comparing against the root instead
+    // would label every slash chord with the bass it was told to play.
+    const v = voicedAs(chord(n('C'), 'major', [], n('E')), [null, null, 52, 57, 60, 64]);
+    expect(v.asWritten).toBe(true);
+    expect(formatNote(v.bass)).toBe('E');
+  });
+
+  it('names the bass of an inversion', () => {
+    // Bb D G D: the third underneath, which is how a six-string sits under a
+    // seven-string playing the G.
+    const v = voicedAs(gm7, [null, 46, 50, 55, 62, null]);
+    expect(v.asWritten).toBe(false);
+    expect(formatNote(v.bass)).toBe('Bb');
+  });
+
+  it('reports a missing root', () => {
+    // Bb D F Bb — a Gm7 with no G in it at all.
+    const v = voicedAs(gm7, [null, null, 58, 62, 65, 70]);
+    expect(v.rootless).toBe(true);
+    expect(formatNote(v.bass)).toBe('Bb');
+  });
+
+  it('spells the bass from the chord, not from a pitch-class table', () => {
+    // The seventh of Db7 is Cb. Spelled off a table of flats it would come back
+    // as B, which is the same sound and the wrong note.
+    const db7 = chord(n('Db'), 'major', [{ degree: 7, alter: -1 }]);
+    expect(formatNote(voicedAs(db7, [null, null, 47, 53, 56, 61]).bass)).toBe('Cb');
+    // And the third of E7 is G#, not Ab.
+    const e7 = chord(n('E'), 'major', [{ degree: 7, alter: -1 }]);
+    expect(formatNote(voicedAs(e7, [44, 50, 52, 59, null, null]).bass)).toBe('G#');
+    // A major's third is C#, even though the shape is full of flats elsewhere.
+    expect(formatNote(voicedAs(chord(n('A')), [null, 49, 52, 57, 61, null]).bass)).toBe('C#');
+  });
+
+  it('falls back to the chord\'s own accidental for a foreign bass', () => {
+    // Someone wrote a voicing with a note the chord does not contain. There is
+    // no functional spelling to borrow, so a flat chord keeps flats.
+    const bb = chord(n('Bb'));
+    expect(formatNote(voicedAs(bb, [null, null, 51, 58, 62, null]).bass)).toBe('Eb');
+    const a = chord(n('A'));
+    expect(formatNote(voicedAs(a, [null, null, 51, 57, 61, null]).bass)).toBe('D#');
+  });
+
+  it('has nothing to say about a shape that sounds nothing', () => {
+    expect(voicedAs(chord(n('G')), [null, null, null, null, null, null])).toBe(null);
+    expect(voicedAs(chord(n('G')), undefined)).toBe(null);
   });
 });

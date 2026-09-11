@@ -892,6 +892,57 @@ test.describe('printing', () => {
   });
 });
 
+/**
+ * The chart names the harmony; the shape decides what is underneath it. Where
+ * the two differ the legend says so, because with another instrument on the bass
+ * that difference is the arrangement (docs/DESIGN.md §6.2).
+ */
+test.describe('what the shape sounds', () => {
+  const SONG = [
+    '# A',
+    'Gm | Bb/F | G',
+    '',
+    '---',
+    '',
+    '# Voicings: E2, A2, D3, G3, B3, E4',
+    'Gm = x1003x',
+    'Bb/F = x5333x',
+    'G = 320003',
+    '',
+  ].join('\n');
+
+  test('the legend says when a shape sounds something other than its name', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+    await newSong(page, 'Dominante');
+    await setBody(page, SONG);
+    await page.locator('#sheet-view').click();
+
+    const legend = page.locator('.ec-print-legend');
+    await expect(legend.locator('.ec-print-chord')).toHaveCount(3);
+
+    // Gm with its third underneath, which is where a six-string sits when a
+    // seven-string has the G.
+    const gm = legend.locator('.ec-print-chord', { hasText: 'Gm' }).first();
+    await expect(gm.locator('.ec-voiced-as')).toHaveText('Gm/Bb');
+
+    // The chart already carries a slash, and the shape sounds a different note
+    // again. The label replaces that bass rather than appending to it.
+    const bb = legend.locator('.ec-print-chord', { hasText: 'Bb/F' }).first();
+    await expect(bb.locator('.ec-voiced-as')).toHaveText('Bb/D');
+
+    // An ordinary root-position G sounds what it is called, so nothing is said.
+    // The legend is in symbol order, so it sits between the other two.
+    const g = legend.locator('.ec-print-chord').nth(1);
+    await expect(g.locator('.ec-print-chord-name')).toHaveText('G');
+    await expect(g.locator('.ec-voiced-as')).toHaveCount(0);
+
+    // Said twice over three chords, so the label is not decoration on all of
+    // them.
+    await expect(legend.locator('.ec-voiced-as')).toHaveCount(2);
+  });
+});
+
 test.describe('sharing a song', () => {
   test('a link round-trips the song, voicings included', async ({ page }) => {
     await freshVisit(page);

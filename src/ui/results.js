@@ -13,7 +13,7 @@
  */
 
 import { el, clear } from './dom.js';
-import { renderDiagram } from '../render/index.js';
+import { renderDiagram, voicedAsLabel } from '../render/index.js';
 import { renderFingeringGroups } from './fingering-groups.js';
 import { t } from '../i18n/index.js';
 
@@ -70,6 +70,9 @@ export function renderResults(
         chordText: store.state.chordText,
         frets: fingering.frets,
       });
+      // Every card here is the same chord, so only the bass is worth saying:
+      // it is what tells these shapes apart (§6.2).
+      const sounded = voicedAsLabel(fingering, { chord, dialect: prefs.dialect, full: false });
 
       return el(
         'li',
@@ -86,6 +89,7 @@ export function renderResults(
           'p',
           { class: 'ec-caption' },
           el('span', { class: 'ec-shorthand' }, fingering.shorthand),
+          sounded ? el('span', { class: 'ec-voiced-as' }, sounded) : null,
           el(
             'span',
             { class: `ec-badge ec-badge-${fingering.difficulty}` },

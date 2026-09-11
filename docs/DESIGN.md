@@ -1171,6 +1171,57 @@ needs, so a diagram can describe itself.
 This is cheap done from the first diagram and expensive to retrofit, so it is a
 constraint on phase 4 rather than a phase of its own.
 
+### 6.2 What the shape sounds, beside what the symbol says
+
+A chord symbol names the harmony. The shape decides which of the chord's notes
+ends up lowest, and whether the root is sounded at all. Usually those agree and
+there is nothing to remark on. When they do not, the difference is worth saying,
+because it is often the arrangement rather than an accident.
+
+The case that forced this: a six-string playing choro alongside a seven-string.
+The seven-string carries the bass line, so the six-string deliberately takes a
+different inversion, conventionally with its bass a third above the other
+guitar's, so that the two do not double each other. A chart that says `Gm` is
+played by one guitar as `Gm` and by the other as `Gm/Bb`, and the chart cannot
+say both. Nor should it: the harmony is shared, and which inversion an
+instrument takes is a property of its voicing.
+
+So three layers stay separate, and only the middle one is per-instrument:
+
+| Layer | Where it lives | Example |
+| --- | --- | --- |
+| The harmony | the chart, shared by every instrument | `Gm7` |
+| The voicing | the per-tuning `# Voicings:` block | `x1303x` |
+| The relationship | derived from the shape, shown and never stored | `Gm7/Bb` |
+
+`voicedAs` in `core/chord.js` derives the third layer from the frets, the tuning
+and the parsed symbol. Nothing is written into the song text, which matters for
+two reasons: an annotation would go stale the moment a shape was edited, and it
+would have to be repeated for every tuning.
+
+Two rules make the label quiet enough to leave on:
+
+- **Only when it differs from the symbol.** The comparison is against the
+  symbol's own bass — the slash note where there is one, the root otherwise —
+  and not against the root. A `C/E` asked for E underneath, so a shape that
+  gives it has nothing to remark on. Comparing against the root would label
+  every slash chord with the bass it was told to play.
+- **The bass is spelled from the chord's own tones**, never from a pitch-class
+  table. The seventh of D♭7 is C♭, not B. A table of flats gets four of the 27
+  chords in one choro wrong. A note that is not in the chord at all — possible
+  in a voicing written by hand — has no functional spelling to borrow and falls
+  back to the chord's own accidental.
+
+It renders in two forms, because the two places it appears want different
+things. The song legend shows each chord once, so it carries the whole symbol,
+the chart's name to the left and the sounded one to the right. The result list
+shows many shapes of a single chord, so repeating the name would say nothing and
+the card carries the bass alone. Both are italic and muted: derived, not typed.
+
+The chart's own slash bass is dropped before the sounded one is appended. A
+chart that says `D7/F#` with a shape sounding A reads as `D7/A`, because
+`D7/F#/A` is not a chord.
+
 ---
 
 ## 7. PWA and offline

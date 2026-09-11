@@ -174,6 +174,83 @@ export function toneWithRole(c, role) {
   return chordTones(c).find((t) => t.role === role);
 }
 
+// Spellings for a pitch class the chord has no tone for. Only reachable for a
+// voicing somebody wrote by hand containing a note from outside the chord:
+// there is no functional spelling to borrow, so the chord's own accidental
+// decides, a flat chord keeping flats and anything else taking sharps.
+const SHARP_SPELLING = [
+  ['C', 0],
+  ['C', 1],
+  ['D', 0],
+  ['D', 1],
+  ['E', 0],
+  ['F', 0],
+  ['F', 1],
+  ['G', 0],
+  ['G', 1],
+  ['A', 0],
+  ['A', 1],
+  ['B', 0],
+];
+const FLAT_SPELLING = [
+  ['C', 0],
+  ['D', -1],
+  ['D', 0],
+  ['E', -1],
+  ['E', 0],
+  ['F', 0],
+  ['G', -1],
+  ['G', 0],
+  ['A', -1],
+  ['A', 0],
+  ['B', -1],
+  ['B', 0],
+];
+
+function spellForeign(c, pc) {
+  const flats = c.root.accidental < 0 || (c.bass?.accidental ?? 0) < 0;
+  const [letter, accidental] = (flats ? FLAT_SPELLING : SHARP_SPELLING)[pc];
+  return { letter, accidental };
+}
+
+/**
+ * How a shape sounds the chord, as against what the symbol says.
+ *
+ * The symbol names the harmony. The shape decides which of its notes ends up
+ * lowest and whether the root is sounded at all, and when another instrument
+ * has the bass that difference is the arrangement rather than an accident: a
+ * six-string playing choro beside a seven-string takes a different inversion on
+ * purpose, so the two do not double each other (docs/DESIGN.md §6.2).
+ *
+ * The bass is spelled from the chord's own tones, so the seventh of Db7 comes
+ * back as Cb and not as B. Nothing here is a display decision — no dialect and
+ * no wording — only which note it is and whether it is the one asked for.
+ *
+ * `asWritten` compares against the symbol rather than against the root, since a
+ * slash chord already says where its bass goes: a `C/E` played with E lowest is
+ * doing as it was told, and has nothing to remark on.
+ *
+ * @param {Chord} c
+ * @param {(number|null)[]} midis  sounding pitches, null where a string is muted
+ * @returns {{bass: import('./pitch.js').SpelledNote, asWritten: boolean,
+ *            rootless: boolean}|null} null when nothing sounds
+ */
+export function voicedAs(c, midis) {
+  const sounding = (midis ?? []).filter((m) => typeof m === 'number');
+  if (sounding.length === 0) return null;
+
+  const pcOf = (m) => ((m % 12) + 12) % 12;
+  const bassPc = pcOf(Math.min(...sounding));
+  const rootPc = pitchClass(c.root);
+  const tone = chordTones(c).find((x) => x.pitchClass === bassPc);
+
+  return {
+    bass: tone ? tone.spelled : spellForeign(c, bassPc),
+    asWritten: bassPc === pitchClass(bassNote(c)),
+    rootless: !sounding.some((m) => pcOf(m) === rootPc),
+  };
+}
+
 /** @param {Chord} c @returns {string} a debug string, not a display name */
 export function describeChordTones(c) {
   return chordTones(c)

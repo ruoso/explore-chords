@@ -144,6 +144,8 @@ export default {
     fingers: 'fingers {fingers}',
     muted: { one: '{count} string not played', other: '{count} strings not played' },
     rootOn: 'root on the {ordinal} string',
+    noRoot: 'no root',
+    voicedAs: 'voiced as {chord}',
     toPlay: '{difficulty} to play',
   },
 
@@ -675,6 +677,30 @@ export default {
             'that rather than as a chord nobody recognises. It is shown the way you wrote it, ' +
             'not turned into the chord it stands for, and there is nothing to choose for it: ' +
             'the chord it repeats already has its shape where it was written.',
+        },
+      ],
+    },
+    '0.10.0': {
+      title: 'What changed in 0.10',
+      sections: [
+        {
+          heading: 'Every diagram the same size',
+          text:
+            'A shape that sits up the neck carries a fret number, and the room for it used to ' +
+            'make that diagram wider than the rest, leaving a row of them ragged and each grid ' +
+            'off-centre under its name. Every diagram now reserves that room whether it needs ' +
+            'it or not. The fret number is bigger too, and so are the diagrams on a printed ' +
+            'sheet, which were too small to read from a music stand.',
+        },
+        {
+          heading: 'What a shape actually sounds',
+          text:
+            'A chord name says what the harmony is. The shape decides which of its notes ends ' +
+            'up lowest, and whether the root is played at all. Where the two differ, the name ' +
+            'now carries a quiet note of what you are really holding: a Gm7 with its third ' +
+            'underneath reads Gm7/Bb. It matters most when another instrument has the bass, ' +
+            'because then taking a different inversion is the arrangement rather than an ' +
+            'accident.',
         },
       ],
     },

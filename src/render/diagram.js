@@ -10,6 +10,8 @@
  */
 
 import { formatChord } from '../core/notation/format.js';
+import { voicedAs } from '../core/chord.js';
+import { formatNote } from '../core/pitch.js';
 import { t, ordinal } from '../i18n/index.js';
 
 /** Fret rows drawn in a chord box. A 4-fret span needs 4; 5 leaves air. */
@@ -101,6 +103,41 @@ export function stringNumber(index, stringCount) {
 }
 
 /**
+ * The chord as this shape actually sounds it: "Gm7/Bb", or just "/Bb".
+ *
+ * Shown next to the name the chart wrote, because the two can differ and the
+ * difference is the point when another instrument has the bass (§6.2). Returns
+ * null when there is nothing to add — a shape that puts the symbol's own bass
+ * lowest is sounding what it was asked for.
+ *
+ * The full form carries the whole symbol, for a legend where each chord appears
+ * once. The short form is the bass alone, for a list of many shapes of one
+ * chord, where repeating the name would say nothing.
+ *
+ * The chord's own slash bass is dropped before the sounded one is appended: the
+ * chart may say `D7/F#` while the shape sounds `D7/A`, and `D7/F#/A` is not a
+ * chord.
+ *
+ * @param {object} fingering
+ * @param {{chord: object, dialect?: string, full?: boolean}} context
+ * @returns {string|null}
+ */
+export function voicedAsLabel(fingering, { chord, dialect, full = true } = {}) {
+  if (!chord || !fingering?.midis) return null;
+  const sounded = voicedAs(chord, fingering.midis);
+  if (!sounded) return null;
+
+  const parts = [];
+  if (!sounded.asWritten) {
+    const bass = formatNote(sounded.bass);
+    parts.push(full ? `${formatChord({ ...chord, bass: null }, dialect)}/${bass}` : `/${bass}`);
+  }
+  if (sounded.rootless) parts.push(t('diagram.noRoot'));
+
+  return parts.length > 0 ? parts.join(', ') : null;
+}
+
+/**
  * A sentence describing a fingering, used as the diagram's `aria-label`.
  *
  * Example: "C major, x32010, open position, fingers 3-2-1, root on the 5th
@@ -137,6 +174,12 @@ export function describeFingering(fingering, { chord, dialect, instrument } = {}
       );
     }
   }
+
+  // What the shape sounds, where that differs from the symbol: the inversion,
+  // and a missing root. A sighted reader gets this from the label beside the
+  // chord name, so it belongs in the sentence too.
+  const sounded = voicedAsLabel(fingering, { chord, dialect, full: true });
+  if (sounded) parts.push(t('diagram.voicedAs', { chord: sounded }));
 
   if (fingering.difficulty) {
     parts.push(

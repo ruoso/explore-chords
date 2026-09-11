@@ -59,11 +59,29 @@
   text-align: center;
 }
 
+/* The chart's name to the left, what the shape sounds to the right, so a column
+   of legend entries reads as two columns: the chords the song wrote, and the
+   chords you actually play (DESIGN.md 6.2). */
 .ec-print-chord-name {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.375rem;
   margin: 0 0 0.1rem;
   font-size: 0.8rem;
   font-weight: 650;
   line-height: 1.1;
+}
+
+/* Nothing to say about this one: the name goes back over the middle of its
+   diagram rather than hanging off the left edge. */
+.ec-print-chord-name:not(:has(.ec-voiced-as)) {
+  justify-content: center;
+}
+
+.ec-print-chord-name .ec-voiced-as {
+  font-size: 0.7rem;
+  font-weight: 400;
 }
 
 .ec-print-section {
