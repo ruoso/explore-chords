@@ -1000,6 +1000,41 @@ test.describe('what the shape sounds', () => {
     // And the long one is taller, because it wrapped rather than stretched.
     expect(Math.max(...nameHeights)).toBeGreaterThan(Math.min(...nameHeights));
   });
+
+  test('can name the chart itself by what the shapes sound, print included', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+    await newSong(page, 'Dominante');
+    await setBody(page, SONG);
+    await page.locator('#sheet-view').click();
+
+    // Off by default: a chart names the harmony, which is what a chart is for.
+    await expect(page.locator('#chart-voiced-as')).not.toBeChecked();
+    await expect(page.locator('.ec-print-cell').first()).toHaveText('Gm');
+
+    await page.locator('#chart-voiced-as').check();
+    // The chords the shapes actually sound — and G is left alone, because it
+    // sounds what it is called.
+    await expect(page.locator('.ec-print-cell').nth(0)).toHaveText('Gm/Bb');
+    await expect(page.locator('.ec-print-cell').nth(1)).toHaveText('Bb/D');
+    await expect(page.locator('.ec-print-cell').nth(2)).toHaveText('G');
+
+    // The legend follows the chart rather than disagreeing with it. Once the
+    // chart carries the sounded name, that is the shape's only name and the
+    // second one beside it would say the same thing twice.
+    await expect(page.locator('.ec-print-legend .ec-voiced-as')).toHaveCount(0);
+    const names = page.locator('.ec-print-legend .ec-print-chord-name');
+    await expect(names.filter({ hasText: 'Gm/Bb' })).toHaveCount(1);
+    await expect(names.filter({ hasText: /^Gm$/ })).toHaveCount(0);
+
+    // The printed sheet is this same renderer, so it goes to paper too.
+    await page.evaluate(() => {
+      window.print = () => {};
+    });
+    await page.locator('#sheet-print').click();
+    await expect(page.locator('#print-root .ec-print-cell').first()).toHaveText('Gm/Bb');
+    await expect(page.locator('#print-root .ec-voiced-as')).toHaveCount(0);
+  });
 });
 
 test.describe('sharing a song', () => {

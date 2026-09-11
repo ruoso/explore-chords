@@ -1311,6 +1311,33 @@ The chart's own slash bass is dropped before the sounded one is appended. A
 chart that says `D7/F#` with a shape sounding A reads as `D7/A`, because
 `D7/F#/A` is not a chord.
 
+#### Naming the chart by what the shapes sound
+
+The chart names the harmony, and that is what a chart is for, so it keeps its
+own names by default. But a player reading a sheet wants the chord under their
+fingers, and with a whole song voiced into inversions the two drift apart. So
+the reading page carries a checkbox: name the chords in the chart by what the
+shapes sound, and `Gm | Bb/F` reads `Gm/Bb | Bb/D`.
+
+It reaches paper for free, because the printed sheet is the same renderer. That
+is the argument for the reading page being a preview rather than a second
+opinion, cashed in: a display choice made there needs no second implementation
+to print.
+
+A chord whose shape sounds what its symbol says is left alone, so the option
+marks the chords it has something to say about rather than rewriting all of
+them.
+
+The legend follows the chart rather than disagreeing with it. With the option
+off it shows the chart's name with the sounded one beside it, so the two can be
+compared. With it on, the sounded name *is* the name and the second one
+disappears: repeating it in the margin would say the same thing twice, and a
+legend labelled differently from the chart it belongs to is worse than either.
+
+One consequence worth knowing: a longer name takes more width, and under a line
+of words a chord sits above the syllable it falls on. Turning this on can crowd
+a sung line. It is off by default and opt-in for that reason.
+
 ---
 
 ## 7. PWA and offline

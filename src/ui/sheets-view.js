@@ -232,7 +232,10 @@ export function renderSheetList(container, { store, onOpen, onChange, nudge }) {
  * legend of shapes. Nothing here is clickable, because nothing here is a
  * choice — the choices are made in the editor, one button away.
  */
-export function renderSheetView(container, { store, sheet, onBack, onEdit, onShare, onPrint }) {
+export function renderSheetView(
+  container,
+  { store, sheet, onBack, onEdit, onShare, onPrint, onChange }
+) {
   clear(container);
   const instrument = store.effectiveInstrument;
   if (!sheet || !instrument) return;
@@ -273,7 +276,23 @@ export function renderSheetView(container, { store, sheet, onBack, onEdit, onSha
         )
       )
     ),
-    el('div', { class: 'ec-share-slot', id: 'sheet-share-out' })
+    el('div', { class: 'ec-share-slot', id: 'sheet-share-out' }),
+    // A reading choice, so it lives with the reading page — and because the
+    // printed sheet is this same renderer, it goes to paper too (§6.2).
+    el(
+      'label',
+      { class: 'ec-song-option', for: 'chart-voiced-as' },
+      el('input', {
+        type: 'checkbox',
+        id: 'chart-voiced-as',
+        checked: store.state.prefs.chartVoicedAs || null,
+        onChange: (event) => {
+          store.setPrefs({ chartVoicedAs: event.target.checked });
+          onChange?.();
+        },
+      }),
+      t('editor.chartVoicedAs')
+    )
   );
 
   // In the document first: the sheet measures itself, both to size its columns

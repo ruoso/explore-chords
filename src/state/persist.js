@@ -140,6 +140,9 @@ export const DEFAULT_PREFS = {
   dialect: DEFAULT_DIALECT,
   orientation: 'vertical',
   handed: 'right',
+  // Off: the chart names the harmony, which is what it is for. Turning this on
+  // makes it name what the chosen shapes actually sound instead (§6.2).
+  chartVoicedAs: false,
 };
 
 export function loadPrefs() {

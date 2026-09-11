@@ -72,4 +72,4 @@ export function renderDiagram(fingering, context = {}, options = {}) {
 
 export { renderChordBox, renderNeck, describeFingering };
 export { neckInset, boxWidth } from './chord-box.js';
-export { diagramModel, FRETS_SHOWN, stringNumber, voicedAsLabel } from './diagram.js';
+export { diagramModel, FRETS_SHOWN, stringNumber, voicedAsLabel, voicedAsSymbol } from './diagram.js';

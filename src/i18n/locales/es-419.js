@@ -342,6 +342,7 @@ export default {
   },
 
   editor: {
+    chartVoicedAs: 'Nombrar los acordes de la cifra por lo que suenan las formas',
     back: '← Todas las canciones',
     titleLabel: 'Título de la canción',
     title: 'Título',
@@ -797,6 +798,14 @@ export default {
             'parte de la guitarra de seis cuerdas en un regional de choro al lado de una ' +
             'siete cuerdas. Muestra qué haría antes de que cambie nada, y cada una explica ' +
             'sus propias reglas y cita sus propias fuentes en «Cómo funciona».',
+        },
+        {
+          heading: 'O nombrar la cifra por lo que tocás',
+          text:
+            'Una casilla en la página de lectura nombra los acordes de la cifra por lo que ' +
+            'suenan las formas elegidas, así Gm aparece como Gm/Bb cuando su forma pone la ' +
+            'tercera abajo. Apagado por defecto, ya que una cifra nombra la armonía. Vale ' +
+            'también para la hoja impresa, porque es el mismo renderizador.',
         },
       ],
     },

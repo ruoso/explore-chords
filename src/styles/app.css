@@ -1394,6 +1394,17 @@ body {
   font-size: 0.9rem;
 }
 
+/* A reading choice on the reading page, which the printed sheet inherits
+   because it is the same renderer (DESIGN.md 6.2). */
+.ec-song-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 /* --- the voicing wizard (DESIGN.md 2.10) -------------------------------- */
 
 /* Above the chart, because it decides the whole song rather than one chord. */

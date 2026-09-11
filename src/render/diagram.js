@@ -103,7 +103,40 @@ export function stringNumber(index, stringCount) {
 }
 
 /**
- * The chord as this shape actually sounds it: "Gm7/Bb", or just "/Bb".
+ * The chord symbol with the bass this shape actually sounds.
+ *
+ * The chord's own slash bass is dropped before the sounded one is appended: the
+ * chart may say `D7/F#` while the shape sounds `D7/A`, and `D7/F#/A` is not a
+ * chord.
+ *
+ * `name` is the chart's own text for the chord, used in preference to
+ * re-formatting it. Beside a name the chart wrote as `Dm7(b5)`, a label reading
+ * `Dm7(5-)/F` looks like a different chord, even though the dialect would write
+ * the fifth that way everywhere else.
+ */
+function soundedSymbol(chord, sounded, dialect, name) {
+  const written = name
+    ? String(name).replace(/\/[A-G][b#]?$/, '')
+    : formatChord({ ...chord, bass: null }, dialect);
+  return `${written}/${formatNote(sounded.bass)}`;
+}
+
+/**
+ * Just the chord this shape sounds — "Gm7/Bb" — with no remark attached.
+ *
+ * For the chart, where a chord name has to stay a chord name. Null when the
+ * shape sounds what the symbol already says.
+ */
+export function voicedAsSymbol(fingering, { chord, dialect, name } = {}) {
+  if (!chord || !fingering?.midis) return null;
+  const sounded = voicedAs(chord, fingering.midis);
+  if (!sounded || sounded.asWritten) return null;
+  return soundedSymbol(chord, sounded, dialect, name);
+}
+
+/**
+ * The chord as this shape actually sounds it, with any remark: "Gm7/Bb", or
+ * "Gm7/Bb, no root", or just "/Bb".
  *
  * Shown next to the name the chart wrote, because the two can differ and the
  * difference is the point when another instrument has the bass (§6.2). Returns
@@ -113,15 +146,6 @@ export function stringNumber(index, stringCount) {
  * The full form carries the whole symbol, for a legend where each chord appears
  * once. The short form is the bass alone, for a list of many shapes of one
  * chord, where repeating the name would say nothing.
- *
- * The chord's own slash bass is dropped before the sounded one is appended: the
- * chart may say `D7/F#` while the shape sounds `D7/A`, and `D7/F#/A` is not a
- * chord.
- *
- * `name` is the chart's own text for the chord, and is used in preference to
- * re-formatting it. Beside a name the chart wrote as `Dm7(b5)`, a label reading
- * `Dm7(5-)/F` looks like a different chord, even though the dialect would write
- * the fifth that way everywhere else.
  *
  * @param {object} fingering
  * @param {{chord: object, dialect?: string, full?: boolean, name?: string}} context
@@ -134,11 +158,9 @@ export function voicedAsLabel(fingering, { chord, dialect, full = true, name } =
 
   const parts = [];
   if (!sounded.asWritten) {
-    const bass = formatNote(sounded.bass);
-    const written = name
-      ? String(name).replace(/\/[A-G][b#]?$/, '')
-      : formatChord({ ...chord, bass: null }, dialect);
-    parts.push(full ? `${written}/${bass}` : `/${bass}`);
+    parts.push(
+      full ? soundedSymbol(chord, sounded, dialect, name) : `/${formatNote(sounded.bass)}`
+    );
   }
   if (sounded.rootless) parts.push(t('diagram.noRoot'));
 

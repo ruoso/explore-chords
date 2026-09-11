@@ -342,6 +342,7 @@ export default {
   },
 
   editor: {
+    chartVoicedAs: 'Chiamare gli accordi della cifra come suonano le forme',
     back: '← Tutte le canzoni',
     titleLabel: 'Titolo della canzone',
     title: 'Titolo',
@@ -798,6 +799,14 @@ export default {
             'parte della chitarra a sei corde in un regional di choro accanto a una sette ' +
             'corde. Mostra cosa farebbe prima che cambi qualcosa, e ognuno spiega le proprie ' +
             'regole e cita le proprie fonti sotto “Come funziona”.',
+        },
+        {
+          heading: 'O chiamare la cifra come suoni davvero',
+          text:
+            'Una casella nella pagina di lettura chiama gli accordi della cifra come suonano ' +
+            'le forme scelte, così Gm si legge Gm/Bb quando la sua forma mette la terza ' +
+            'sotto. Spento per impostazione predefinita, dato che una cifra nomina ' +
+            'l’armonia. Vale anche per il foglio stampato, perché è lo stesso renderizzatore.',
         },
       ],
     },

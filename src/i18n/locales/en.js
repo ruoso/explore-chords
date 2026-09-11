@@ -340,6 +340,7 @@ export default {
   },
 
   editor: {
+    chartVoicedAs: 'Name the chords in the chart by what the shapes sound',
     back: '← All songs',
     titleLabel: 'Song title',
     title: 'Title',
@@ -792,6 +793,14 @@ export default {
             'part in a choro regional alongside a seven-string. It shows what it would do ' +
             'before anything changes, and each one explains its own rules and cites its own ' +
             'sources under "How it works".',
+        },
+        {
+          heading: 'Or name the chart by what you play',
+          text:
+            'A checkbox on the reading page names the chords in the chart by what the chosen ' +
+            'shapes actually sound, so Gm reads Gm/Bb where its shape puts the third ' +
+            'underneath. Off by default, since a chart names the harmony. It reaches the ' +
+            'printed sheet too, because that is the same renderer.',
         },
       ],
     },

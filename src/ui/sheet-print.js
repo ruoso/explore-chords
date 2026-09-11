@@ -15,7 +15,13 @@ import { parseChord } from '../core/notation/parse.js';
 import { parseSong, compareVoicings } from '../core/song.js';
 import { layoutSection } from '../core/chart-layout.js';
 import { resolveSongVoicings } from '../core/voicings.js';
-import { renderDiagram, voicedAsLabel, neckInset, boxWidth } from '../render/index.js';
+import {
+  renderDiagram,
+  voicedAsLabel,
+  voicedAsSymbol,
+  neckInset,
+  boxWidth,
+} from '../render/index.js';
 import { t } from '../i18n/index.js';
 
 /**
@@ -114,6 +120,38 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
   const body = el('div', { class: 'ec-print-body' });
   article.append(body);
 
+  const resolved = resolveSongVoicings(song, instrument, dialect);
+
+  /**
+   * What each chord reads as, where the shape sounds something else.
+   *
+   * Empty unless the option is on. The chart names the harmony, which is what a
+   * chart is for; with the option on it names what the chosen shapes actually
+   * sound, so a player reading the sheet sees the chord under their fingers
+   * (§6.2). Only the chords where the two differ are in here — elsewhere there
+   * is nothing to say.
+   *
+   * The legend reads from the same map, so the two agree: when the chart has
+   * been renamed, that name is the shape's only name and there is no second one
+   * beside it to reconcile.
+   */
+  const soundedNames = new Map();
+  if (store.state.prefs.chartVoicedAs) {
+    for (const [key, entry] of resolved) {
+      const occurrence = song.occurrences.find((c) => c.key === key);
+      const chord = parseChord(occurrence.symbol, dialect).chord;
+      if (!chord) continue;
+      const symbol = voicedAsSymbol(entry.fingering, {
+        chord,
+        dialect,
+        name: occurrence.symbol,
+      });
+      if (symbol) soundedNames.set(key, symbol);
+    }
+  }
+  const renamed = store.state.prefs.chartVoicedAs;
+  const chartName = (segment) => soundedNames.get(segment.chord.key) ?? segment.chord.raw;
+
   for (const section of song.sections) {
     const block = el('section', { class: 'ec-print-section' });
     if (section.name) block.append(el('h2', { class: 'ec-print-section-name' }, section.name));
@@ -152,7 +190,7 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
                           segment.chord || segment.mark ? '' : ' is-blank'
                         }`,
                       },
-                      segment.chord ? segment.chord.raw : segment.mark || '\u00a0'
+                      segment.chord ? chartName(segment) : segment.mark || '\u00a0'
                     )
                   : null,
                 el('span', { class: 'ec-print-segment-words' }, segment.lyric)
@@ -180,7 +218,7 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
                 class: `ec-print-cell${j === 0 ? ' is-measure-start' : ''}`,
                 colspan: span > 1 ? String(span) : null,
               },
-              segment.chord ? segment.chord.raw : segment.mark
+              segment.chord ? chartName(segment) : segment.mark
             )
           );
         });
@@ -191,7 +229,6 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
     body.append(block);
   }
 
-  const resolved = resolveSongVoicings(song, instrument, dialect);
   const legend = [...resolved.entries()]
     .map(([key, r]) => {
       const occurrence = song.occurrences.find((c) => c.key === key);
@@ -205,14 +242,14 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
       const chord = parseChord(entry.symbol, dialect).chord;
       if (!chord) continue;
       const { fingering } = entry;
-      // What the shape sounds, where that is not what the chart wrote: the
-      // chart's name to the left, the sounded one to the right (§6.2).
-      const sounded = voicedAsLabel(fingering, {
-        chord,
-        dialect,
-        full: true,
-        name: entry.symbol,
-      });
+      // Normally the chart's name with the sounded one beside it, so the two
+      // can be compared (§6.2). Once the chart itself has been renamed there is
+      // nothing to compare: the sounded name is the name, and repeating it in
+      // the margin would say the same thing twice.
+      const name = renamed ? (soundedNames.get(entry.key) ?? entry.key) : entry.key;
+      const sounded = renamed
+        ? null
+        : voicedAsLabel(fingering, { chord, dialect, full: true, name: entry.symbol });
       list.append(
         el(
           'li',
@@ -227,7 +264,7 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
           el(
             'p',
             { class: 'ec-print-chord-name' },
-            el('span', {}, entry.key),
+            el('span', {}, name),
             sounded ? el('span', { class: 'ec-voiced-as' }, sounded) : null
           ),
           el('div', {

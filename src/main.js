@@ -337,6 +337,7 @@ function renderSheets() {
     renderSheetView(nodes.main, {
       store,
       sheet,
+      onChange: redraw,
       onBack: toList,
       onEdit: () => {
         store.set({ sheetMode: 'edit' });

@@ -342,6 +342,7 @@ export default {
   },
 
   editor: {
+    chartVoicedAs: 'Nomear os acordes da cifra pelo que os desenhos soam',
     back: '← Todas as músicas',
     titleLabel: 'Nome da música',
     title: 'Nome',
@@ -795,6 +796,14 @@ export default {
             'do violão de seis cordas num regional de choro ao lado de um sete cordas. Ele ' +
             'mostra o que faria antes de mudar qualquer coisa, e cada um explica as próprias ' +
             'regras e cita as próprias fontes em “Como funciona”.',
+        },
+        {
+          heading: 'Ou nomear a cifra pelo que você toca',
+          text:
+            'Uma caixa de seleção na página de leitura nomeia os acordes da cifra pelo que os ' +
+            'desenhos escolhidos soam, então Gm aparece como Gm/Bb quando o desenho põe a ' +
+            'terça embaixo. Desligado por padrão, já que uma cifra nomeia a harmonia. Vale ' +
+            'também para a folha impressa, porque é o mesmo renderizador.',
         },
       ],
     },
