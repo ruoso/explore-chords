@@ -424,6 +424,87 @@ export default {
     cancel: 'Cancelar',
   },
 
+  wizard: {
+    open: 'Asistente de formas',
+    barHelp: 'Elegí formas para toda la canción de una vez.',
+    title: 'Elegir formas para toda la canción',
+    help:
+      'Cada uno de estos elige una forma para cada acorde de la canción, tomando en cuenta ' +
+      'el camino de la mano por la cifra en vez de juzgar cada acorde por separado. Ves qué ' +
+      'haría antes de que cambie nada.',
+    planners: {
+      smoothest: {
+        name: 'El camino más parejo',
+        text:
+          'Deja la mano donde está y evita saltos en la voz más aguda. Dos formas fáciles en ' +
+          'extremos opuestos del mástil cuestan más en secuencia que dos intermedias juntas.',
+        how: [
+          'Toda forma que la búsqueda ofrece para el acorde es candidata.',
+          'Cada una se puntúa por lo difícil que es de sostener, más cuánto tendrían que ' +
+            'moverse la mano y la voz más aguda respecto de la forma anterior.',
+          'La cifra se recorre en orden de lectura, así cada elección responde a la anterior.',
+        ],
+      },
+      openPosition: {
+        name: 'Junto a la cejuela',
+        text:
+          'La forma más grave de cada acorde, con cuerdas al aire donde ayudan. Las formas ' +
+          'que un principiante ya conoce.',
+        how: [
+          'Toda forma que la búsqueda ofrece para el acorde es candidata.',
+          'Cada una se puntúa por lo difícil que es de sostener, más cuánto sube por el ' +
+            'mástil, menos un crédito por cada cuerda al aire.',
+          'La cifra se recorre en orden de lectura, así cada elección responde a la anterior.',
+        ],
+      },
+      choroCentro: {
+        name: 'Choro, al lado de una siete cuerdas',
+        text:
+          'La parte de la guitarra de seis cuerdas en un regional: bajo con el pulgar y tres ' +
+          'dedos, en el primer cuarto del mástil, con su bajo una tercera arriba de lo que ' +
+          'toca la siete cuerdas, para que las dos no se dupliquen.',
+        how: [
+          'Las formas se enumeran, no se buscan. La búsqueda común descarta una forma con ' +
+            'cuerdas apagadas cuando hay una más llena e igual de fácil, lo que está bien para ' +
+            'quien toca solo y mal acá, donde las cuerdas graves callan porque las tiene la ' +
+            'siete cuerdas.',
+          'Cuatro cuerdas sonando, o cinco. Cuatro es la norma en este idioma y cinco la ' +
+            'excepción ocasional: un bajo con el pulgar y el resto con tres dedos.',
+          'Las cuerdas que suenan son vecinas, con el pulgar en la más grave o la segunda más ' +
+            'grave y la toma llegando a la segunda cuerda desde arriba. Un hueco en el medio ' +
+            'es una decisión que todavía podés tomar; una forma que lo necesita no se deshace.',
+          'Nada arriba del séptimo traste, y las cuerdas al aire son bienvenidas. Las fuentes ' +
+            'ubican este trabajo en el primer cuarto del mástil.',
+          'La nota más grave queda una tercera arriba de lo que toca la siete cuerdas — la ' +
+            'nota tras la barra cuando la cifra escribe una, la fundamental si no — en la ' +
+            'octava en que esté esa guitarra. De eso se trata: las dos guitarras toman ' +
+            'inversiones distintas para no duplicarse.',
+          'Cuando una tercera arriba de ese bajo no pertenece al acorde, se usa una sexta, y ' +
+            'en su defecto una octava. Ese caso está nombrado en la literatura, no es una ' +
+            'falla de acá: una tercera arriba de la séptima de un dominante que resuelve en ' +
+            'acorde mayor cae en una nota que el estilo no usa.',
+          'Se conserva toda nota del acorde salvo la quinta, que es la que este idioma deja.',
+          'La cifra se recorre en orden de lectura, prefiriendo formas que mantengan las ' +
+            'mismas cuerdas sonando, que es lo que vuelve una serie como Gm, Gm6, Gm7 una ' +
+            'sola toma con un dedo moviéndose.',
+        ],
+      },
+    },
+    summary: {
+      one: '{count} de {total} acordes cambiarían.',
+      other: '{count} de {total} acordes cambiarían.',
+    },
+    nothing: 'Cada acorde ya tiene la forma que esto elegiría.',
+    missing: 'Ninguna forma para {list}.',
+    how: 'Cómo funciona',
+    howTitle: 'Cómo elige esto',
+    sources: 'De dónde viene esto',
+    noSources: 'Sin fuente: es una regla práctica sobre manos, no una afirmación sobre cómo se toca la música de nadie.',
+    apply: 'Usar estas formas',
+    back: '← Otras maneras',
+    cancel: 'Cancelar',
+  },
+
   print: { legend: 'Formas de acorde usadas' },
 
   confirm: { cancel: 'Cancelar', confirm: 'Eliminar' },
@@ -707,6 +788,15 @@ export default {
             'ahora lleva una nota discreta de lo que estás tomando en realidad: un Gm7 con la ' +
             'tercera abajo aparece como Gm7/Bb. Importa más cuando otro instrumento hace el ' +
             'bajo, porque entonces tomar otra inversión es el arreglo y no un accidente.',
+        },
+        {
+          heading: 'El asistente de formas',
+          text:
+            'Un botón arriba de la cifra elige formas para toda la canción de una vez. Tres ' +
+            'maneras hasta ahora: el camino más parejo para la mano, junto a la cejuela, o la ' +
+            'parte de la guitarra de seis cuerdas en un regional de choro al lado de una ' +
+            'siete cuerdas. Muestra qué haría antes de que cambie nada, y cada una explica ' +
+            'sus propias reglas y cita sus propias fuentes en «Cómo funciona».',
         },
       ],
     },

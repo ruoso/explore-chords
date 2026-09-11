@@ -421,6 +421,88 @@ export default {
     cancel: 'Cancel',
   },
 
+  wizard: {
+    open: 'Voicing wizard',
+    barHelp: 'Choose shapes for the whole song at once.',
+    title: 'Choose shapes for the whole song',
+    help:
+      'Each of these picks a shape for every chord in the song, taking the hand’s path ' +
+      'through the chart into account rather than judging each chord on its own. You see ' +
+      'what it would do before anything changes.',
+    planners: {
+      smoothest: {
+        name: 'The smoothest path',
+        text:
+          'Keeps the hand where it is and the top voice from leaping. Two easy shapes at ' +
+          'opposite ends of the neck are harder to play in sequence than two middling ones ' +
+          'next to each other.',
+        how: [
+          'Every shape the search offers for the chord is a candidate.',
+          'Each one is scored on how hard it is to hold, plus how far the hand and the top ' +
+            'voice would have to move from the shape before it.',
+          'The chart is walked in reading order, so each choice answers the one before it.',
+        ],
+      },
+      openPosition: {
+        name: 'Down at the nut',
+        text:
+          'The lowest shape each chord has, with open strings where they help. The shapes a ' +
+          'beginner already knows.',
+        how: [
+          'Every shape the search offers for the chord is a candidate.',
+          'Each one is scored on how hard it is to hold, plus how far up the neck it sits, ' +
+            'less a credit for each open string.',
+          'The chart is walked in reading order, so each choice answers the one before it.',
+        ],
+      },
+      choroCentro: {
+        name: 'Choro, beside a seven-string',
+        text:
+          'The six-string’s part in a regional: a thumb bass plus three fingers, in the first ' +
+          'quarter of the neck, with its bass a third above whatever the seven-string is ' +
+          'playing so the two do not double each other.',
+        how: [
+          'Shapes are enumerated rather than searched. The ordinary search discards a shape ' +
+            'with muted strings when a fuller one is no harder, which is right for a solo ' +
+            'player and wrong here, where the low strings are quiet because the seven-string ' +
+            'has them.',
+          'Four sounding strings, or five. Four is the norm in this idiom and five the ' +
+            'occasional departure: a bass note under the thumb and the rest under three fingers.',
+          'The strings sounded are next to each other, with the thumb on the lowest or ' +
+            'second-lowest and the grip reaching the second string from the top. A hole in the ' +
+            'middle is a decision you can still make; a shape that needs one cannot be undone.',
+          'Nothing above the seventh fret, and open strings welcome. The sources put this work ' +
+            'in the first quarter of the neck.',
+          'The lowest note is a third above whatever the seven-string is playing — the slash ' +
+            'note where the chart writes one, the root otherwise — in whichever octave that ' +
+            'guitar is in. This is the whole point: the two guitars take different inversions ' +
+            'so they do not double each other.',
+          'Where a third above that bass is not in the chord, a sixth is used instead, and ' +
+            'failing that an octave. That case is named in the literature, not a gap here: a ' +
+            'third above the seventh of a dominant resolving to a major chord lands on a note ' +
+            'the style does not use.',
+          'Every note of the chord is kept except the fifth, which is the one this idiom drops.',
+          'The chart is walked in reading order, preferring shapes that keep the same strings ' +
+            'sounding, which is what turns a run like Gm, Gm6, Gm7 into one grip with one ' +
+            'finger moving.',
+        ],
+      },
+    },
+    summary: {
+      one: '{count} of {total} chords would change.',
+      other: '{count} of {total} chords would change.',
+    },
+    nothing: 'Every chord already has the shape this would choose.',
+    missing: 'No shape for {list}.',
+    how: 'How it works',
+    howTitle: 'How this chooses',
+    sources: 'Where this comes from',
+    noSources: 'No source: this is a rule of thumb about hands, not a claim about how anybody’s music is played.',
+    apply: 'Use these shapes',
+    back: '← Other ways',
+    cancel: 'Cancel',
+  },
+
   print: { legend: 'Chord shapes used' },
 
   confirm: { cancel: 'Cancel', confirm: 'Delete' },
@@ -701,6 +783,15 @@ export default {
             'underneath reads Gm7/Bb. It matters most when another instrument has the bass, ' +
             'because then taking a different inversion is the arrangement rather than an ' +
             'accident.',
+        },
+        {
+          heading: 'The voicing wizard',
+          text:
+            'A button above the chart chooses shapes for the whole song at once. Three ways ' +
+            'so far: the smoothest path for the hand, down at the nut, or the six-string’s ' +
+            'part in a choro regional alongside a seven-string. It shows what it would do ' +
+            'before anything changes, and each one explains its own rules and cites its own ' +
+            'sources under "How it works".',
         },
       ],
     },

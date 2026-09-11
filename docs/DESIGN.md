@@ -568,6 +568,95 @@ readers, button labels, and the tutorial and release notes, which live under
 `announcements.<id>` in each language so the announcement list itself holds
 only ids.
 
+### 2.10 The voicing wizard
+
+Picking a shape one chord at a time is the right way to make a decision and the
+wrong way to make thirty of them. What a player wants across a whole song is not
+thirty decisions but a *policy*: keep it near the nut, keep the hand still, or
+play the part a particular idiom asks for.
+
+So a button above the chart — above, because it decides the song rather than any
+one chord in it — opens a wizard. It is two steps. Choose a policy, see the
+shapes it would choose, then accept them. A wizard that rewrote thirty shapes on
+one click would be something you undo rather than something you use, and the
+preview shows the same diagram and the same "voiced as" label (§6.2) the song
+will carry, so it is the thing itself rather than a description of it.
+
+A planner is two functions in `core/voicing-plan.js`: which shapes it will
+consider for a chord, and what they cost given where the hand already is. The
+walk through the chart is shared, greedy and in reading order, which is the
+order a player meets the chords in. Nothing there writes text; a plan is a map
+from voicing key to frets, and the caller applies it through the same
+`setVoicingForKey` the one-chord picker uses, so the footnote and tidying rules
+apply exactly as they would to thirty separate choices.
+
+`appliesTo` keeps a planner off an instrument it makes no sense on, rather than
+letting it return nothing and look broken.
+
+#### Each planner cites its own sources
+
+Two of the three are engineering heuristics about hands. The third claims to
+reproduce a documented practice, and a claim like that has to be able to say
+whose. So "How it works" is shown in the context of one planner and lists that
+planner's rules and that planner's references — what backs the choro texture
+says nothing about keeping a hand near the nut, and a planner with no source
+says so rather than borrowing someone else's authority.
+
+References live in `src/data/sources.js`, language-independent on purpose: an
+author, a title and a year are the same in every language, and translating a
+citation only invites four ways to get it wrong. Only works whose full reference
+is known are listed, because a half-remembered one is worse than none.
+
+#### The choro centro planner
+
+The six-string's part in a choro *regional*: it plays the *centro* while a
+seven-string carries the bass line. The rules, and where each comes from:
+
+- **Enumerated, not searched.** The ordinary search discards a muted shape when
+  a fuller one is no harder (§5.2). Right for a solo player, wrong here, where
+  the low strings are quiet because another instrument has them.
+- **Four sounding strings, or five.** A bass note under the thumb and the rest
+  under three fingers. Four is called the predominant pattern of the style and
+  five the occasional departure.
+- **Contiguous strings**, thumb on the lowest or second-lowest, the grip
+  reaching the second string from the top. Contiguity is our rule rather than
+  the idiom's — the transcriptions do show gapped grips — on the reasoning that
+  a hole is a decision the player can still make, while a shape that needs one
+  cannot be undone. Reaching the second string from the top is the idiom: the
+  fingers go on the second, third and fourth strings.
+- **Nothing above the seventh fret, open strings welcome.** The sources put this
+  work in the first quarter of the neck. This is the rule that most contradicted
+  our first attempt, which had been mid-neck with no open strings.
+- **The lowest note a third above whatever the other instrument is playing** —
+  the slash note where the chart writes one, the root otherwise, in whichever
+  octave that instrument is in. This is the substance: the two guitars take
+  different inversions so they do not double each other. It is a simple third
+  between two bass lines in the same register, not a tenth.
+- **A sixth, or failing that an octave, where a third is not a chord tone.** A
+  third above the seventh of a dominant resolving to a major chord lands on a
+  note the style does not use. The literature names that case and gives the
+  sixth as its answer, so this is a documented exception rather than a gap.
+- **Every tone kept but the fifth**, which is the note this idiom drops — not
+  the root. "Rootless" in the jazz sense is the wrong frame: the six-string
+  displaces its bass rather than surrendering it.
+- **Prefer keeping the same strings sounding.** The picking hand has a pattern,
+  and a chord that moves the strings under it interrupts that pattern as surely
+  as a jump interrupts the fretting hand. It is also what turns a run like
+  Gm–Gm6–Gm7 into one grip with one finger moving.
+- **No note sounded more than twice.** Doubling once is ordinary on a guitar;
+  twice over is a four-voice grip giving the chord two notes.
+
+Worth recording what this replaced. An earlier attempt gave the six-string
+top-four-string voicings with the two lowest strings muted, on the reasoning
+that the seven-string owns the bass. No source in any language recommends
+muting those strings, and the one Brazilian source that does prescribe that
+profile — top four strings, high register, deferring to the instruments below —
+is writing about an electric guitar in MPB, and says itself that it sounds like
+a cavaquinho. The six-string's slot is *médio-grave*, with a bass note of its
+own.
+
+---
+
 ## 3. Architecture
 
 ### 3.1 Stack

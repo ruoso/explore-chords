@@ -44,6 +44,7 @@ import { renderDiagram } from '../render/index.js';
 import { renderSongPages } from './song-pages.js';
 import { EXAMPLE_BODY } from '../state/sheets.js';
 import { openVoicingDialog } from './voicing-dialog.js';
+import { openWizardDialog } from './wizard-dialog.js';
 import { t } from '../i18n/index.js';
 
 /** The list of sheets for the active instrument, with create and delete. */
@@ -571,6 +572,26 @@ export function renderSheetEditor(
       chart.append(block);
     }
   }
+  // Above the chart, because it is a decision about the whole song rather than
+  // about any one chord in it (§2.10).
+  right.append(
+    el(
+      'div',
+      { class: 'ec-wizard-bar' },
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'ec-button ec-button-small',
+          id: 'voicing-wizard',
+          onClick: () =>
+            openWizardDialog({ store, sheet, instrument, tuning, dialect, onChange }),
+        },
+        t('wizard.open')
+      ),
+      el('span', { class: 'ec-help' }, t('wizard.barHelp'))
+    )
+  );
   right.append(chart);
 
   // --- the voicings this song uses ----------------------------------------

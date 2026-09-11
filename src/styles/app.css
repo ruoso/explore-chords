@@ -1394,6 +1394,114 @@ body {
   font-size: 0.9rem;
 }
 
+/* --- the voicing wizard (DESIGN.md 2.10) -------------------------------- */
+
+/* Above the chart, because it decides the whole song rather than one chord. */
+.ec-wizard-bar {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.6rem;
+}
+
+.ec-wizard-planners {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A policy and the reason to want it, so the choice is readable rather than a
+   row of names you have to try one by one. */
+.ec-wizard-planner {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ec-wizard-planner:hover,
+.ec-wizard-planner:focus-visible {
+  border-color: var(--accent);
+}
+
+.ec-wizard-planner-name {
+  display: block;
+  font-weight: 650;
+}
+
+.ec-wizard-planner-text {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.ec-wizard-chosen {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+}
+
+/* Folded away by default: the reasoning is worth having and is not what you
+   came for. */
+.ec-wizard-how {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.ec-wizard-how > summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.ec-wizard-how-title {
+  margin: 0.6rem 0 0.3rem;
+  font-size: 0.85rem;
+}
+
+.ec-wizard-rules,
+.ec-wizard-sources {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+}
+
+.ec-wizard-rules > li,
+.ec-wizard-sources > li {
+  margin: 0.25rem 0;
+}
+
+.ec-wizard-summary {
+  margin: 0.5rem 0 0;
+  font-weight: 650;
+}
+
+.ec-wizard-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.6rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A shape the song already had: shown, because a preview that hid them would
+   be a list of changes and not a picture of the song. */
+.ec-wizard-shape.is-unchanged {
+  opacity: 0.55;
+}
+
 /* --- wide layouts ------------------------------------------------------ */
 
 /* On a wide screen the song editor puts the text beside what it produces,

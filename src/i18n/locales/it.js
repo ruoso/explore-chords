@@ -424,6 +424,88 @@ export default {
     cancel: 'Annulla',
   },
 
+  wizard: {
+    open: 'Assistente delle forme',
+    barHelp: 'Scegli le forme per tutto il brano in una volta.',
+    title: 'Scegliere le forme per tutto il brano',
+    help:
+      'Ognuno di questi scegli una forma per ogni accordo del brano, tenendo conto del ' +
+      'percorso della mano lungo la cifra invece di giudicare ogni accordo da solo. Vedi ' +
+      'cosa farebbe prima che cambi qualcosa.',
+    planners: {
+      smoothest: {
+        name: 'Il percorso più scorrevole',
+        text:
+          'Lascia la mano dov’è ed evita salti nella voce più acuta. Due forme facili ai due ' +
+          'capi del manico costano più in sequenza di due intermedie vicine.',
+        how: [
+          'Ogni forma che la ricerca offre per l’accordo è una candidata.',
+          'Ognuna è valutata per quanto è difficile da tenere, più quanto dovrebbero muoversi ' +
+            'la mano e la voce più acuta rispetto alla forma precedente.',
+          'La cifra è percorsa nell’ordine di lettura, così ogni scelta risponde a quella prima.',
+        ],
+      },
+      openPosition: {
+        name: 'Vicino al capotasto',
+        text:
+          'La forma più bassa di ogni accordo, con le corde a vuoto dove aiutano. Le forme ' +
+          'che un principiante già conosce.',
+        how: [
+          'Ogni forma che la ricerca offre per l’accordo è una candidata.',
+          'Ognuna è valutata per quanto è difficile da tenere, più quanto sale sul manico, ' +
+            'meno un credito per ogni corda a vuoto.',
+          'La cifra è percorsa nell’ordine di lettura, così ogni scelta risponde a quella prima.',
+        ],
+      },
+      choroCentro: {
+        name: 'Choro, accanto a una sette corde',
+        text:
+          'La parte della chitarra a sei corde in un regional: basso col pollice e tre dita, ' +
+          'nel primo quarto del manico, col basso una terza sopra quello che suona la sette ' +
+          'corde, così che le due non si raddoppino.',
+        how: [
+          'Le forme sono enumerate, non cercate. La ricerca ordinaria scarta una forma con ' +
+            'corde smorzate quando ce n’è una più piena e altrettanto facile, cosa giusta per ' +
+            'chi suona da solo e sbagliata qui, dove le corde basse tacciono perché le ha la ' +
+            'sette corde.',
+          'Quattro corde che suonano, o cinque. Quattro è la norma in questo idioma e cinque ' +
+            'l’eccezione occasionale: un basso col pollice e il resto con tre dita.',
+          'Le corde che suonano sono vicine, col pollice sulla più bassa o sulla seconda più ' +
+            'bassa e la presa che arriva alla seconda corda dall’alto. Un buco in mezzo è una ' +
+            'decisione che puoi ancora prendere; una forma che ne ha bisogno non si disfa.',
+          'Niente sopra il settimo tasto, e le corde a vuoto sono benvenute. Le fonti mettono ' +
+            'questo lavoro nel primo quarto del manico.',
+          'La nota più bassa sta una terza sopra quello che suona la sette corde — la nota ' +
+            'dopo la barra quando la cifra ne scrive una, la fondamentale altrimenti — ' +
+            'nell’ottava in cui si trova quella chitarra. È tutto qui: le due chitarre ' +
+            'prendono rivolti diversi per non raddoppiarsi.',
+          'Dove una terza sopra quel basso non appartiene all’accordo, si usa una sesta, e in ' +
+            'mancanza di quella un’ottava. Quel caso è nominato nella letteratura, non è una ' +
+            'lacuna di qui: una terza sopra la settima di una dominante che risolve su un ' +
+            'accordo maggiore cade su una nota che lo stile non usa.',
+          'Ogni nota dell’accordo è mantenuta tranne la quinta, che è quella che questo idioma ' +
+            'lascia.',
+          'La cifra è percorsa nell’ordine di lettura, preferendo forme che tengano le stesse ' +
+            'corde in vibrazione, ed è questo che trasforma una serie come Gm, Gm6, Gm7 in una ' +
+            'sola presa con un dito che si muove.',
+        ],
+      },
+    },
+    summary: {
+      one: '{count} accordo su {total} cambierebbe.',
+      other: '{count} accordi su {total} cambierebbero.',
+    },
+    nothing: 'Ogni accordo ha già la forma che questo scegliereb­be.',
+    missing: 'Nessuna forma per {list}.',
+    how: 'Come funziona',
+    howTitle: 'Come sceglie',
+    sources: 'Da dove viene',
+    noSources: 'Nessuna fonte: è una regola pratica sulle mani, non un’affermazione su come si suona la musica di qualcuno.',
+    apply: 'Usa queste forme',
+    back: '← Altri modi',
+    cancel: 'Annulla',
+  },
+
   print: { legend: 'Forme degli accordi usate' },
 
   confirm: { cancel: 'Annulla', confirm: 'Elimina' },
@@ -707,6 +789,15 @@ export default {
             'nome porta ora una nota discreta di quello che stai davvero tenendo: un Gm7 con ' +
             'la terza sotto si legge Gm7/Bb. Conta di più quando un altro strumento fa il ' +
             'basso, perché allora prendere un rivolto diverso è l\'arrangiamento e non un caso.',
+        },
+        {
+          heading: 'L’assistente delle forme',
+          text:
+            'Un pulsante sopra la cifra scegli le forme per tutto il brano in una volta. Tre ' +
+            'modi per ora: il percorso più scorrevole per la mano, vicino al capotasto, o la ' +
+            'parte della chitarra a sei corde in un regional di choro accanto a una sette ' +
+            'corde. Mostra cosa farebbe prima che cambi qualcosa, e ognuno spiega le proprie ' +
+            'regole e cita le proprie fonti sotto “Come funziona”.',
         },
       ],
     },

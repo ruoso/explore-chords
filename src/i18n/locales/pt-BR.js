@@ -423,6 +423,88 @@ export default {
     cancel: 'Cancelar',
   },
 
+  wizard: {
+    open: 'Assistente de desenhos',
+    barHelp: 'Escolha desenhos para a música toda de uma vez.',
+    title: 'Escolher desenhos para a música toda',
+    help:
+      'Cada um destes escolhe um desenho para cada acorde da música, levando em conta o ' +
+      'caminho da mão pela cifra em vez de julgar cada acorde isoladamente. Você vê o que ' +
+      'aconteceria antes de mudar qualquer coisa.',
+    planners: {
+      smoothest: {
+        name: 'O caminho mais suave',
+        text:
+          'Mantém a mão onde está e evita saltos na voz mais aguda. Dois desenhos fáceis em ' +
+          'pontas opostas do braço são mais difíceis em sequência do que dois medianos lado ' +
+          'a lado.',
+        how: [
+          'Todo desenho que a busca oferece para o acorde é um candidato.',
+          'Cada um é pontuado pela dificuldade de segurar, mais o quanto a mão e a voz mais ' +
+            'aguda teriam de se mover em relação ao desenho anterior.',
+          'A cifra é percorrida na ordem de leitura, então cada escolha responde à anterior.',
+        ],
+      },
+      openPosition: {
+        name: 'Junto à pestana',
+        text:
+          'O desenho mais grave de cada acorde, com cordas soltas onde ajudam. Os desenhos ' +
+          'que um iniciante já conhece.',
+        how: [
+          'Todo desenho que a busca oferece para o acorde é um candidato.',
+          'Cada um é pontuado pela dificuldade de segurar, mais o quanto sobe no braço, menos ' +
+            'um crédito por cada corda solta.',
+          'A cifra é percorrida na ordem de leitura, então cada escolha responde à anterior.',
+        ],
+      },
+      choroCentro: {
+        name: 'Choro, ao lado de um sete cordas',
+        text:
+          'A parte do violão de seis cordas no regional: baixo no polegar e três dedos, no ' +
+          'primeiro quádruplo do braço, com o baixo uma terça acima do que o sete cordas ' +
+          'toca, para que os dois não se dobrem.',
+        how: [
+          'Os desenhos são enumerados, não buscados. A busca comum descarta um desenho com ' +
+            'cordas abafadas quando existe um mais cheio e igualmente fácil, o que está certo ' +
+            'para quem toca sozinho e errado aqui, onde as cordas graves ficam caladas porque ' +
+            'o sete cordas as tem.',
+          'Quatro cordas soando, ou cinco. Quatro é o padrão nesse idioma e cinco a exceção ' +
+            'ocasional: um baixo no polegar e o resto em três dedos.',
+          'As cordas que soam são vizinhas, com o polegar na mais grave ou na segunda mais ' +
+            'grave e a pega alcançando a segunda corda de cima. Um buraco no meio é uma ' +
+            'decisão que você ainda pode tomar; um desenho que precisa de um não se desfaz.',
+          'Nada acima da sétima casa, e cordas soltas são bem-vindas. As fontes situam esse ' +
+            'trabalho no primeiro quádruplo do braço.',
+          'A nota mais grave fica uma terça acima do que o sete cordas toca — a nota depois da ' +
+            'barra quando a cifra escreve uma, a fundamental caso contrário — na oitava em que ' +
+            'aquele violão estiver. É disso que se trata: os dois violões pegam inversões ' +
+            'diferentes para não se dobrarem.',
+          'Quando uma terça acima desse baixo não pertence ao acorde, usa-se uma sexta, e na ' +
+            'falta dela uma oitava. Esse caso está nomeado na literatura, não é uma falha ' +
+            'daqui: uma terça acima da sétima de um dominante que resolve em acorde maior cai ' +
+            'numa nota que o estilo não usa.',
+          'Toda nota do acorde é mantida, exceto a quinta, que é a que esse idioma dispensa.',
+          'A cifra é percorrida na ordem de leitura, preferindo desenhos que mantenham as ' +
+            'mesmas cordas soando, o que transforma uma sequência como Gm, Gm6, Gm7 em uma ' +
+            'só pega com um dedo se movendo.',
+        ],
+      },
+    },
+    summary: {
+      one: '{count} de {total} acordes mudariam.',
+      other: '{count} de {total} acordes mudariam.',
+    },
+    nothing: 'Todo acorde já tem o desenho que este escolheria.',
+    missing: 'Nenhum desenho para {list}.',
+    how: 'Como funciona',
+    howTitle: 'Como esta escolha é feita',
+    sources: 'De onde isto vem',
+    noSources: 'Sem fonte: é uma regra prática sobre mãos, não uma afirmação sobre como a música de alguém é tocada.',
+    apply: 'Usar estes desenhos',
+    back: '← Outras formas',
+    cancel: 'Cancelar',
+  },
+
   print: { legend: 'Desenhos de acorde usados' },
 
   confirm: { cancel: 'Cancelar', confirm: 'Excluir' },
@@ -704,6 +786,15 @@ export default {
             'observação discreta do que você está pegando de fato: um Gm7 com a terça embaixo ' +
             'aparece como Gm7/Bb. Importa mais quando outro instrumento faz o baixo, porque aí ' +
             'escolher outra inversão é o arranjo, não um acidente.',
+        },
+        {
+          heading: 'O assistente de desenhos',
+          text:
+            'Um botão acima da cifra escolhe desenhos para a música toda de uma vez. Três ' +
+            'formas até agora: o caminho mais suave para a mão, junto à pestana, ou a parte ' +
+            'do violão de seis cordas num regional de choro ao lado de um sete cordas. Ele ' +
+            'mostra o que faria antes de mudar qualquer coisa, e cada um explica as próprias ' +
+            'regras e cita as próprias fontes em “Como funciona”.',
         },
       ],
     },
