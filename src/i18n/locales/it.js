@@ -232,6 +232,16 @@ export default {
     instruments: { one: '{count} strumento', other: '{count} strumenti' },
     songs: { one: '{count} canzone', other: '{count} canzoni' },
     confirmButton: 'Sostituisci tutto',
+    nudgeTitle: 'Le tue canzoni esistono solo su questo dispositivo',
+    nudgeText: {
+      one:
+        'La canzone qui non è in nessun backup. Su Android un telefono nuovo non la ' +
+        'riceve, e un browser che cancella i dati se la porta via.',
+      other:
+        'Le {count} canzoni qui non sono in nessun backup. Su Android un telefono nuovo ' +
+        'non le riceve, e un browser che cancella i dati se le porta via.',
+    },
+    notNow: 'Non ora',
     failed: 'Non riesco a leggere questo backup: {reason}',
   },
   instruments: {

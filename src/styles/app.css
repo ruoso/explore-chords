@@ -1024,6 +1024,40 @@ body {
   margin: 0;
 }
 
+/* Something the app has to say before it is asked: what is at risk, and the
+   one button that fixes it. Warm rather than alarming — it is a reminder, not
+   an error. */
+.ec-nudge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--warn-border);
+  border-radius: 0.5rem;
+  background: var(--warn-bg);
+}
+
+.ec-nudge-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.ec-nudge-text {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  max-width: 60ch;
+}
+
+.ec-nudge-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
 /* The shape of a backup, shown rather than described. */
 .ec-backup-tree {
   margin: 0.5rem 0 0;

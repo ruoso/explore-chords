@@ -30,7 +30,7 @@ import { sheetForSharing, sheetFromSharing } from './state/sheets.js';
 import { encodeSheetLink, decodeSheetLink } from './state/codec.js';
 import { instrumentInstance } from './core/instrument.js';
 import { createZip, readZip } from './state/zip.js';
-import { backupFiles, backupFileName, readBackup } from './state/backup.js';
+import { backupFiles, backupFileName, readBackup, backupDue } from './state/backup.js';
 import {
   saveInstruments,
   saveActiveId,
@@ -297,8 +297,19 @@ function printSheet() {
 function renderSheets() {
   const sheet = store.activeSheet;
   if (!sheet) {
+    const due = backupDue(store.state);
     renderSheetList(nodes.main, {
       store,
+      nudge: due
+        ? {
+            count: due.songs,
+            onSave: () => saveBackup(null),
+            onDismiss: () => {
+              store.setPrefs({ backupNudgedAt: Date.now() });
+              render();
+            },
+          }
+        : null,
       onOpen: (id, mode) => {
         store.setActiveSheet(id, mode);
         navigate('sheets');
@@ -455,24 +466,49 @@ function showCreate({ firstRun }) {
 /**
  * Everything the app knows, in one file the user keeps (§8.4).
  *
- * A blob and a link that clicks itself: there is nowhere to send it and nothing
- * to ask a server for, which is the whole point of a browser holding the data.
+ * Nothing is sent anywhere and nothing is asked of a server, which is the whole
+ * point of a browser holding the data.
  */
 async function saveBackup(error) {
-  error.hidden = true;
+  if (error) error.hidden = true;
   try {
     const at = new Date();
+    const name = backupFileName(at);
     const blob = await createZip(backupFiles(store.state, at), at);
-    const url = URL.createObjectURL(blob);
-    const link = el('a', { href: url, download: backupFileName(at) });
-    document.body.append(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+
+    // A phone has a share sheet, and that is where Drive, Files and iCloud
+    // live: handing the file to it beats a download nobody can find. A desktop
+    // has no share sheet, so it gets the download.
+    const file = new File([blob], name, { type: 'application/zip' });
+    if (globalThis.navigator?.canShare?.({ files: [file] })) {
+      try {
+        await globalThis.navigator.share({ files: [file], title: name });
+      } catch (e) {
+        // Thinking better of it is not a failure, and nothing was saved.
+        if (e?.name === 'AbortError') return;
+        download(blob, name);
+      }
+    } else {
+      download(blob, name);
+    }
+
+    store.setPrefs({ lastBackupAt: Date.now() });
+    render();
   } catch (e) {
+    if (!error) return;
     error.textContent = t('backup.failed', { reason: errorText(e) });
     error.hidden = false;
   }
+}
+
+/** A blob and a link that clicks itself: there is nowhere to send it. */
+function download(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const link = el('a', { href: url, download: name });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 /**

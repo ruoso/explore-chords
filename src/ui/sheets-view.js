@@ -54,7 +54,7 @@ function labelForTuning(store, tuning) {
   return match ? match.label : tuning;
 }
 
-export function renderSheetList(container, { store, onOpen, onChange }) {
+export function renderSheetList(container, { store, onOpen, onChange, nudge }) {
   clear(container);
   const instrument = store.effectiveInstrument;
   if (!instrument) return;
@@ -72,6 +72,42 @@ export function renderSheetList(container, { store, onOpen, onChange }) {
       t('sheets.help', { label: instrument.label })
     )
   );
+
+  // Before anything else, if there is work no backup holds: the songs are what
+  // is at risk, so this is where it is said (state/backup.js).
+  if (nudge) {
+    page.append(
+      el(
+        'div',
+        { class: 'ec-nudge', id: 'backup-nudge', role: 'status' },
+        el(
+          'div',
+          {},
+          el('p', { class: 'ec-nudge-title' }, t('backup.nudgeTitle')),
+          el('p', { class: 'ec-nudge-text' }, t('backup.nudgeText', { count: nudge.count }))
+        ),
+        el(
+          'div',
+          { class: 'ec-nudge-actions' },
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'ec-button ec-button-primary',
+              id: 'nudge-save',
+              onClick: nudge.onSave,
+            },
+            t('backup.save')
+          ),
+          el(
+            'button',
+            { type: 'button', class: 'ec-button', id: 'nudge-dismiss', onClick: nudge.onDismiss },
+            t('backup.notNow')
+          )
+        )
+      )
+    );
+  }
 
   const form = el('form', { class: 'ec-newsheet', novalidate: true });
   const input = el('input', {

@@ -1262,6 +1262,23 @@ No zip64, no encryption, no compression method but stored and deflated: none of
 it is reachable with a few text files. A damaged entry is refused rather than
 half-read, since every entry carries a CRC-32 and the reader checks it.
 
+**The app says when there is work no backup holds**, on the song list, because
+the songs are what is at risk. It speaks up when something has been in no backup
+for a week, counts what that is, and offers the one button that fixes it.
+Dismissing restarts the clock rather than silencing it, since what it is warning
+about has not gone away. Songs only: an instrument is a minute to set up again
+and a starred shape is a click, but a song somebody typed out is gone for good.
+
+This exists because of what the platforms do and do not do. An iPhone keeps a
+Home Screen web app's storage in its iCloud backup, so a replacement phone gets
+the songs. Android reinstalls the app on a new phone and leaves its data behind.
+Nobody expects that of an app, so the app has to be the one to mention it.
+
+**Where the file goes is the platform's business.** A phone has a share sheet,
+and that is where Drive, Files and iCloud live, so the zip is handed to
+`navigator.share` where the browser has it and downloaded where it does not.
+Cancelling a share is not a failure and records no backup.
+
 **Restoring is replacing.** A backup is the state of a device, not a set of
 changes to merge into one, so it asks first and says what the file holds. The
 new state is written to storage and the page reloaded, so everything comes up

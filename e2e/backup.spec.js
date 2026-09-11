@@ -45,6 +45,64 @@ test.describe('backing everything up', () => {
     await page.locator('#sheet-body').blur();
   };
 
+  test('says when songs are in no backup, and stops once they are', async ({ page }, testInfo) => {
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+    await goToView(page, 'sheets');
+    await page.fill('#new-sheet-title', 'Valsa');
+    await page.getByRole('button', { name: 'New song' }).click();
+    await page.fill('#sheet-body', 'Gm | D7');
+    await page.locator('#sheet-body').blur();
+    await page.locator('#sheet-back').click();
+
+    // Nothing is said about work done a minute ago.
+    await expect(page.locator('#backup-nudge')).toHaveCount(0);
+
+    // Wind the clock back, as if all of this had happened that long ago: the
+    // songs, and any time the reminder was put away.
+    const age = (days) =>
+      page.evaluate((old) => {
+        const sheets = JSON.parse(window.localStorage.getItem('ec:v2:sheets'));
+        window.localStorage.setItem(
+          'ec:v2:sheets',
+          JSON.stringify(sheets.map((s) => ({ ...s, updated: Date.now() - old })))
+        );
+        const prefs = JSON.parse(window.localStorage.getItem('ec:v2:prefs') ?? '{}');
+        if (prefs.backupNudgedAt) prefs.backupNudgedAt = Date.now() - old;
+        window.localStorage.setItem('ec:v2:prefs', JSON.stringify(prefs));
+      }, days * 24 * 60 * 60 * 1000);
+    await age(14);
+    await page.reload();
+    await goToView(page, 'sheets');
+
+    await expect(page.locator('#backup-nudge')).toBeVisible();
+    // Counted, and phrased for the count it found.
+    await expect(page.locator('#backup-nudge')).toContainText('The song here is in no backup');
+
+    // Dismissing puts it away, and it is not shown again straight away — but it
+    // comes back, because what it is warning about has not gone away.
+    await page.locator('#nudge-dismiss').click();
+    await expect(page.locator('#backup-nudge')).toHaveCount(0);
+    await page.reload();
+    await goToView(page, 'sheets');
+    await expect(page.locator('#backup-nudge')).toHaveCount(0);
+
+    // Saving a backup from the nudge answers it for good, not for a week.
+    await age(14);
+    await page.reload();
+    await goToView(page, 'sheets');
+    await expect(page.locator('#backup-nudge')).toBeVisible();
+    const download = await Promise.all([
+      page.waitForEvent('download'),
+      page.locator('#nudge-save').click(),
+    ]).then(([d]) => d);
+    await download.saveAs(testInfo.outputPath('from-nudge.zip'));
+    await expect(page.locator('#backup-nudge')).toHaveCount(0);
+    await page.reload();
+    await goToView(page, 'sheets');
+    await expect(page.locator('#backup-nudge')).toHaveCount(0);
+  });
+
   test('saves a zip and restores everything from it', async ({ page }, testInfo) => {
     await freshVisit(page);
     await completeSetup(page, { instrument: '6guitar' });

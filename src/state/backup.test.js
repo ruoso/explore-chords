@@ -3,7 +3,14 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createZip, readZip, crc32 } from './zip.js';
-import { backupFiles, readBackup, backupFileName, SETTINGS_FILE, CHORDS_FILE } from './backup.js';
+import {
+  backupFiles,
+  readBackup,
+  backupFileName,
+  backupDue,
+  SETTINGS_FILE,
+  CHORDS_FILE,
+} from './backup.js';
 import { fromCatalog } from '../core/instrument.js';
 
 const state = () => {
@@ -139,5 +146,48 @@ describe('a backup', () => {
 
   it('refuses settings that are not readable', () => {
     expect(() => readBackup([{ name: SETTINGS_FILE, text: '{ not json' }])).toThrow();
+  });
+});
+
+describe('mentioning a backup that has not been made', () => {
+  const day = 24 * 60 * 60 * 1000;
+  const now = Date.UTC(2026, 8, 20);
+  const song = (updated) => ({ id: 's', title: 'A', body: 'C\n', updated });
+
+  it('says nothing when there are no songs to lose', () => {
+    expect(backupDue({ sheets: [], prefs: {} }, now)).toBeNull();
+  });
+
+  it('says nothing about work of a day or two', () => {
+    expect(backupDue({ sheets: [song(now - 2 * day)], prefs: {} }, now)).toBeNull();
+  });
+
+  it('speaks up once work has sat in no backup for a week', () => {
+    const due = backupDue({ sheets: [song(now - 8 * day)], prefs: {} }, now);
+    expect(due).toEqual({ songs: 1, days: 8 });
+  });
+
+  it('says nothing when the last backup already holds everything', () => {
+    const state = { sheets: [song(now - 8 * day)], prefs: { lastBackupAt: now - day } };
+    expect(backupDue(state, now)).toBeNull();
+  });
+
+  it('speaks up again about work done since the last backup', () => {
+    const state = {
+      sheets: [song(now - 30 * day), song(now - 9 * day)],
+      prefs: { lastBackupAt: now - 20 * day },
+    };
+    // Only the song the backup does not hold is counted, and the clock runs
+    // from it rather than from the older one.
+    expect(backupDue(state, now)).toEqual({ songs: 1, days: 9 });
+  });
+
+  it('restarts the clock when it is dismissed, rather than going away', () => {
+    const state = {
+      sheets: [song(now - 40 * day)],
+      prefs: { backupNudgedAt: now - 2 * day },
+    };
+    expect(backupDue(state, now)).toBeNull();
+    expect(backupDue(state, now + 6 * day)).toEqual({ songs: 1, days: 8 });
   });
 });

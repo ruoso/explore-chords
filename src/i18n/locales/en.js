@@ -230,6 +230,16 @@ export default {
     instruments: { one: '{count} instrument', other: '{count} instruments' },
     songs: { one: '{count} song', other: '{count} songs' },
     confirmButton: 'Replace everything',
+    nudgeTitle: 'Your songs are only on this device',
+    nudgeText: {
+      one:
+        'The song here is in no backup. On Android a new phone does not get it, and a ' +
+        'browser that clears its data takes it with it.',
+      other:
+        'The {count} songs here are in no backup. On Android a new phone does not get ' +
+        'them, and a browser that clears its data takes them with it.',
+    },
+    notNow: 'Not now',
     failed: 'That backup could not be read: {reason}',
   },
   instruments: {

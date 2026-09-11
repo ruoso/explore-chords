@@ -16,6 +16,9 @@ import { serialiseInstrument } from './persist.js';
 import { fault } from '../core/errors.js';
 
 export const BACKUP_VERSION = 1;
+/** How long work may sit in no backup before the app mentions it. */
+export const NUDGE_DAYS = 7;
+const DAY = 24 * 60 * 60 * 1000;
 export const SETTINGS_FILE = 'settings.json';
 export const CHORDS_FILE = 'saved-chords.json';
 export const SONGS_DIRECTORY = 'songs/';
@@ -156,4 +159,37 @@ export function readBackup(files) {
     favorites,
     sheets,
   };
+}
+
+/**
+ * Is there work that no backup holds, and has it been that way a while?
+ *
+ * Asked because of what the platforms do and do not do. An iPhone carries a
+ * Home Screen web app's storage in its iCloud backup, so a replacement phone
+ * gets the songs; Android carries the app across and not its data, so they are
+ * gone with the handset. Nobody expects that of an app, which is why the app
+ * has to be the one to mention it rather than waiting to be found.
+ *
+ * Songs only. They are the work: an instrument is a minute to set up again and
+ * a starred shape is a click, but a song somebody typed out is gone for good.
+ * Dismissing it restarts the clock rather than silencing it, because the thing
+ * it is warning about does not go away.
+ *
+ * @param {{sheets: object[], prefs: object}} state
+ * @param {number} [now]
+ * @returns {{songs: number, days: number}|null} null when there is nothing to say
+ */
+export function backupDue(state, now = Date.now()) {
+  const changed = (state.sheets ?? []).map((sheet) => sheet.updated ?? 0).filter((at) => at > 0);
+  if (changed.length === 0) return null;
+
+  const lastBackup = state.prefs?.lastBackupAt ?? 0;
+  const atRisk = changed.filter((at) => at > lastBackup);
+  if (atRisk.length === 0) return null;
+
+  // The clock runs from the oldest thing no backup holds, or from the last time
+  // this was dismissed, whichever is later.
+  const since = Math.max(Math.min(...atRisk), state.prefs?.backupNudgedAt ?? 0);
+  const days = Math.floor((now - since) / DAY);
+  return days >= NUDGE_DAYS ? { songs: atRisk.length, days } : null;
 }

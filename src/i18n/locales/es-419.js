@@ -232,6 +232,16 @@ export default {
     instruments: { one: '{count} instrumento', other: '{count} instrumentos' },
     songs: { one: '{count} canción', other: '{count} canciones' },
     confirmButton: 'Reemplazar todo',
+    nudgeTitle: 'Tus canciones solo están en este dispositivo',
+    nudgeText: {
+      one:
+        'La canción de aquí no está en ningún respaldo. En Android un teléfono nuevo no ' +
+        'la recibe, y un navegador que borra sus datos se la lleva.',
+      other:
+        'Las {count} canciones de aquí no están en ningún respaldo. En Android un ' +
+        'teléfono nuevo no las recibe, y un navegador que borra sus datos se las lleva.',
+    },
+    notNow: 'Ahora no',
     failed: 'No pude leer ese respaldo: {reason}',
   },
   instruments: {
