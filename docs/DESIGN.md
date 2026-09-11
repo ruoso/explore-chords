@@ -319,6 +319,15 @@ Fm/D#` names one too, since cifras write it both ways — but only when what
 follows the colon is chords, or every sung line with a colon in it would name a
 section.
 
+**`%` means the measure carries on as before**, which is how a chart writes the
+repeat sign. It is not a chord: there is nothing to look up and nothing to
+choose a shape for, because the chord it stands for has both where it was
+written. So it is shown as written rather than resolved into that chord — the
+text says `%` and the chart says `%` — and nothing about it is clickable. Like a
+bracket it counts as neither a chord nor a word, since two of the four things on
+`C | % | F | %` are not chords and counting them as words would read that line
+as something sung.
+
 **A bracket around a run of chords marks a repeat**, which a cifra writes as
 `( Cm  Cm/A#  Am7/5- )`. It annotates the run rather than any chord in it, so it
 is a mark of its own standing between chords: shown as written, never clickable,

@@ -310,6 +310,46 @@ describe('brackets marking a repeat', () => {
   });
 });
 
+describe('the repeat sign', () => {
+  it('is an instruction to keep playing, not a chord', () => {
+    // There is nothing to look up and nothing to choose a shape for: the chord
+    // it stands for has both, where it was written.
+    const song = parseSong('C | % | F | %', 'brazilian');
+    expect(song.unknown).toEqual([]);
+    expect(song.symbols).toEqual(['C', 'F']);
+    expect(song.occurrences.map((c) => c.raw)).toEqual(['C', 'F']);
+  });
+
+  it('is a measure of its own, shown as written', () => {
+    const song = parseSong('C | % | F | %', 'brazilian');
+    expect(measureCount(song)).toBe(4);
+    expect(
+      song.sections[0].lines[0].measures.map((m) => m.segments.map((seg) => seg.mark || seg.chord.raw))
+    ).toEqual([['C'], ['%'], ['F'], ['%']]);
+    expect(song.sections[0].lines[0].measures[1].segments[0].repeat).toBe(true);
+  });
+
+  it('does not make a chart line look like prose', () => {
+    // Two of the four things on `C | % | F | %` are not chords. Counted as
+    // words, in a song that has words elsewhere, the line would be sung.
+    const song = parseSong(
+      '[Intro] C | % | F | %\n\n[Verso]\nGm\nComo fosse um par que',
+      'brazilian'
+    );
+    expect(song.unknown).toEqual([]);
+    expect(song.sections[0].lines[0].lyrics).toBe(false);
+    expect(song.sections[1].lines[0].lyrics).toBe(true);
+  });
+
+  it('can stand over the words like a chord does', () => {
+    const song = parseSong('Gm     %\nComo fosse um par', 'brazilian');
+    const segments = song.sections[0].lines[0].measures.flatMap((m) => m.segments);
+    expect(segments.map((seg) => seg.mark || seg.chord.raw)).toEqual(['Gm', '%']);
+    // The sign takes the words from its own column, exactly as a chord would.
+    expect(segments.map((seg) => seg.lyric)).toEqual(['Como fo', 'sse um par']);
+  });
+});
+
 describe('chords that run past the end of the words', () => {
   it('are segments of their own with no words to show', () => {
     // No spaces are invented to give them width. A space in a proportional

@@ -1208,6 +1208,15 @@ body {
   margin-right: 0.4em;
 }
 
+/* The repeat sign: the measure carries on as before. Musical content rather
+   than punctuation, so it reads as firmly as the chords around it. */
+.ec-chord-repeat {
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
 /* A bracket marking a repeat: shown as written, but it is not a chord and
    nothing about it is clickable. */
 .ec-chord-mark {

@@ -56,6 +56,14 @@ const VOICING_LINE = /^\s*([^\s=[\]]+)(?:\[(\d+)\])?\s*=\s*(\S+)\s*$/;
 const CHORD_TOKEN = /^(.*?)(?:\[(\d+)\])?$/;
 /** `[Intro]`, alone or with the chords of that section on the same line. */
 const BRACKET_HEADING = /^(\s*\[\s*([^\]]*?)\s*\]\s*)(.*)$/;
+/**
+ * The measure carries on as before: the repeat sign a chart writes as `%`.
+ *
+ * Not a chord — there is nothing to look up and nothing to choose a shape for,
+ * because the chord it stands for has both where it was written. It is an
+ * instruction to keep playing, and it is shown as one.
+ */
+const REPEAT = '%';
 /** `Intro: C  G`, the other way a cifra names a section. */
 const LABEL_HEADING = /^(\s*([^\s:|]+)\s*:\s*)(.*)$/;
 /** A leading `>` forces a line to be read as words. Kept in the text. */
@@ -208,7 +216,11 @@ function scanChords(raw, lineStart, dialect, collect) {
       const { before, chord: word, after } = splitMarks(match[0]);
 
       if (before) add({ chord: null, mark: before, lyric: '' }, start);
-      if (word) {
+      if (word === REPEAT) {
+        // Keep playing. Recorded as what it is rather than resolved into the
+        // chord it stands for: the text says `%`, so the chart says `%`.
+        add({ chord: null, mark: REPEAT, repeat: true, lyric: '' }, start + before.length);
+      } else if (word) {
         const column = start + before.length;
         add({ chord: makeChord(word, lineStart + column, dialect, collect), mark: '', lyric: '' }, column);
       }
@@ -297,9 +309,13 @@ function lineShape(raw, dialect) {
   const forced = LYRIC_MARKER.test(raw);
   const body = forced ? stripLyricMarker(raw) : raw;
   const tokens = body.replace(/\|/g, ' ').match(/\S+/g) ?? [];
-  // A bracket on its own is neither a chord nor a word: counting it as one
-  // would make a bracketed line of chords look a third prose.
-  const words = tokens.filter((token) => splitMarks(token).chord !== '');
+  // A bracket on its own is neither a chord nor a word, and neither is a repeat
+  // sign: counted as words, `C | % | F | %` is half prose and the line would be
+  // read as something sung.
+  const words = tokens.filter((token) => {
+    const { chord } = splitMarks(token);
+    return chord !== '' && chord !== REPEAT;
+  });
 
   if (tokens.length === 0) return { kind: 'blank', body, forced, prose: false };
   if (forced) return { kind: 'words', body, forced, prose: true };

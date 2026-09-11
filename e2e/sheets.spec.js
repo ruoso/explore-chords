@@ -269,6 +269,14 @@ test.describe('a song with words under the chords', () => {
     await expect(page.locator('.ec-measure-chord.is-invalid')).toHaveCount(0);
   });
 
+  test('a repeat sign is shown as one, and is not a chord to choose', async ({ page }) => {
+    await setBody(page, '[Intro] C | % | F | %');
+    await expect(page.locator('.ec-error')).toHaveCount(0);
+    await expect(page.locator('.ec-chord-repeat')).toHaveText(['%', '%']);
+    await expect(page.locator('.ec-measure-chord')).toHaveText(['C', 'F']);
+    await expect(page.locator('.ec-measure-chord.is-invalid')).toHaveCount(0);
+  });
+
   test('a plain chord chart is untouched by any of it', async ({ page }) => {
     await setBody(page, '# Verse\nC  Am | F  G | C');
     await expect(page.locator('.ec-song-sung')).toHaveCount(0);

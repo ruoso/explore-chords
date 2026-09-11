@@ -460,7 +460,14 @@ export function renderSheetEditor(
       // One table per section, a row per line and a column per measure, so the
       // measures line up the way they do on a hand-written chart. A measure
       // with several chords splits its column between them.
-      const mark = (text) => (text ? el('span', { class: 'ec-chord-mark' }, text) : null);
+      const mark = (segment) =>
+        segment.mark
+          ? el(
+              'span',
+              { class: segment.repeat ? 'ec-chord-repeat' : 'ec-chord-mark' },
+              segment.mark
+            )
+          : null;
       const chordButton = (chord) => {
         const resolution = resolved.get(chord.key);
         const source = resolution?.source ?? null;
@@ -522,7 +529,7 @@ export function renderSheetEditor(
                 segment.chord
                   ? chordButton(segment.chord)
                   : segment.mark
-                    ? mark(segment.mark)
+                    ? mark(segment)
                     : chorded
                       ? el(
                           'span',
@@ -555,7 +562,7 @@ export function renderSheetEditor(
             });
             line.append(cell);
             if (segment.chord) cell.append(chordButton(segment.chord));
-            else if (segment.mark) cell.append(mark(segment.mark));
+            else if (segment.mark) cell.append(mark(segment));
           });
         }
         table.body.append(line);
