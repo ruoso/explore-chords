@@ -419,11 +419,17 @@ of adding a duplicate footnote, markers renumber from actual use so a chord that
 returns to one voicing loses its marker again, and entries nothing refers to are
 dropped.
 
-**The printed sheet takes as many columns as the page can hold**, up to two. A
-song with its words is narrow and tall — a sung line is about a third the width
-of A4 and there is one per line of the song — so a single column wastes most of
-the paper and spends pages doing it. Two columns routinely turn two pages into
-one.
+**The printed sheet fills the page down before it fills it across**, and takes
+at most two columns to do it. A song with its words is narrow and tall — a sung
+line is about a third the width of A4 and there is one per line of the song — so
+a single column that runs past the foot of the page wastes most of the paper and
+spends pages doing it. A second column routinely turns two pages into one.
+
+That is what a column is *for*, and it is all it is for: the first one runs to
+the bottom of the page before any of the song goes beside it. Shared out evenly
+instead, a song that wants three quarters of one column comes out as two short
+ones side by side with a third of the page blank underneath — two things to read
+where there was one, and not a sheet of paper saved by it.
 
 How many fit is not the app's decision: paper size and margins are chosen in the
 print dialog and never reach it. What the app can measure is how narrow a column
@@ -446,9 +452,11 @@ both ways in side by side, a new song opens in the editor since it has nothing
 in it yet, and a song arriving by link opens to be read. Which of the two a song
 is open in is not persisted: coming back to the app lands on the reading page.
 
-The reading page takes the whole width it is given and breaks into as many
-columns as fit. Print stops at two, because turning a page beats reading down a
-third column; on screen there is no page to turn.
+The reading page is given the whole width, and fills the height of the page
+before it uses any of it — the same rule as print, since a screen-sized page
+runs out of room the same way. Where print stops at two columns, the screen has
+no cap: turning a page beats reading down a third column, and on screen there is
+no page to turn.
 
 **It is broken into pages the size of the screen**, so that where the song runs
 past the end of a page is visible, and so that playing from a screen is a page
@@ -475,7 +483,11 @@ that panel rather than as something the song itself offers.
 
 Printable via a dedicated print stylesheet — the chart, then a legend
 of the voicings used, drawn small enough that a song's shapes fit in a row or
-two: the chart is read while playing, the shapes are looked up. Opening a sheet
+two: the chart is read while playing, the shapes are looked up. The legend goes
+at the end of the song's own flow rather than in a band under the columns, so
+that it takes the room the last column has left. Given a band of its own it
+would be a block the page has to find room for once a filled column has taken
+the lot, and a song's shapes would go overleaf on their own. Opening a sheet
 whose instrument is not the active one triggers the §2.1 "viewing as" bar.
 
 ### 2.7 Other v1 features

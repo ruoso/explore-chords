@@ -66,9 +66,9 @@ export function renderSongPages(container, { store, sheet, instrument, startAt =
   const legend = article.querySelector('.ec-print-legend');
   if (legend) items.push({ section: null, node: legend });
 
-  const header = [...article.children].filter(
-    (node) => node !== source && node !== legend
-  );
+  // What is left of the sheet once the flowing part is taken out: the title and
+  // the instrument it is written for.
+  const header = [...article.children].filter((node) => node !== source);
 
   const geometry = pageGeometry(pages);
   let page = null;

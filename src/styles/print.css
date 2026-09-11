@@ -21,14 +21,20 @@
 }
 
 /* The column width is measured from the song and set inline (sheet-print.js);
-   the browser decides how many of them fit the paper it is given. Balanced, so
-   the last page does not leave one full column beside an empty one. Only the
-   sections are in here — the title and the legend belong to the whole sheet and
-   sit outside it, because a spanning element at the start of a multicol pushes
-   everything after it onto the next page. */
+   the browser decides how many of them fit the paper it is given. The title
+   belongs to the whole sheet and sits outside, because a spanning element at
+   the start of a multicol pushes everything after it onto the next page.
+
+   Filled rather than balanced: a column runs to the foot of the page before the
+   next one is started. Balancing shares the song out over every column the
+   paper has room for, so a sheet that wants three quarters of one column comes
+   out as two short ones side by side with a third of the page blank under them
+   — two things to read where there was one, and nothing saved by it. What a
+   second column *is* worth is a page: the first one fills, and the song carries
+   on beside it rather than overleaf. */
 .ec-print-body {
   column-gap: 1cm;
-  column-fill: balance;
+  column-fill: auto;
 }
 
 /* A chart whose measures are wider than a column: it spans them all, the way a

@@ -902,13 +902,14 @@ body {
 /* The song takes whatever the title leaves, and no more. Given `height: 100%`
    instead, the first page's sections would hang below it by the height of the
    title, clipped by the page and invisible to the page-filling loop, which
-   measures the box it is filling. */
+   measures the box it is filling.
+
+   A height it must have, and not only so that it stops where the page does:
+   the columns are filled rather than balanced (print.css), and a column can
+   only be filled to a height something has settled on. */
 .ec-song-page .ec-print-body {
   flex: 1;
   min-height: 0;
-  /* Columns run to the bottom of the page rather than balancing across it:
-     what the page cannot hold has to *not fit*, so it can be measured. */
-  column-fill: auto;
 }
 
 /* A section may break across the columns of a page: it is the page that is
@@ -974,11 +975,6 @@ body {
 
 .ec-pager-count:hover {
   color: var(--accent);
-}
-
-/* The legend belongs to the sheet rather than to a column of it. */
-.ec-song-page .ec-print-legend {
-  column-span: all;
 }
 
 /* The title, and beside it the two ways out of the page. Wraps on a phone, so

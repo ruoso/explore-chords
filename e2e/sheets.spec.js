@@ -310,6 +310,46 @@ test.describe('reading a song', () => {
     );
   });
 
+  test('uses the height of the page before it uses another column', async ({ page }) => {
+    // A song with room to spare stays in one column, however wide the window,
+    // and a song without it fills that column to the foot of the page before
+    // any of it goes alongside. Shared out over every column that fits instead,
+    // four verses come out as one line of song across an otherwise empty page.
+    const verse = [
+      'Gm             Gm/F',
+      'Como fosse um par que',
+      '            Em7/5-',
+      'Nessa valsa triste',
+    ].join('\n');
+    const sing = (n) =>
+      setBody(page, ['[Verso]', ...Array.from({ length: n }, () => `${verse}\n`)].join('\n'));
+    const layout = () =>
+      page.evaluate(() => {
+        const body = document.querySelector('.ec-song-page .ec-print-body');
+        const box = body.getBoundingClientRect();
+        const lines = [...body.querySelectorAll('.ec-print-sung')];
+        const lefts = [...new Set(lines.map((line) => Math.round(line.getBoundingClientRect().left)))];
+        const first = lines.filter(
+          (line) => Math.round(line.getBoundingClientRect().left) === Math.min(...lefts)
+        );
+        const lowest = Math.max(...first.map((line) => line.getBoundingClientRect().bottom));
+        return { columns: lefts.length, filled: (lowest - box.top) / box.height };
+      });
+
+    await sing(4);
+    await page.locator('#sheet-view').click();
+    await expect(page.locator('.ec-song-page')).toHaveCount(1);
+    expect((await layout()).columns).toBe(1);
+
+    // Enough to want a second column on a wide screen. Whether it gets one is
+    // the window's business; what matters is that the first is full first.
+    await page.locator('#sheet-edit').click();
+    await sing(16);
+    await page.locator('#sheet-view').click();
+    await expect(page.locator('.ec-song-page').first()).toBeVisible();
+    expect((await layout()).filled).toBeGreaterThan(0.9);
+  });
+
   test('is where a song opens from the list, with editing a button away', async ({ page }) => {
     await page.locator('#sheet-back').click();
     await page.getByRole('button', { name: 'View Valsa' }).click();

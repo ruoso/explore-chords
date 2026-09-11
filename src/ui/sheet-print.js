@@ -106,9 +106,9 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
   );
 
   // The sections go in a box of their own, because that box is what gets broken
-  // into columns. The title and the legend stay outside it: a spanning element
-  // at the very start of a multicol pushed everything after it to the next
-  // page, leaving a first page with nothing on it but the title.
+  // into columns. The title stays outside it: a spanning element at the very
+  // start of a multicol pushed everything after it to the next page, leaving a
+  // first page with nothing on it but the title.
   const body = el('div', { class: 'ec-print-body' });
   article.append(body);
 
@@ -222,7 +222,13 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
         )
       );
     }
-    article.append(list);
+    // In with the sections, at the end of the flow, rather than under the whole
+    // sheet. A legend of its own outside the columns is a block the page has to
+    // find room for after they have taken what they want, and a filled column
+    // wants the whole page — so the shapes went overleaf on their own, a sheet
+    // of paper for four diagrams. In the flow they take the room the last
+    // column has left, which is usually exactly where they were anyway.
+    body.append(list);
   }
 
   container.append(article);
