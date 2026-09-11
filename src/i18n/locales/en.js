@@ -665,5 +665,18 @@ export default {
         },
       ],
     },
+    '0.9.0': {
+      title: 'What changed in 0.9',
+      sections: [
+        {
+          heading: 'The repeat sign',
+          text:
+            'A chart can say % for a measure that carries on as before, and it is read as ' +
+            'that rather than as a chord nobody recognises. It is shown the way you wrote it, ' +
+            'not turned into the chord it stands for, and there is nothing to choose for it: ' +
+            'the chord it repeats already has its shape where it was written.',
+        },
+      ],
+    },
   },
 };

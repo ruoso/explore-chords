@@ -672,5 +672,18 @@ export default {
         },
       ],
     },
+    '0.9.0': {
+      title: 'Qué cambió en la 0.9',
+      sections: [
+        {
+          heading: 'El signo de repetición',
+          text:
+            'El cifrado puede usar % para un compás que sigue igual al anterior, y se lee ' +
+            'así, no como un acorde que nadie reconoce. Se muestra tal como lo escribiste, ' +
+            'sin convertirse en el acorde que representa, y no hay nada que elegir en él: el ' +
+            'acorde que repite ya tiene su forma donde se escribió.',
+        },
+      ],
+    },
   },
 };

@@ -1,6 +1,6 @@
 {
   "name": "explore-chords",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Explore chord fingerings on fretted string instruments with arbitrary tunings",
   "type": "module",
   "license": "MIT",

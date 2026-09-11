@@ -672,5 +672,18 @@ export default {
         },
       ],
     },
+    '0.9.0': {
+      title: 'Cosa è cambiato nella 0.9',
+      sections: [
+        {
+          heading: 'Il segno di ripetizione',
+          text:
+            'Uno schema può usare % per una battuta che continua come la precedente, e viene ' +
+            'letto così, non come un accordo che nessuno riconosce. Si vede come l’hai ' +
+            'scritto, senza diventare l’accordo che rappresenta, e non c’è niente da ' +
+            'scegliere: l’accordo che ripete ha già la sua forma dove è stato scritto.',
+        },
+      ],
+    },
   },
 };

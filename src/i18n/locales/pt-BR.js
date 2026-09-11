@@ -669,5 +669,18 @@ export default {
         },
       ],
     },
+    '0.9.0': {
+      title: 'O que mudou na 0.9',
+      sections: [
+        {
+          heading: 'O sinal de repetição',
+          text:
+            'A cifra pode usar % para um compasso que continua igual ao anterior, e ele é ' +
+            'lido assim, não como um acorde que ninguém reconhece. Aparece do jeito que você ' +
+            'escreveu, sem virar o acorde que ele representa, e não há nada para escolher ' +
+            'nele: o acorde que ele repete já tem o desenho dele onde foi escrito.',
+        },
+      ],
+    },
   },
 };
