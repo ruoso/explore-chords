@@ -1222,9 +1222,12 @@ exactly as written, which is the whole point of the distinction.
 
 Everything the app knows lives in this browser's storage, which is a fine place
 for it right up until the phone is replaced. So all of it goes into **one zip**,
-offered as a download and taken back the same way, from the instrument screen —
-the closest thing here to a settings page, and where most of what a backup holds
-is set.
+offered as a download and taken back the same way, from **a screen of its own**
+in the navigation. It sat on the instrument screen first, on the reasoning that
+that is the closest thing here to a settings page — true, and beside the point:
+a backup is about everything rather than about an instrument, and something you
+are told to do before you lose your phone has to be findable without being told
+where to look.
 
 ```
 settings.json        instruments and their rules, preferences, which one is in use
@@ -1341,6 +1344,7 @@ A small, named set of specs — kept small on purpose:
 | `heuristics` | preset changes results; configs stay separate per instrument |
 | `library` | favourites and custom tunings survive reload |
 | `sheets` | build a sheet, print layout, share-link round trip |
+| `backup` | save a zip, wipe the device, restore everything from it |
 | `offline` | service worker, offline reload, update toast |
 | `a11y` | axe on each main view, keyboard traversal of the result grid |
 

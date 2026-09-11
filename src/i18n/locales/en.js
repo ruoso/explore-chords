@@ -22,6 +22,7 @@ export default {
     instrument: 'Instrument',
     library: 'Saved',
     sheets: 'Songs',
+    backup: 'Backup',
   },
 
   chip: {
@@ -217,6 +218,11 @@ export default {
       'A backup is one zip holding your instruments and settings, your saved shapes, and ' +
       'every song as a plain text file you can read and edit anywhere.',
     save: 'Save a backup',
+    insideTitle: 'What is in it',
+    inside:
+      'One zip, with your instruments and their rules and your settings in one file, your ' +
+      'saved shapes in another, and every song as a text file named after it. Drop another ' +
+      'song into the songs folder with any zip tool and it comes back with the rest.',
     restore: 'Restore a backup',
     confirmTitle: 'Restore from “{name}”?',
     confirmBody:

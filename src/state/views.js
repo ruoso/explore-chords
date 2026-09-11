@@ -2,8 +2,8 @@
  * Which screen is showing.
  *
  * The explorer is a tool, not a dashboard: it holds the chord input and the
- * results, and nothing else. Instrument settings, saved shapes and song sheets
- * are their own screens, reached from the navigation.
+ * results, and nothing else. Instrument settings, saved shapes, song sheets and
+ * the backup are their own screens, reached from the navigation.
  *
  * Views live in the query string like all other state (docs/DESIGN.md §8.1),
  * so a project-subpath deploy needs no SPA fallback.
@@ -15,6 +15,7 @@ export const VIEWS = {
   instrument: { id: 'instrument' },
   library: { id: 'library' },
   sheets: { id: 'sheets' },
+  backup: { id: 'backup' },
 };
 
 export const DEFAULT_VIEW = 'explore';

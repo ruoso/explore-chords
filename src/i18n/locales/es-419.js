@@ -22,6 +22,7 @@ export default {
     instrument: 'Instrumento',
     library: 'Guardados',
     sheets: 'Canciones',
+    backup: 'Respaldo',
   },
 
   chip: {
@@ -219,6 +220,11 @@ export default {
       'no. Un respaldo es un solo zip con tus instrumentos y ajustes, tus formas guardadas y ' +
       'cada canción como un archivo de texto que puedes leer y editar en cualquier parte.',
     save: 'Guardar un respaldo',
+    insideTitle: 'Qué trae dentro',
+    inside:
+      'Un zip, con tus instrumentos y sus reglas y tus ajustes en un archivo, tus formas ' +
+      'guardadas en otro, y cada canción como un archivo de texto con su nombre. Pon otra ' +
+      'canción en la carpeta songs con cualquier programa de zip y vuelve con el resto.',
     restore: 'Restaurar un respaldo',
     confirmTitle: '¿Restaurar desde “{name}”?',
     confirmBody:

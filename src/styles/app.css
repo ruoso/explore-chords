@@ -1024,6 +1024,20 @@ body {
   margin: 0;
 }
 
+/* The shape of a backup, shown rather than described. */
+.ec-backup-tree {
+  margin: 0.5rem 0 0;
+  padding: 0.6rem 0.8rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--panel);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
 .ec-song-help pre {
   margin: 0.25rem 0 0;
   padding: 0.35rem 0.5rem;

@@ -17,6 +17,7 @@ import { renderResults } from './ui/results.js';
 import { renderChordInput } from './ui/chord-input.js';
 import { renderDisplayToggles } from './ui/display-toggles.js';
 import { renderLibrary } from './ui/library.js';
+import { renderBackupPage } from './ui/backup-view.js';
 import { renderNav } from './ui/nav.js';
 import {
   renderInstrumentList,
@@ -378,8 +379,6 @@ function renderInstruments() {
   if (!editing) {
     renderInstrumentList(nodes.main, {
       store,
-      onSaveBackup: saveBackup,
-      onRestoreBackup: restoreBackup,
       onAdd: () => {
         store.set({ instrumentForm: { mode: 'create' } });
         render();
@@ -622,6 +621,10 @@ function render() {
 
     case 'sheets':
       renderSheets();
+      break;
+
+    case 'backup':
+      renderBackupPage(nodes.main, { onSave: saveBackup, onRestore: restoreBackup });
       break;
 
     default:

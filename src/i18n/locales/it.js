@@ -22,6 +22,7 @@ export default {
     instrument: 'Strumento',
     library: 'Salvati',
     sheets: 'Canzoni',
+    backup: 'Backup',
   },
 
   chip: {
@@ -219,6 +220,11 @@ export default {
       'dispositivo. Un backup è un solo zip con i tuoi strumenti e le impostazioni, le forme ' +
       'salvate e ogni canzone come file di testo che puoi leggere e modificare dove vuoi.',
     save: 'Salva un backup',
+    insideTitle: 'Cosa c’è dentro',
+    inside:
+      'Uno zip, con i tuoi strumenti e le loro regole e le impostazioni in un file, le forme ' +
+      'salvate in un altro, e ogni canzone come file di testo col suo nome. Metti un’altra ' +
+      'canzone nella cartella songs con qualunque programma di zip e torna con le altre.',
     restore: 'Ripristina un backup',
     confirmTitle: 'Ripristinare da “{name}”?',
     confirmBody:
