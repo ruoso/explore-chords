@@ -941,6 +941,65 @@ test.describe('what the shape sounds', () => {
     // them.
     await expect(legend.locator('.ec-voiced-as')).toHaveCount(2);
   });
+
+  test('lines the two names up with the neck, not the edge of the diagram', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+    await newSong(page, 'Dominante');
+    await setBody(page, SONG);
+    await page.locator('#sheet-view').click();
+
+    // A chord box reserves room either side for a fret number, so the diagram
+    // is wider than its neck. Names sitting at the diagram's edge read as
+    // unaligned, so they are inset to the outer strings.
+    const item = page.locator('.ec-print-legend .ec-print-chord').first();
+    const strings = await item.locator('svg.ec-diagram line.ec-string').all();
+    const left = await strings[0].boundingBox();
+    const right = await strings[strings.length - 1].boundingBox();
+    const name = await item.locator('.ec-print-chord-name > span').first().boundingBox();
+    const sounded = await item.locator('.ec-voiced-as').boundingBox();
+
+    expect(Math.abs(name.x - left.x)).toBeLessThan(2);
+    expect(Math.abs(sounded.x + sounded.width - right.x)).toBeLessThan(2);
+    // And inside the diagram rather than out over its margin.
+    const svg = await item.locator('svg.ec-diagram').boundingBox();
+    expect(name.x).toBeGreaterThan(svg.x + 1);
+  });
+
+  test('wraps a long label to a second line instead of widening its cell', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+    await newSong(page, 'Dominante');
+    // Dm7(b5) with its own name repeated is the longest label in the app; Gm is
+    // among the shortest.
+    await setBody(
+      page,
+      [
+        '# A',
+        'Gm | Dm7(b5)',
+        '',
+        '---',
+        '',
+        '# Voicings: E2, A2, D3, G3, B3, E4',
+        'Gm = x1003x',
+        'Dm7(b5) = 1301xx',
+        '',
+      ].join('\n')
+    );
+    await page.locator('#sheet-view').click();
+
+    const items = page.locator('.ec-print-legend .ec-print-chord');
+    const widths = [];
+    const nameHeights = [];
+    for (const item of await items.all()) {
+      widths.push(Math.round((await item.boundingBox()).width));
+      nameHeights.push(Math.round((await item.locator('.ec-print-chord-name').boundingBox()).height));
+    }
+    // Same width, whatever the label costs.
+    expect(new Set(widths).size).toBe(1);
+    // And the long one is taller, because it wrapped rather than stretched.
+    expect(Math.max(...nameHeights)).toBeGreaterThan(Math.min(...nameHeights));
+  });
 });
 
 test.describe('sharing a song', () => {

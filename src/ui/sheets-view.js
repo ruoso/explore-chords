@@ -40,7 +40,7 @@ import { formatTuning } from '../core/instrument.js';
 import { layoutSection } from '../core/chart-layout.js';
 import { resolveSongVoicings, unvoiceableKeys } from '../core/voicings.js';
 import { parseChord } from '../core/notation/parse.js';
-import { renderDiagram } from '../render/index.js';
+import { renderDiagram, voicedAsLabel } from '../render/index.js';
 import { renderSongPages } from './song-pages.js';
 import { EXAMPLE_BODY } from '../state/sheets.js';
 import { openVoicingDialog } from './voicing-dialog.js';
@@ -589,7 +589,7 @@ export function renderSheetEditor(
         },
         t('wizard.open')
       ),
-      el('span', { class: 'ec-help' }, t('wizard.barHelp'))
+      el('span', { class: 'ec-wizard-barhelp' }, t('wizard.barHelp'))
     )
   );
   right.append(chart);
@@ -632,6 +632,10 @@ export function renderSheetEditor(
       const chord = parseChord(entry.symbol, dialect).chord;
       const usedIn = countForKey(song, entry.key);
       const isDefault = entry.source === 'default';
+      // This is the panel you look at to see what the song plays, so it is the
+      // place that most needs to say when a shape sounds something other than
+      // its name (§6.2).
+      const sounded = voicedAsLabel(entry.fingering, { chord, dialect, full: false });
 
       grid.append(
         el(
@@ -684,6 +688,7 @@ export function renderSheetEditor(
               'span',
               { class: 'ec-caption' },
               el('span', { class: 'ec-shorthand' }, entry.fingering.shorthand),
+              sounded ? el('span', { class: 'ec-voiced-as' }, sounded) : null,
               el('span', { class: 'ec-used-in' }, `${usedIn}\u00d7`)
             )
           )

@@ -15,7 +15,7 @@ import { parseChord } from '../core/notation/parse.js';
 import { parseSong, compareVoicings } from '../core/song.js';
 import { layoutSection } from '../core/chart-layout.js';
 import { resolveSongVoicings } from '../core/voicings.js';
-import { renderDiagram, voicedAsLabel } from '../render/index.js';
+import { renderDiagram, voicedAsLabel, neckInset, boxWidth } from '../render/index.js';
 import { t } from '../i18n/index.js';
 
 /**
@@ -207,11 +207,23 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
       const { fingering } = entry;
       // What the shape sounds, where that is not what the chart wrote: the
       // chart's name to the left, the sounded one to the right (§6.2).
-      const sounded = voicedAsLabel(fingering, { chord, dialect, full: true });
+      const sounded = voicedAsLabel(fingering, {
+        chord,
+        dialect,
+        full: true,
+        name: entry.symbol,
+      });
       list.append(
         el(
           'li',
-          { class: 'ec-print-chord' },
+          {
+            class: 'ec-print-chord',
+            // The diagram's width, so a name and its label wrap to a second
+            // line rather than stretching the cell (§6.2).
+            style:
+              `--ec-box-width: ${boxWidth(fingering.frets.length, PRINT_DIAGRAM_SIZE)}px;` +
+              `--ec-neck-inset: ${neckInset(PRINT_DIAGRAM_SIZE)}px`,
+          },
           el(
             'p',
             { class: 'ec-print-chord-name' },

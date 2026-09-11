@@ -118,11 +118,16 @@ export function stringNumber(index, stringCount) {
  * chart may say `D7/F#` while the shape sounds `D7/A`, and `D7/F#/A` is not a
  * chord.
  *
+ * `name` is the chart's own text for the chord, and is used in preference to
+ * re-formatting it. Beside a name the chart wrote as `Dm7(b5)`, a label reading
+ * `Dm7(5-)/F` looks like a different chord, even though the dialect would write
+ * the fifth that way everywhere else.
+ *
  * @param {object} fingering
- * @param {{chord: object, dialect?: string, full?: boolean}} context
+ * @param {{chord: object, dialect?: string, full?: boolean, name?: string}} context
  * @returns {string|null}
  */
-export function voicedAsLabel(fingering, { chord, dialect, full = true } = {}) {
+export function voicedAsLabel(fingering, { chord, dialect, full = true, name } = {}) {
   if (!chord || !fingering?.midis) return null;
   const sounded = voicedAs(chord, fingering.midis);
   if (!sounded) return null;
@@ -130,7 +135,10 @@ export function voicedAsLabel(fingering, { chord, dialect, full = true } = {}) {
   const parts = [];
   if (!sounded.asWritten) {
     const bass = formatNote(sounded.bass);
-    parts.push(full ? `${formatChord({ ...chord, bass: null }, dialect)}/${bass}` : `/${bass}`);
+    const written = name
+      ? String(name).replace(/\/[A-G][b#]?$/, '')
+      : formatChord({ ...chord, bass: null }, dialect);
+    parts.push(full ? `${written}/${bass}` : `/${bass}`);
   }
   if (sounded.rootless) parts.push(t('diagram.noRoot'));
 

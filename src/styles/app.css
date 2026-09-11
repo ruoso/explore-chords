@@ -1405,6 +1405,13 @@ body {
   margin: 0 0 0.6rem;
 }
 
+/* A line of explanation, not a callout. Beside a button, the bordered help box
+   reads as a second button. */
+.ec-wizard-barhelp {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .ec-wizard-planners {
   display: grid;
   gap: 0.5rem;
@@ -1494,6 +1501,13 @@ body {
   margin: 0.75rem 0 0;
   padding: 0;
   list-style: none;
+}
+
+/* Sized to its diagram, like a legend entry, so a long name and label wrap
+   rather than stretching the cell (DESIGN.md 6.2). */
+.ec-wizard-shape {
+  width: var(--ec-box-width, auto);
+  text-align: center;
 }
 
 /* A shape the song already had: shown, because a preview that hid them would

@@ -12,6 +12,35 @@ import { diagramModel, esc } from './diagram.js';
 const UNIT = 16; // spacing between strings and frets, before scaling
 
 /**
+ * Room for a fret number whether or not there is one, and the same room on the
+ * other side. A diagram that grew when its shape sat up the neck made a row of
+ * them ragged, and left the grid off-centre under its chord name.
+ */
+const MARGIN_SIDE = UNIT * 1.2;
+
+/**
+ * How far the neck is inset from the edge of a chord box, in CSS pixels.
+ *
+ * Anything drawn *beside* a diagram rather than inside it has to line up with
+ * the neck and not with the diagram's edge, or a label sits out over the
+ * margin. The margin is the renderer's, so the measurement is too (§6.2).
+ */
+export function neckInset(size = 1) {
+  return MARGIN_SIDE * size;
+}
+
+/**
+ * How wide a chord box comes out, in CSS pixels.
+ *
+ * Given to whatever holds a diagram so the holder can be the diagram's width
+ * rather than its content's. That is what lets a long label wrap to a second
+ * line instead of stretching the cell and leaving a row of them ragged.
+ */
+export function boxWidth(stringCount, size = 1) {
+  return (MARGIN_SIDE * 2 + (stringCount - 1) * UNIT) * size;
+}
+
+/**
  * @param {import('../core/search.js').Fingering} fingering
  * @param {object} [options]  DiagramOptions plus { label } for the aria-label
  * @returns {string} SVG markup
@@ -21,10 +50,7 @@ export function renderChordBox(fingering, options = {}) {
   const { stringCount, fretsShown, startFret, showNut, size } = model;
 
   const marginTop = UNIT * 1.4; // room for the X and O row
-  // Room for a fret number whether or not there is one, and the same room on
-  // the other side. A diagram that grew when its shape sat up the neck made a
-  // row of them ragged, and left the grid off-centre under its chord name.
-  const marginSide = UNIT * 1.2;
+  const marginSide = MARGIN_SIDE;
   const gridWidth = (stringCount - 1) * UNIT;
   const gridHeight = fretsShown * UNIT;
   const width = marginSide * 2 + gridWidth;

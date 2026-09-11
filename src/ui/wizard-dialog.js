@@ -17,7 +17,7 @@ import { parseSong, setVoicingForKey, voicingsFor, compareVoicings } from '../co
 import { fingeringFromFrets } from '../core/search.js';
 import { plannersFor, planVoicings, plannerById } from '../core/voicing-plan.js';
 import { sourcesFor, citation } from '../data/sources.js';
-import { renderDiagram, voicedAsLabel } from '../render/index.js';
+import { renderDiagram, voicedAsLabel, neckInset, boxWidth } from '../render/index.js';
 import { t, tr } from '../i18n/index.js';
 
 /**
@@ -170,13 +170,23 @@ export function openWizardDialog({ store, sheet, instrument, tuning, dialect, on
       const frets = plan.chosen.get(entry.key);
       const fingering = fingeringFromFrets(frets, chord, instrument);
       if (!fingering) continue;
-      const sounded = voicedAsLabel(fingering, { chord, dialect, full: true });
+      const sounded = voicedAsLabel(fingering, {
+        chord,
+        dialect,
+        full: true,
+        name: entry.symbol,
+      });
       const same = plan.unchanged.includes(entry.key);
 
       grid.append(
         el(
           'li',
-          { class: `ec-wizard-shape${same ? ' is-unchanged' : ''}` },
+          {
+            class: `ec-wizard-shape${same ? ' is-unchanged' : ''}`,
+            style:
+              `--ec-box-width: ${boxWidth(fingering.frets.length)}px;` +
+              `--ec-neck-inset: ${neckInset()}px`,
+          },
           el(
             'p',
             { class: 'ec-print-chord-name' },
