@@ -637,5 +637,33 @@ export default {
         },
       ],
     },
+    '0.8.0': {
+      title: 'What changed in 0.8',
+      sections: [
+        {
+          heading: 'A reminder to back up',
+          text:
+            'Backup has a screen of its own now, and the song list speaks up when songs are ' +
+            'in no backup — because a new Android phone does not bring them across, and a ' +
+            'browser that clears its data takes them with it. On a phone, saving hands the ' +
+            'file to the share sheet, which is where Drive, Files and iCloud are.',
+        },
+        {
+          heading: 'Pages fill down before across',
+          text:
+            'Reading a song, a column now runs to the foot of the page before any of the song ' +
+            'goes beside it. A few verses on a wide screen used to come out as one line across ' +
+            'the top of an otherwise empty page. A second column is a page saved, not width to ' +
+            'be used up.',
+        },
+        {
+          heading: 'Chords keep their own brackets',
+          text:
+            'Em7(b5), A7(b13) and C7(9) were being read as a chord called Em7(b5 with a stray ' +
+            'bracket beside it, because brackets also mark a repeat. Only a bracket that ' +
+            'nothing closes, or that nothing opened, is a repeat mark now.',
+        },
+      ],
+    },
   },
 };

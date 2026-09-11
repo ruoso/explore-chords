@@ -644,5 +644,33 @@ export default {
         },
       ],
     },
+    '0.8.0': {
+      title: 'Cosa è cambiato nella 0.8',
+      sections: [
+        {
+          heading: 'Un promemoria per il backup',
+          text:
+            'Il backup ora ha una schermata sua, e la lista delle canzoni avvisa quando ci sono ' +
+            'canzoni che non stanno in nessun backup — perché un Android nuovo non le porta ' +
+            'con sé, e un browser che cancella i dati se le porta via. Sul telefono, salvare ' +
+            'passa il file al menu di condivisione, dove stanno Drive, File e iCloud.',
+        },
+        {
+          heading: 'Le pagine si riempiono in basso prima che di lato',
+          text:
+            'Leggendo una canzone, una colonna ora arriva in fondo alla pagina prima che ' +
+            'qualcosa della canzone vada di lato. Prima, qualche strofa su uno schermo largo ' +
+            'usciva come una riga in cima a una pagina vuota. Una seconda colonna è una pagina ' +
+            'risparmiata, non larghezza da consumare.',
+        },
+        {
+          heading: 'Gli accordi si tengono le loro parentesi',
+          text:
+            'Em7(b5), A7(b13) e C7(9) venivano letti come un accordo chiamato Em7(b5 con una ' +
+            'parentesi spaiata accanto, perché le parentesi segnano anche una ripetizione. Ora ' +
+            'è marca di ripetizione solo la parentesi che niente chiude, o che niente ha aperto.',
+        },
+      ],
+    },
   },
 };

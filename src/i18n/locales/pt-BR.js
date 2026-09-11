@@ -641,5 +641,33 @@ export default {
         },
       ],
     },
+    '0.8.0': {
+      title: 'O que mudou na 0.8',
+      sections: [
+        {
+          heading: 'Um lembrete para fazer backup',
+          text:
+            'O backup agora tem uma tela própria, e a lista de músicas avisa quando há ' +
+            'músicas que não estão em nenhum backup — porque um Android novo não leva elas, e ' +
+            'um navegador que limpa os dados leva elas junto. No celular, salvar entrega o ' +
+            'arquivo para o menu de compartilhar, que é onde ficam o Drive, o Arquivos e o iCloud.',
+        },
+        {
+          heading: 'As páginas enchem para baixo antes de para o lado',
+          text:
+            'Lendo uma música, a coluna agora vai até o pé da página antes de qualquer parte ' +
+            'da música ir para o lado. Antes, algumas estrofes numa tela larga saíam como uma ' +
+            'linha no alto de uma página vazia. Uma segunda coluna é uma página economizada, ' +
+            'não largura para gastar.',
+        },
+        {
+          heading: 'Os acordes ficam com os parênteses deles',
+          text:
+            'Em7(b5), A7(b13) e C7(9) estavam sendo lidos como um acorde chamado Em7(b5 com um ' +
+            'parêntese solto do lado, porque parênteses também marcam repetição. Agora só é ' +
+            'marca de repetição o parêntese que nada fecha, ou que nada abriu.',
+        },
+      ],
+    },
   },
 };

@@ -644,5 +644,33 @@ export default {
         },
       ],
     },
+    '0.8.0': {
+      title: 'Qué cambió en la 0.8',
+      sections: [
+        {
+          heading: 'Un recordatorio para respaldar',
+          text:
+            'El respaldo ahora tiene su propia pantalla, y la lista de canciones avisa cuando ' +
+            'hay canciones que no están en ningún respaldo — porque un Android nuevo no las ' +
+            'trae, y un navegador que borra sus datos se las lleva. En el teléfono, guardar ' +
+            'entrega el archivo al menú de compartir, donde están Drive, Archivos e iCloud.',
+        },
+        {
+          heading: 'Las páginas se llenan hacia abajo antes que a lo ancho',
+          text:
+            'Al leer una canción, la columna ahora llega al pie de la página antes de que algo ' +
+            'de la canción vaya al lado. Antes, unas estrofas en una pantalla ancha salían como ' +
+            'una línea arriba de una página vacía. Una segunda columna es una página ahorrada, ' +
+            'no ancho para gastar.',
+        },
+        {
+          heading: 'Los acordes conservan sus paréntesis',
+          text:
+            'Em7(b5), A7(b13) y C7(9) se leían como un acorde llamado Em7(b5 con un paréntesis ' +
+            'suelto al lado, porque los paréntesis también marcan una repetición. Ahora solo es ' +
+            'marca de repetición el paréntesis que nada cierra, o que nada abrió.',
+        },
+      ],
+    },
   },
 };
