@@ -59,9 +59,12 @@
   font: 600 9px/1 system-ui, sans-serif;
 }
 
+/* Which part of the neck the shape sits on: the one number on the diagram, and
+   the one that decides whether you are playing the right shape in the wrong
+   place. It was set smaller than the X and O above it. */
 .ec-fretnum {
   fill: var(--diagram-marker);
-  font: 500 9px/1 system-ui, sans-serif;
+  font: 650 12px/1 system-ui, sans-serif;
 }
 
 .ec-open {

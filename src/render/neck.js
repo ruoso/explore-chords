@@ -20,7 +20,9 @@ export function renderNeck(fingering, options = {}) {
   const { stringCount, fretsShown, startFret, showNut, size } = model;
 
   const marginLeft = UNIT * 1.4; // room for the X and O column
-  const marginTop = startFret > 1 ? UNIT * 1.0 : UNIT * 0.6;
+  // Room for a fret number whether or not there is one, so a row of necks is
+  // the same height whatever part of the neck each one sits on.
+  const marginTop = UNIT * 1.0;
   const gridWidth = fretsShown * UNIT;
   const gridHeight = (stringCount - 1) * UNIT;
   const width = marginLeft + gridWidth + UNIT * 0.4;

@@ -21,13 +21,16 @@ export function renderChordBox(fingering, options = {}) {
   const { stringCount, fretsShown, startFret, showNut, size } = model;
 
   const marginTop = UNIT * 1.4; // room for the X and O row
-  const marginLeft = startFret > 1 ? UNIT * 1.2 : UNIT * 0.6;
+  // Room for a fret number whether or not there is one, and the same room on
+  // the other side. A diagram that grew when its shape sat up the neck made a
+  // row of them ragged, and left the grid off-centre under its chord name.
+  const marginSide = UNIT * 1.2;
   const gridWidth = (stringCount - 1) * UNIT;
   const gridHeight = fretsShown * UNIT;
-  const width = marginLeft + gridWidth + UNIT * 0.6;
+  const width = marginSide * 2 + gridWidth;
   const height = marginTop + gridHeight + UNIT * 0.4;
 
-  const x = (stringIndex) => marginLeft + stringIndex * UNIT;
+  const x = (stringIndex) => marginSide + stringIndex * UNIT;
   const y = (row) => marginTop + row * UNIT;
 
   const out = [];
@@ -51,7 +54,7 @@ export function renderChordBox(fingering, options = {}) {
   // Starting fret label, when the shape does not sit at the nut
   if (startFret > 1) {
     out.push(
-      `<text x="${marginLeft - UNIT * 0.55}" y="${y(0.5) + 4}" class="ec-fretnum" ` +
+      `<text x="${marginSide - UNIT * 0.6}" y="${y(0.5) + 4}" class="ec-fretnum" ` +
         `text-anchor="middle">${startFret}</text>`
     );
   }

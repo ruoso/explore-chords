@@ -346,7 +346,9 @@ test.describe('reading a song', () => {
 
     await sing(4);
     await page.locator('#sheet-view').click();
-    await expect(page.locator('.ec-song-page')).toHaveCount(1);
+    await expect(page.locator('.ec-song-page').first()).toBeVisible();
+    // One column, whatever the window. How many pages it takes is not the
+    // claim: on a phone the legend of shapes alone can want a page of its own.
     expect((await layout()).columns).toBe(1);
 
     // Enough to want a second column on a wide screen. Whether it gets one is

@@ -19,10 +19,12 @@ import { renderDiagram } from '../render/index.js';
 import { t } from '../i18n/index.js';
 
 /**
- * Diagrams in the legend are looked up, not read along with, so they are drawn
- * smaller than on screen: a full song's shapes should fit on one row or two.
+ * Diagrams in the legend are looked up rather than read along with, so they are
+ * drawn smaller than the chart — but not so small that the dots crowd. Printed
+ * at 0.7 they came out under two centimetres across, which is a shape you have
+ * to lean in to read on a music stand.
  */
-const PRINT_DIAGRAM_SIZE = 0.7;
+const PRINT_DIAGRAM_SIZE = 1;
 
 /**
  * Columns a printed sheet may be broken into, at most.

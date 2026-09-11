@@ -490,9 +490,12 @@ they are the two ways out of the song. They used to sit under the voicings
 panel, which on a long song is a scroll away and reads as an afterthought to
 that panel rather than as something the song itself offers.
 
-Printable via a dedicated print stylesheet — the chart, then a legend
-of the voicings used, drawn small enough that a song's shapes fit in a row or
-two: the chart is read while playing, the shapes are looked up. The legend goes
+Printable via a dedicated print stylesheet — the chart, then a legend of the
+voicings used: the chart is read while playing, the shapes are looked up.
+Smaller than the chart, then, but not so small that the dots crowd. At seven
+tenths they printed under two centimetres across, which is a shape you lean in
+to read on a music stand, so they are drawn full size and a song's shapes take
+two or three rows rather than one. The legend goes
 at the end of the song's own flow rather than in a band under the columns, so
 that it takes the room the last column has left. Given a band of its own it
 would be a block the page has to find room for once a filled column has taken
@@ -1127,6 +1130,13 @@ thing to lose.
 (`orientation`, `handed`, `labels`, `size`); `chord-box.js` and `neck.js` turn
 that geometry into SVG. Left-handed mode is a coordinate transform, not a second
 code path.
+
+**Every diagram is the same size**, whether or not it carries a fret number.
+Room for that number is reserved on both sides always: a diagram that grew when
+its shape sat up the neck made a row of them ragged, and left the grid
+off-centre under its own chord name. The number itself is set as large as the X
+and O above it, since it is the one thing on the diagram that decides whether
+you are playing the right shape in the wrong place.
 
 SVGs are cached in an LRU keyed by `fingering + options`, as the reference's
 `svgCache` does. SVG (not canvas) keeps print and export trivial — the export
