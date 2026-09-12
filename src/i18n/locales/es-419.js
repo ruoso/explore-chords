@@ -829,5 +829,39 @@ export default {
         },
       ],
     },
+    '0.11.0': {
+      title: 'Qué cambió en 0.11',
+      sections: [
+        {
+          heading: 'Armar una forma haciendo clic',
+          text:
+            'La lista de formas de un acorde es lo que encontró la búsqueda, que no sirve ' +
+            'cuando ya sabés qué querés tocar y no está ahí. Las dos maneras de elegir una ' +
+            'forma ahora también ofrecen un diagrama grande para hacer clic: un traste para ' +
+            'poner un dedo, otra vez para sacarlo, la fila arriba de la cejuela para alternar ' +
+            'la cuerda entre al aire y sin tocar. Empieza desde la forma en uso, o desde cero, ' +
+            'y te deja guardar una apertura para la que no encuentra dedos: una forma puede ' +
+            'estar bien y ser incómoda. Abajo están las notas que toma, con cualquier nota ' +
+            'fuera del acorde marcada.',
+        },
+        {
+          heading: 'Las formas bajan por la página en el teléfono',
+          text:
+            'Las formas de una canción y las que guardaste iban en una sola fila que se ' +
+            'desplazaba de costado, dejando siete de ocho fuera de la pantalla con todo el ' +
+            'alto de la página libre. Ahora se acomodan en varias filas. Los resultados de ' +
+            'acordes siguen desplazándose de costado, porque ahí hay un orden y el primero de ' +
+            'la fila es la respuesta.',
+        },
+        {
+          heading: 'Menos páginas al leer una canción',
+          text:
+            'Una canción con líneas de cifra más anchas que la pantalla del teléfono salía con ' +
+            'una página por título de sección y las formas cortadas al costado. Ahora la cifra ' +
+            'ocupa la única página que necesita, y las formas siguen entre páginas en vez de ' +
+            'quedar cortadas.',
+        },
+      ],
+    },
   },
 };

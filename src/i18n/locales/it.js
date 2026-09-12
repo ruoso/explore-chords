@@ -830,5 +830,38 @@ export default {
         },
       ],
     },
+    '0.11.0': {
+      title: 'Cosa è cambiato nella 0.11',
+      sections: [
+        {
+          heading: 'Comporre una forma cliccando',
+          text:
+            'L’elenco delle forme di un accordo è quello che ha trovato la ricerca, che non ' +
+            'serve quando sai già cosa vuoi suonare e non c’è. I due modi di scegliere una ' +
+            'forma ora offrono anche un diagramma grande da cliccare: un tasto per metterci un ' +
+            'dito, di nuovo per toglierlo, la fila sopra il capotasto per alternare la corda ' +
+            'fra a vuoto e non suonata. Parte dalla forma in uso, o da zero, e ti lascia ' +
+            'salvare un’apertura per cui non trova le dita: una forma può essere giusta e ' +
+            'scomoda. Sotto ci sono le note che tiene, con qualsiasi nota fuori dall’accordo ' +
+            'segnata.',
+        },
+        {
+          heading: 'Le forme scendono lungo la pagina sul telefono',
+          text:
+            'Le forme di un brano e quelle salvate stavano su una sola fila che scorreva di ' +
+            'lato, lasciando sette forme su otto fuori dallo schermo con tutta l’altezza della ' +
+            'pagina libera. Ora vanno a capo. I risultati degli accordi scorrono ancora di ' +
+            'lato, perché là c’è un ordine e il primo della fila è la risposta.',
+        },
+        {
+          heading: 'Meno pagine quando si legge un brano',
+          text:
+            'Un brano con righe di cifra più larghe dello schermo del telefono usciva con una ' +
+            'pagina per ogni titolo di sezione e le forme tagliate di lato. Ora la cifra ' +
+            'occupa l’unica pagina che le serve, e le forme continuano fra le pagine invece di ' +
+            'essere tagliate.',
+        },
+      ],
+    },
   },
 };

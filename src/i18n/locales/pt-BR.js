@@ -827,5 +827,38 @@ export default {
         },
       ],
     },
+    '0.11.0': {
+      title: 'O que mudou na 0.11',
+      sections: [
+        {
+          heading: 'Montar um desenho clicando',
+          text:
+            'A lista de desenhos de um acorde é o que a busca achou, o que não ajuda quando ' +
+            'você já sabe o que quer tocar e não está lá. As duas formas de escolher um ' +
+            'desenho agora também oferecem um diagrama grande o bastante para clicar: uma ' +
+            'casa para pôr um dedo, de novo para tirar, a fileira acima da pestana para ' +
+            'alternar a corda entre solta e não tocada. Começa do desenho em uso, ou do zero, ' +
+            'e deixa salvar uma abertura para a qual não acha dedos — um desenho pode estar ' +
+            'certo e ser difícil. Abaixo ficam as notas que ele pega, com qualquer nota fora ' +
+            'do acorde marcada.',
+        },
+        {
+          heading: 'Os desenhos descem a página no celular',
+          text:
+            'Os desenhos de uma música e os que você salvou ficavam numa fileira só, que ' +
+            'rolava para o lado, deixando sete de oito fora da tela com a altura toda da ' +
+            'página sobrando. Agora eles quebram em linhas. Os resultados de acordes continuam ' +
+            'rolando para o lado, porque ali há uma ordem e o primeiro da fileira é a resposta.',
+        },
+        {
+          heading: 'Menos páginas ao ler uma música',
+          text:
+            'Uma música com linhas de cifra mais largas que a tela do celular saía com uma ' +
+            'página por título de seção e os desenhos cortados na lateral. Agora a cifra ocupa ' +
+            'a única página de que precisa, e os desenhos seguem pelas páginas em vez de serem ' +
+            'cortados.',
+        },
+      ],
+    },
   },
 };

@@ -642,7 +642,7 @@ export function renderSheetEditor(
     );
   } else {
     const grid = el('ul', {
-      class: 'ec-grid ec-voicings',
+      class: 'ec-grid ec-grid-wrap ec-voicings',
       tabindex: '0',
       'aria-label': t('editor.voicingsList'),
     });

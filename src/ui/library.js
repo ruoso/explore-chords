@@ -42,7 +42,7 @@ export function renderLibrary(container, { store, onOpen, onRemove }) {
   );
 
   const list = el('ul', {
-    class: 'ec-grid',
+    class: 'ec-grid ec-grid-wrap',
     tabindex: '0',
     'aria-label': t('library.list', { label: instrument.label }),
   });

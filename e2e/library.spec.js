@@ -102,3 +102,36 @@ test.describe('custom tunings', () => {
     await expect(page.locator('.ec-chip-label')).toContainText('DADGAD');
   });
 });
+
+/**
+ * Same reasoning as the song's own list of shapes: the explorer's rows are
+ * ranked and scroll sideways on a phone, a library is a set to find something
+ * in and has the height of the page (§7).
+ */
+test.describe('the library on a narrow screen', () => {
+  test('wraps its shapes down the page instead of off the side', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 727 });
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+    await searchChord(page, 'C');
+
+    const stars = page.locator('.ec-star');
+    const many = Math.min(8, await stars.count());
+    expect(many).toBeGreaterThan(2);
+    for (let i = 0; i < many; i += 1) await stars.nth(i).click();
+
+    await goToView(page, 'library');
+    const shape = await page.evaluate(() => {
+      const grid = document.querySelector('.ec-grid');
+      const cards = [...grid.querySelectorAll('.ec-card')];
+      return {
+        cards: cards.length,
+        scrollsSideways: grid.scrollWidth > grid.clientWidth + 1,
+        rows: new Set(cards.map((c) => Math.round(c.getBoundingClientRect().top))).size,
+      };
+    });
+    expect(shape.cards).toBe(many);
+    expect(shape.scrollsSideways).toBe(false);
+    expect(shape.rows).toBeGreaterThan(1);
+  });
+});

@@ -824,5 +824,37 @@ export default {
         },
       ],
     },
+    '0.11.0': {
+      title: 'What changed in 0.11',
+      sections: [
+        {
+          heading: 'Enter a shape by clicking it',
+          text:
+            'The list of shapes for a chord is what the search found, which is no help when ' +
+            'you already know what you want to play and it is not there. Both ways of ' +
+            'choosing a voicing now also offer a diagram big enough to click: a fret to put a ' +
+            'finger on it, again to take it off, the row above the nut to switch a string ' +
+            'between open and not played. It starts from the shape in effect, or from nothing, ' +
+            'and it will let you save a stretch it cannot find fingers for — a shape can be ' +
+            'right and awkward. Underneath are the notes it holds, with any note from outside ' +
+            'the chord marked.',
+        },
+        {
+          heading: 'Shapes go down the page on a phone',
+          text:
+            'A song\u2019s shapes and your saved ones were laid out in one row that scrolled ' +
+            'sideways, which left seven of eight off the edge of a screen with the whole page ' +
+            'height going spare. They wrap now. The chord results still scroll sideways, ' +
+            'because those are ranked and the first one in the row is the answer.',
+        },
+        {
+          heading: 'Fewer pages when reading a song',
+          text:
+            'A song whose chart lines are wider than a phone screen came out with a page per ' +
+            'section heading and its shapes cut off the side. The chart now takes the one page ' +
+            'it needs, and the shapes carry on across pages instead of being clipped.',
+        },
+      ],
+    },
   },
 };
