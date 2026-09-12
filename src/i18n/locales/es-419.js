@@ -412,6 +412,8 @@ export default {
   },
 
   picker: {
+    enter: 'Armar una forma',
+    editCurrent: 'Editar esta forma',
     changeEverywhere: 'Cambiar {label} en todos los lugares',
     howPlayed: '¿Cómo se toca {chord} aquí?',
     noParse: 'Ese acorde no se entiende.',
@@ -504,6 +506,24 @@ export default {
     apply: 'Usar estas formas',
     back: '← Otras maneras',
     cancel: 'Cancelar',
+  },
+
+  shape: {
+    foreign: '{note}, fuera del acorde',
+    title: 'Armar una forma',
+    titleFor: 'Armar una forma para {chord}',
+    help:
+      'Hacé clic en un traste para poner un dedo, y otra vez para sacarlo. La fila arriba de ' +
+      'la cejuela alterna la cuerda entre al aire y sin tocar.',
+    frets: 'Trastes {from} a {to}',
+    towardsNut: 'Mover la ventana hacia la cejuela',
+    upTheNeck: 'Mover la ventana hacia arriba del mástil',
+    sketch: 'Forma en armado: {shorthand}',
+    unplayable: 'Ninguna mano para esto',
+    empty: 'Nada en ninguna cuerda todavía.',
+    clear: 'Limpiar',
+    cancel: 'Cancelar',
+    save: 'Usar esta forma',
   },
 
   print: { legend: 'Formas de acorde usadas' },

@@ -674,6 +674,44 @@ own.
 
 ---
 
+### 2.11 Entering a shape by hand
+
+The picker (§2.6) offers the shapes the search found. That is the right answer
+almost always, and no answer at all when you already know what you want to play
+and it is not on the list — a voicing off a chart, something a teacher showed
+you, a shape the rules were never going to allow. So both ways into the picker,
+the one for a single bar and the one that re-voices a chord across the song,
+also offer a shape you enter yourself: click a fret to put a finger on it, and
+again to take it off.
+
+It opens either on nothing or on the shape in effect, because a shape that is
+nearly right is quicker to correct than to build.
+
+**The click targets come from the renderer**, emitted by the same code that
+draws the grid (`render/chord-box.js`, the `hits` option). A separate set of
+coordinates would drift from the lines on screen the moment either moved. They
+carry the *logical* string, mirroring already undone, so the caller never has to
+think about left-handedness.
+
+**The window onto the neck is the caller's**, which is what the `startFret` and
+`fretsShown` overrides on `diagramModel` are for. Elsewhere the window follows
+the shape; here it must not, or it would slide out from under you as you enter
+notes. It shows six frets — two more than any hand spans — and moves on request.
+That is also how a shape at the twentieth fret is reachable at all.
+
+**Nothing is validated away while you work.** A shape being entered is drawn
+from its frets rather than from a fingering, because the search refuses to
+describe a stretch no hand can hold and refusing to *draw* it would leave you
+unable to see what you had just clicked. The dialog says "no hand for this" and
+still lets you save it: a shape can be right and awkward, and the way to a shape
+usually runs through several that are not one yet.
+
+**It says what is wrong rather than whether something is.** Under the diagram
+are the notes it holds down, string by string, with any note from outside the
+chord marked — in a word and a glyph, not only a colour (§6.1).
+
+---
+
 ## 3. Architecture
 
 ### 3.1 Stack

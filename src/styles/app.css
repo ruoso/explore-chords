@@ -1405,6 +1405,80 @@ body {
   font-size: 0.85rem;
 }
 
+/* --- entering a shape by hand (DESIGN.md 2.11) -------------------------- */
+
+.ec-dialog-shape {
+  width: min(26rem, 92vw);
+  text-align: center;
+}
+
+.ec-shape-board {
+  margin: 0.75rem 0 0.5rem;
+}
+
+/* Invisible, and the reason the diagram can be clicked at all. A fill is
+   needed for the target to exist; `transparent` still takes a hit. */
+.ec-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.ec-hit:hover {
+  fill: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.ec-shape-position {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.ec-shape-fret {
+  min-width: 8rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.ec-shape-readout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+}
+
+/* What it is holding down, string by string. More use than a verdict: it says
+   which note is wrong rather than that something is. */
+.ec-shape-notes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.ec-shape-note {
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* A note that is not in the chord. Marked with a word in the label as well as
+   a colour, since colour alone carries nothing (DESIGN.md 6.1). */
+.ec-shape-note.is-foreign {
+  border-color: var(--warn-border);
+  background: var(--warn-bg);
+}
+
+.ec-shape-warn {
+  color: var(--muted);
+}
+
 /* --- the voicing wizard (DESIGN.md 2.10) -------------------------------- */
 
 /* Above the chart, because it decides the whole song rather than one chord. */

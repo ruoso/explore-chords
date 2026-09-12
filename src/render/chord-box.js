@@ -129,6 +129,30 @@ export function renderChordBox(fingering, options = {}) {
     }
   }
 
+  // Click targets, for a diagram a shape is entered on rather than read from
+  // (§2.11). Emitted here so they come off the same geometry that drew the
+  // grid: a separate set of coordinates would drift the moment either moved.
+  //
+  // `data-string` is the logical string, mirroring undone, so the caller never
+  // has to think about left-handedness. The row above the nut is the one that
+  // sets open or muted, which is where its own markers are drawn.
+  if (options.hits) {
+    const logical = (d) => (model.handed === 'left' ? stringCount - 1 - d : d);
+    const half = UNIT / 2;
+    for (let d = 0; d < stringCount; d += 1) {
+      out.push(
+        `<rect class="ec-hit ec-hit-marker" data-string="${logical(d)}" data-fret="marker" ` +
+          `x="${x(d) - half}" y="${marginTop - UNIT}" width="${UNIT}" height="${UNIT}" />`
+      );
+      for (let r = 0; r < fretsShown; r += 1) {
+        out.push(
+          `<rect class="ec-hit" data-string="${logical(d)}" data-fret="${startFret + r}" ` +
+            `x="${x(d) - half}" y="${y(r)}" width="${UNIT}" height="${UNIT}" />`
+        );
+      }
+    }
+  }
+
   const label = options.label ?? fingering.shorthand;
   const w = width * size;
   const h = height * size;

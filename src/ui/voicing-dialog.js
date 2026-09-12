@@ -19,6 +19,7 @@ import { searchFingerings } from '../core/search.js';
 import { renderDiagram } from '../render/index.js';
 import { t, errorText } from '../i18n/index.js';
 import { renderFingeringGroups } from './fingering-groups.js';
+import { openShapeDialog } from './shape-dialog.js';
 
 export function openVoicingDialog({
   store,
@@ -149,9 +150,52 @@ export function openVoicingDialog({
     }
   }
 
+  /**
+   * Enter a shape by hand, starting from one or from nothing.
+   *
+   * The list above is the shapes the search found, which is no answer at all
+   * when you already know what you want to play and it is not there (§2.11).
+   */
+  const byHand = (from) =>
+    openShapeDialog({
+      instrument,
+      chord: parsed.chord,
+      label: label ?? chordText,
+      dialect,
+      frets: from,
+      onSave: (frets) => {
+        onChoose(frets);
+        close();
+      },
+    });
+
   const actions = el(
     'div',
     { class: 'ec-dialog-actions' },
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'ec-button ec-button-small',
+        id: 'voicing-enter',
+        onClick: () => byHand(null),
+      },
+      t('picker.enter')
+    ),
+    // Starting from what is in effect, which is the usual way in: a shape that
+    // is nearly right is quicker to correct than to build.
+    current
+      ? el(
+          'button',
+          {
+            type: 'button',
+            class: 'ec-button ec-button-small',
+            id: 'voicing-edit',
+            onClick: () => byHand(current),
+          },
+          t('picker.editCurrent')
+        )
+      : null,
     chosen
       ? el(
           'button',

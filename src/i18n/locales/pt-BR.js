@@ -411,6 +411,8 @@ export default {
   },
 
   picker: {
+    enter: 'Montar um desenho',
+    editCurrent: 'Editar este desenho',
     changeEverywhere: 'Trocar {label} em todos os lugares',
     howPlayed: 'Como {chord} é tocado aqui?',
     noParse: 'Esse acorde não faz sentido.',
@@ -504,6 +506,24 @@ export default {
     apply: 'Usar estes desenhos',
     back: '← Outras formas',
     cancel: 'Cancelar',
+  },
+
+  shape: {
+    foreign: '{note}, fora do acorde',
+    title: 'Montar um desenho',
+    titleFor: 'Montar um desenho para {chord}',
+    help:
+      'Clique numa casa para pôr um dedo nela, e de novo para tirar. A fileira acima da ' +
+      'pestana alterna a corda entre solta e não tocada.',
+    frets: 'Casas {from} a {to}',
+    towardsNut: 'Mover a janela para a pestana',
+    upTheNeck: 'Mover a janela para cima do braço',
+    sketch: 'Desenho sendo montado: {shorthand}',
+    unplayable: 'Nenhuma mão para isto',
+    empty: 'Nada em nenhuma corda ainda.',
+    clear: 'Limpar',
+    cancel: 'Cancelar',
+    save: 'Usar este desenho',
   },
 
   print: { legend: 'Desenhos de acorde usados' },

@@ -409,6 +409,8 @@ export default {
   },
 
   picker: {
+    enter: 'Enter a shape',
+    editCurrent: 'Edit this shape',
     changeEverywhere: 'Change {label} everywhere',
     howPlayed: 'How is {chord} played here?',
     noParse: 'That chord does not parse.',
@@ -502,6 +504,24 @@ export default {
     apply: 'Use these shapes',
     back: '← Other ways',
     cancel: 'Cancel',
+  },
+
+  shape: {
+    foreign: '{note}, not in the chord',
+    title: 'Enter a shape',
+    titleFor: 'Enter a shape for {chord}',
+    help:
+      'Click a fret to put a finger on it, and again to take it off. The row above the nut ' +
+      'switches a string between open and not played.',
+    frets: 'Frets {from} to {to}',
+    towardsNut: 'Move the window towards the nut',
+    upTheNeck: 'Move the window up the neck',
+    sketch: 'Shape being entered: {shorthand}',
+    unplayable: 'No hand for this',
+    empty: 'Nothing on any string yet.',
+    clear: 'Clear',
+    cancel: 'Cancel',
+    save: 'Use this shape',
   },
 
   print: { legend: 'Chord shapes used' },

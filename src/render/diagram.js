@@ -22,6 +22,8 @@ export const FRETS_SHOWN = 5;
  * @property {'vertical'|'horizontal'} [orientation]
  * @property {'right'|'left'} [handed]
  * @property {number} [size]  scale multiplier
+ * @property {number} [startFret]   first fret row drawn; follows the shape by default
+ * @property {number} [fretsShown]  how many fret rows to draw
  */
 
 export const DEFAULT_OPTIONS = {
@@ -41,10 +43,15 @@ export function diagramModel(fingering, options = {}) {
   const stringCount = fingering.frets.length;
   const fretted = fingering.frets.filter((f) => typeof f === 'number' && f > 0);
 
-  // Start at the nut unless the shape sits too high to show from there.
+  // How many fret rows to draw, and where to start. Both follow the shape
+  // unless the caller says otherwise: a diagram that is being *entered* rather
+  // than shown needs a window it controls, since the shape is not finished and
+  // may be anywhere on the neck (§2.11).
+  const fretsShown = opts.fretsShown ?? FRETS_SHOWN;
   const highest = fretted.length ? Math.max(...fretted) : 0;
   const lowest = fretted.length ? Math.min(...fretted) : 0;
-  const startFret = highest <= FRETS_SHOWN - 1 ? 1 : lowest;
+  // Start at the nut unless the shape sits too high to show from there.
+  const startFret = opts.startFret ?? (highest <= fretsShown - 1 ? 1 : lowest);
   const showNut = startFret === 1;
 
   const display = (i) => (opts.handed === 'left' ? stringCount - 1 - i : i);
@@ -64,8 +71,11 @@ export function diagramModel(fingering, options = {}) {
         fret === fingering.barre.fret &&
         i >= fingering.barre.fromString &&
         i <= fingering.barre.toString;
-      if (!inBarre) {
-        dots.push({ stringIndex, fret, finger: fingering.fingers[i], row: fret - startFret });
+      const row = fret - startFret;
+      // A note outside the window is simply not drawn. Only reachable while a
+      // shape is being entered, where the window is the caller's to move.
+      if (!inBarre && row >= 0 && row < fretsShown) {
+        dots.push({ stringIndex, fret, finger: fingering.fingers[i], row });
       }
     }
   }
@@ -85,7 +95,7 @@ export function diagramModel(fingering, options = {}) {
 
   return {
     stringCount,
-    fretsShown: FRETS_SHOWN,
+    fretsShown,
     startFret,
     showNut,
     dots,

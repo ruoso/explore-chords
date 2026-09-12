@@ -412,6 +412,8 @@ export default {
   },
 
   picker: {
+    enter: 'Comporre una forma',
+    editCurrent: 'Modificare questa forma',
     changeEverywhere: 'Cambia {label} ovunque',
     howPlayed: 'Come si suona {chord} qui?',
     noParse: 'Quell’accordo non si capisce.',
@@ -505,6 +507,24 @@ export default {
     apply: 'Usa queste forme',
     back: '← Altri modi',
     cancel: 'Annulla',
+  },
+
+  shape: {
+    foreign: '{note}, fuori dall’accordo',
+    title: 'Comporre una forma',
+    titleFor: 'Comporre una forma per {chord}',
+    help:
+      'Clicca su un tasto per metterci un dito, e di nuovo per toglierlo. La fila sopra il ' +
+      'capotasto alterna la corda fra a vuoto e non suonata.',
+    frets: 'Tasti da {from} a {to}',
+    towardsNut: 'Sposta la finestra verso il capotasto',
+    upTheNeck: 'Sposta la finestra su per il manico',
+    sketch: 'Forma in composizione: {shorthand}',
+    unplayable: 'Nessuna mano per questo',
+    empty: 'Ancora niente su nessuna corda.',
+    clear: 'Pulisci',
+    cancel: 'Annulla',
+    save: 'Usa questa forma',
   },
 
   print: { legend: 'Forme degli accordi usate' },

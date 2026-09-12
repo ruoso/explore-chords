@@ -125,6 +125,21 @@ test.describe('axe finds no violations', () => {
     expect(await scan(page)).toEqual([]);
   });
 
+  test('inside the shape editor, which is a diagram you click', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await goToView(page, 'sheets');
+    await page.fill('#new-sheet-title', 'Lesson');
+    await page.getByRole('button', { name: 'New song' }).click();
+    await page.fill('#sheet-body', 'C | G');
+    await page.locator('#sheet-body').blur();
+
+    await page.locator('.ec-measure-chord', { hasText: 'C' }).first().click();
+    await page.locator('#voicing-edit').click();
+    await expect(page.locator('#shape-dialog')).toBeVisible();
+    expect(await scan(page)).toEqual([]);
+  });
+
   test('on the empty state', async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page, { instrument: 'ukulele' });
