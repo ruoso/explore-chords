@@ -429,6 +429,95 @@ test.describe('reading a song', () => {
     await settledOn(0);
   });
 
+  /**
+   * A chart line can be wider than a phone screen. That used to make the page
+   * permanently wider than its box, so every item after the first looked like
+   * it had overrun and each section heading got a page to itself.
+   */
+  test('does not start a new page for a chart line wider than the screen', async ({ page }) => {
+    // Pinned narrow, so this exercises the case on both projects rather than
+    // only the phone one.
+    await page.setViewportSize({ width: 393, height: 727 });
+    await setBody(
+      page,
+      [
+        '# Section A',
+        'A7/C# A7 | Dm | F7/A F7 | Bb',
+        'Gm6/Bb A7 | D7 D/C | Gm/Bb D7/A | Gm',
+        '',
+        '# Section B',
+        'Am7(b5) D7/F# | Gm | Bm7(b5) E7/G# | Am',
+        '',
+      ].join('\n')
+    );
+    await page.locator('#sheet-view').click();
+    await expect(page.locator('.ec-song-page').first()).toBeVisible();
+
+    // The lines really are wider than the column they sit in, which is the
+    // case that used to break this.
+    const tooWide = await page.evaluate(() => {
+      const body = document.querySelector('.ec-song-page .ec-print-body');
+      const charts = [...document.querySelectorAll('.ec-song-page .ec-print-chart')];
+      return charts.some((c) => c.getBoundingClientRect().width > body.clientWidth + 2);
+    });
+    expect(tooWide).toBe(true);
+
+    // No page may hold a section heading and nothing else.
+    const orphans = await page.evaluate(
+      () =>
+        [...document.querySelectorAll('.ec-song-page')].filter(
+          (p) =>
+            p.querySelectorAll('.ec-print-section-name').length > 0 &&
+            p.querySelectorAll('.ec-print-line').length === 0
+        ).length
+    );
+    expect(orphans).toBe(0);
+  });
+
+  /**
+   * Thirty-odd shapes is more than a phone page holds. As one block the legend
+   * could only be clipped, so it is broken up like everything else.
+   */
+  test('breaks the legend across pages rather than clipping it', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 727 });
+    // Enough distinct chords that the shapes cannot fit one phone page.
+    await setBody(
+      page,
+      [
+        '# Section A',
+        'C | Dm | Em | F',
+        'G | Am | Bdim | C7',
+        'D7 | E7 | F7 | G7',
+        'A7 | B7 | Cm | Dm7',
+        '',
+        '# Section B',
+        'Em7 | Fm7 | Gm7 | Am7',
+        'Bm7 | C6 | D6 | E6',
+        'F6 | G6 | A6 | B6',
+        '',
+      ].join('\n')
+    );
+    await page.locator('#sheet-view').click();
+    await expect(page.locator('.ec-song-page').first()).toBeVisible();
+
+    const shown = await page.evaluate(() => {
+      const pages = [...document.querySelectorAll('.ec-song-page')];
+      let visible = 0;
+      let clipped = 0;
+      for (const p of pages) {
+        const outer = p.getBoundingClientRect();
+        for (const shape of p.querySelectorAll('.ec-print-chord')) {
+          const r = shape.getBoundingClientRect();
+          if (r.right > outer.right + 2 || r.bottom > outer.bottom + 2) clipped += 1;
+          else visible += 1;
+        }
+      }
+      return { visible, clipped };
+    });
+    expect(shown.clipped).toBe(0);
+    expect(shown.visible).toBeGreaterThan(0);
+  });
+
   test('offers no pager for a song that fits on one page', async ({ page }) => {
     await page.locator('#sheet-view').click();
     await expect(page.locator('.ec-song-page')).toHaveCount(1);

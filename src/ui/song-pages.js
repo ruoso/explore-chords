@@ -59,12 +59,16 @@ export function renderSongPages(container, { store, sheet, instrument, startAt =
   // Everything the sheet is made of, in reading order: the heading of a section
   // and then its lines, one at a time, because a verse has to be able to carry
   // on over the fold.
+  //
+  // The legend is broken up the same way. A song of this size has thirty-odd
+  // shapes in it, which is more than a phone page holds, and as one block the
+  // only thing that could happen to it was to be clipped.
   const items = [];
   for (const section of article.querySelectorAll('.ec-print-section')) {
-    for (const node of [...section.children]) items.push({ section, node });
+    for (const node of [...section.children]) items.push({ parent: section, node });
   }
   const legend = article.querySelector('.ec-print-legend');
-  if (legend) items.push({ section: null, node: legend });
+  if (legend) for (const node of [...legend.children]) items.push({ parent: legend, node });
 
   // What is left of the sheet once the flowing part is taken out: the title and
   // the instrument it is written for.
@@ -76,6 +80,8 @@ export function renderSongPages(container, { store, sheet, instrument, startAt =
   let wrapper = null;
   let wrapperFor = null;
   let placed = 0;
+  // The widest item on this page, which is what "too wide" is measured against.
+  let widest = 0;
 
   const startPage = () => {
     page = el('div', { class: 'ec-song-page' });
@@ -91,41 +97,68 @@ export function renderSongPages(container, { store, sheet, instrument, startAt =
     wrapper = null;
     wrapperFor = null;
     placed = 0;
+    widest = 0;
   };
 
-  // Two ways to run out of page, depending on how many columns fit. Where
-  // there are several, what does not fit becomes another column and the page
-  // grows sideways; where there is only one, it simply overflows the bottom.
-  const overflows = () =>
-    body.scrollWidth > body.clientWidth + 1 || body.scrollHeight > body.clientHeight + 1;
+  /**
+   * Has the page run out of room?
+   *
+   * The page never grows taller when it fills: with `column-fill: auto` the
+   * overflow becomes another column off to the side, even where only one column
+   * is visible. So width is the only signal, and the page's own height says
+   * nothing.
+   *
+   * What made that signal unusable on a phone is that a chart line can be wider
+   * than the screen — this song's are 436px in a 311px column. The page is then
+   * permanently wider than its box, every item after the first looks like it
+   * has overrun, and each section heading gets a page to itself.
+   *
+   * So the comparison is against the widest thing on the page rather than
+   * against the page. A line sticking out of its column is a line that will
+   * scroll; content reaching a column that is not there is a full page.
+   */
+  const overflows = (itemWidth) =>
+    body.scrollWidth > Math.max(body.clientWidth, widest, itemWidth) + 2;
 
-  const place = ({ section, node }) => {
-    if (section !== wrapperFor || !wrapper) {
-      wrapper = section ? el('div', { class: section.className }) : body;
-      wrapperFor = section;
-      if (wrapper !== body) body.append(wrapper);
+  /**
+   * Put an item on the page, under a fresh copy of whatever held it.
+   *
+   * The copy takes the original's tag as well as its class, because the legend
+   * is a list and its shapes are list items: a section's lines can hang off a
+   * div, and those cannot.
+   */
+  const place = ({ parent, node }) => {
+    if (parent !== wrapperFor || !wrapper) {
+      wrapper = el(parent.tagName.toLowerCase(), { class: parent.className });
+      const label = parent.getAttribute('aria-label');
+      if (label) wrapper.setAttribute('aria-label', label);
+      wrapperFor = parent;
+      body.append(wrapper);
     }
     wrapper.append(node);
   };
 
+  /** How wide the item is in its own right, ignoring where it landed. */
+  const widthOf = (node) => node.getBoundingClientRect().width;
+
   startPage();
   for (const item of items) {
     place(item);
-    if (!overflows()) {
-      placed += 1;
+    const width = widthOf(item.node);
+    // It did not fit — unless the page has nothing else on it, in which case it
+    // has to keep it anyway, or an item taller than a page would go round for
+    // ever.
+    if (overflows(width) && placed > 0) {
+      item.node.remove();
+      if (wrapper.children.length === 0) wrapper.remove();
+      startPage();
+      place(item);
+      widest = widthOf(item.node);
+      placed = 1;
       continue;
     }
-    // It did not fit. A page with nothing else on it has to keep it anyway,
-    // or a line taller than a page would go round for ever.
-    if (placed === 0) {
-      placed += 1;
-      continue;
-    }
-    item.node.remove();
-    if (wrapper !== body && wrapper.children.length === 0) wrapper.remove();
-    startPage();
-    place(item);
-    placed = 1;
+    widest = Math.max(widest, width);
+    placed += 1;
   }
 
   stage.remove();

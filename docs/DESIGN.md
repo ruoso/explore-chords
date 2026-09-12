@@ -481,6 +481,23 @@ redone when the window changes size, but only for a change worth the trouble: a
 phone hides its address bar as you scroll, and relaying the song out for that
 would move the page out from under whoever is reading it.
 
+**Two things about asking whether a page is full, both learned the hard way.**
+The page never grows taller as it fills: with `column-fill: auto` the overflow
+becomes another column off to the side, even where only one column is visible,
+so the page's own height never moves and only width says anything. But a chart
+line can be wider than a phone screen, and then the page is permanently wider
+than its box — every item after the first looks like it has overrun, and each
+section heading gets a page to itself. So "too wide" is measured against the
+widest thing already on the page rather than against the page: a line sticking
+out of its column is a line that will scroll, while content reaching a column
+that is not there is a full page.
+
+And everything that goes on a page has to be divisible, the legend included. A
+song with thirty-odd shapes has a legend taller than a phone page, and as one
+block the only thing that could happen to it was to be clipped. It is itemised
+like a section, a shape at a time, under a fresh copy of its own list on each
+page.
+
 **The header is not pinned.** On a screen the song is the thing, and a bar
 across the top of every page of it is a strip of the window spent on furniture.
 It scrolls away like everything else, and the pager stays put instead.
