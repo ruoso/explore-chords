@@ -944,6 +944,35 @@ test.describe('saved shapes flow into songs', () => {
   });
 });
 
+/**
+ * The explorer's result rows scroll sideways on a phone because they are ranked
+ * and the first is the answer (§7). The song's own list of shapes is not ranked,
+ * and the panel it sits in has the height of the page.
+ */
+test.describe('the voicings panel on a narrow screen', () => {
+  test('wraps its shapes down the page instead of off the side', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 727 });
+    await freshVisit(page);
+    await completeSetup(page, { instrument: '6guitar' });
+    await newSong(page, 'Many');
+    await setBody(page, '# A\nC | Dm | Em | F | G | Am | Bdim | C7');
+
+    const shape = await page.evaluate(() => {
+      const grid = document.querySelector('.ec-voicings');
+      const cards = [...grid.querySelectorAll('.ec-card')];
+      return {
+        cards: cards.length,
+        scrollsSideways: grid.scrollWidth > grid.clientWidth + 1,
+        rows: new Set(cards.map((c) => Math.round(c.getBoundingClientRect().top))).size,
+      };
+    });
+    expect(shape.cards).toBe(8);
+    expect(shape.scrollsSideways).toBe(false);
+    // Two to a row on a phone, so all eight are on the page rather than one.
+    expect(shape.rows).toBeGreaterThan(1);
+  });
+});
+
 test.describe('printing', () => {
   test('the print layout shows the legend and the chart', async ({ page }) => {
     await freshVisit(page);

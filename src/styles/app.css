@@ -1650,6 +1650,19 @@ body {
   font-weight: 650;
 }
 
+/* Wraps at every width, unlike the explorer's result rows.
+
+   Those scroll sideways on a phone because they are *ranked*: the first shape
+   in a row is the easiest and the row is read in order, so what is off the
+   right-hand edge is the part you were least likely to want. This list is not
+   ranked. It is the shapes the song uses, to be found rather than read through,
+   and the panel it sits in has the whole height of the page. Scrolling it
+   sideways left seven of eight shapes off-screen on a phone. */
+.ec-voicings {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
 .ec-voicings .ec-card:hover {
   border-color: var(--accent);
 }
