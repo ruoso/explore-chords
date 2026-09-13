@@ -865,5 +865,29 @@ export default {
         },
       ],
     },
+    '0.12.0': {
+      title: 'What changed in 0.12',
+      sections: [
+        {
+          heading: 'Bar numbers',
+          text:
+            'Transcribing from a score often means rewriting its structure: a repeat gets ' +
+            'written out straight, because that reads better to play from. The chart\u2019s bars ' +
+            'then stop matching the score\u2019s numbers, and \u201cfrom bar 9\u201d has to mean bar 9 of ' +
+            'the score. So bars count on their own, and @9 at the start of a measure says what ' +
+            'number that bar really is — on a heading too, as # A @9. The numbers run in the ' +
+            'margin of the reading page, and on the printed sheet with it. Off until you ask ' +
+            'for them, and not offered for a song with words in it, where a chord can last ' +
+            'four bars or half of one and the text does not say which.',
+        },
+        {
+          heading: 'The way to enter a shape is findable',
+          text:
+            'A chord has as many shapes as it has — forty-three for a C on a guitar — and the ' +
+            'buttons sat under that list, which on a phone put every one of them past the ' +
+            'bottom of the screen. They are above the list now, under the title.',
+        },
+      ],
+    },
   },
 };

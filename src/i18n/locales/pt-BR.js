@@ -870,5 +870,29 @@ export default {
         },
       ],
     },
+    '0.12.0': {
+      title: 'O que mudou na 0.12',
+      sections: [
+        {
+          heading: 'Números dos compassos',
+          text:
+            'Transcrever de uma partitura muitas vezes quer dizer reescrever a estrutura: uma ' +
+            'repetição vai por extenso, porque assim se toca melhor. Aí os compassos da cifra ' +
+            'deixam de casar com os números da partitura, e “a partir do compasso 9” tem de ' +
+            'querer dizer o compasso 9 da partitura. Então os compassos são contados sozinhos, ' +
+            'e @9 no início de um compasso diz qual é o número dele de verdade — também num ' +
+            'título, como # A @9. Os números aparecem na margem da página de leitura, e na ' +
+            'folha impressa junto. Desligados até você pedir, e não oferecidos numa música com ' +
+            'letra, onde um acorde pode durar quatro compassos ou meio, e o texto não diz qual.',
+        },
+        {
+          heading: 'Dá para achar como montar um desenho',
+          text:
+            'Um acorde tem tantos desenhos quantos tem — quarenta e três para um C no violão — ' +
+            'e os botões ficavam abaixo dessa lista, o que no celular jogava todos eles para ' +
+            'fora da tela. Agora ficam acima da lista, logo abaixo do título.',
+        },
+      ],
+    },
   },
 };

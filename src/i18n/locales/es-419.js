@@ -873,5 +873,30 @@ export default {
         },
       ],
     },
+    '0.12.0': {
+      title: 'Qué cambió en 0.12',
+      sections: [
+        {
+          heading: 'Números de compás',
+          text:
+            'Transcribir de una partitura suele implicar reescribir su estructura: una ' +
+            'repetición se escribe completa, porque así se toca mejor. Entonces los compases ' +
+            'de la cifra dejan de coincidir con los números de la partitura, y “desde el ' +
+            'compás 9” tiene que significar el compás 9 de la partitura. Así que los compases ' +
+            'se cuentan solos, y @9 al principio de un compás dice cuál es su número real ' +
+            '— también en un título, como # A @9. Los números van en el margen de la página de ' +
+            'lectura, y en la hoja impresa con ella. Apagados hasta que los pidas, y no se ' +
+            'ofrecen en una canción con letra, donde un acorde puede durar cuatro compases o ' +
+            'medio y el texto no dice cuál.',
+        },
+        {
+          heading: 'Se encuentra cómo armar una forma',
+          text:
+            'Un acorde tiene tantas formas como tiene — cuarenta y tres para un C en guitarra ' +
+            '— y los botones estaban debajo de esa lista, lo que en el teléfono los dejaba a ' +
+            'todos fuera de la pantalla. Ahora están arriba de la lista, bajo el título.',
+        },
+      ],
+    },
   },
 };

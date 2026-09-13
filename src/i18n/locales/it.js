@@ -873,5 +873,30 @@ export default {
         },
       ],
     },
+    '0.12.0': {
+      title: 'Cosa è cambiato nella 0.12',
+      sections: [
+        {
+          heading: 'Numeri di battuta',
+          text:
+            'Trascrivere da uno spartito vuol dire spesso riscriverne la struttura: una ' +
+            'ripetizione si scrive per esteso, perché così si suona meglio. Allora le battute ' +
+            'della cifra smettono di corrispondere ai numeri dello spartito, e “dalla battuta ' +
+            '9” deve voler dire la battuta 9 dello spartito. Così le battute si contano da ' +
+            'sole, e @9 all’inizio di una battuta dice qual è davvero il suo numero — anche su ' +
+            'un titolo, come # A @9. I numeri vanno nel margine della pagina di lettura, e sul ' +
+            'foglio stampato con essa. Spenti finché non li chiedi, e non offerti per un brano ' +
+            'con il testo, dove un accordo può durare quattro battute o mezza e la cifra non ' +
+            'dice quale.',
+        },
+        {
+          heading: 'Si trova come comporre una forma',
+          text:
+            'Un accordo ha tante forme quante ne ha — quarantatré per un C sulla chitarra — e ' +
+            'i pulsanti stavano sotto quell’elenco, cosa che sul telefono li portava tutti ' +
+            'oltre il fondo dello schermo. Ora stanno sopra l’elenco, sotto il titolo.',
+        },
+      ],
+    },
   },
 };
