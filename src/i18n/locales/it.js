@@ -342,6 +342,21 @@ export default {
   },
 
   editor: {
+    setInUse: 'Forme:',
+    setLabel: 'Quale insieme di forme usare',
+    setDefault: 'Predefinito',
+    setAdd: 'Aggiungi un insieme',
+    setHelp:
+      'Uno strumento può avere più insiemi di forme in un brano: uno facile e uno più pieno, ' +
+      'per esempio. Stanno tutti nel testo, ognuno sotto il proprio titolo; quello in cui ' +
+      'stai lavorando è ricordato per brano.',
+    setName: 'Nome di questo insieme',
+    setPlaceholder: 'Più su sul manico',
+    setCopy: 'Partire dalle forme di “{name}”',
+    setNeedsName: 'Dai un nome all’insieme.',
+    setTaken: 'C’è già un insieme chiamato “{name}” per questo strumento.',
+    setCancel: 'Annulla',
+    setConfirm: 'Aggiungi',
     chartBarNumbers: 'Mostrare i numeri di battuta',
     chartVoicedAs: 'Chiamare gli accordi della cifra come suonano le forme',
     back: '← Tutte le canzoni',
@@ -382,6 +397,14 @@ export default {
           'Un titolo può portare il numero, e un numero su una riga da sola vale per la ' +
           'battuta successiva.',
         example: '# A @9\nDm | G7 | @17 Em | A7',
+      },
+      sets: {
+        term: 'Più di un insieme',
+        text: 'La parola prima dei due punti dà il nome a un insieme, così uno strumento può ' +
+          'averne più di uno in un brano: una versione facile e una più piena, per esempio. Un ' +
+          'titolo che dice solo Voicings è l’insieme predefinito. Quello in cui lavori si ' +
+          'scegli sopra le forme.',
+        example: '# Voicings: E2, A2, D3, G3, B3, E4\nC = x32010\n\n# Più su: E2, A2, D3, G3, B3, E4\nC = x35553',
       },
       voicings: {
         term: 'Voicing',

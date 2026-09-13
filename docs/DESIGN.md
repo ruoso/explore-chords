@@ -790,6 +790,59 @@ score.
 
 ---
 
+### 2.13 Several sets of voicings for one instrument
+
+A song held one set of voicings per tuning, which is an unwarranted limit. One
+instrument may well want two: an easy version for a student and a fuller one for
+the teacher, or two runs of the wizard (§2.10) kept side by side to compare.
+
+**A set is named by its heading.** `# Up the neck: E2, A2, D3, G3, B3, E4` is a
+set called "Up the neck"; a plain `# Voicings:` heading names none, and that is
+the default set. The slot already existed — the label was kept so a song written
+in Portuguese stayed in Portuguese — and it already round-tripped through edits,
+so the format needed no new syntax.
+
+That does repurpose the label. `# Posições:` was documented as equivalent to
+`# Voicings:`, and is now a set *named* "Posições". Harmless in practice,
+because the name is only surfaced when a tuning has more than one set, and such
+a song has one.
+
+**Keying blocks by tuning alone was losing data, not just ignoring it.** Two
+same-tuning blocks parsed correctly and both names survived, but reading found
+only the first, and one edit merged them: the later block's shapes overwrote the
+earlier one's, under the earlier one's name. Blocks are keyed by tuning *and*
+name now. Two blocks that really are the same set still merge, which is the old
+forgiving behaviour.
+
+**A chord a set does not mention takes the app's default**, exactly as a chord
+missing from the only set always has. Sets do not inherit from each other: a set
+means what it says on its own, and deleting a line in one cannot change another.
+
+**An empty named set is kept in the text.** An empty *unnamed* block is still
+dropped — no choices means nothing to say — but a named one exists to be filled
+in, so its heading is written with nothing under it and every chord sits on its
+default until something is chosen.
+
+**Adding a set offers both starts.** A copy of the set in use is the usual need,
+"the same but for these three"; an empty one is the other. A name already in use
+is refused rather than silently landing you in that set.
+
+#### Which set is in use is the one thing kept outside the text
+
+Everywhere else this app keeps the song's state in the song (§2.6), because a
+choice you cannot see is a choice you cannot edit or share. This is the
+exception: the song carries every set, and which one you are working in is
+yours. It lives in prefs, keyed by song and tuning, so a backup carries it while
+a shared link does not — the person you share with gets all the sets and picks
+for themselves.
+
+The cost is that the choice can go stale: a set can be renamed or deleted in the
+text while a name sits in prefs. So the fallback is the song's first set for that
+tuning, in one place (`store.activeVoicingSet`), and the song always has the
+final say over the app's memory.
+
+---
+
 ## 3. Architecture
 
 ### 3.1 Stack

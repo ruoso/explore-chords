@@ -26,7 +26,14 @@ import {
   saveActiveSheetId,
 } from './persist.js';
 import { loadSheets, saveSheets, newSheet } from './sheets.js';
-import { migrateSong, chartKey, canMergeSongs, mergeSongs, parseSong } from '../core/song.js';
+import {
+  migrateSong,
+  chartKey,
+  canMergeSongs,
+  mergeSongs,
+  parseSong,
+  normaliseTuning,
+} from '../core/song.js';
 import { applySavedVoicings } from '../core/voicings.js';
 import { formatTuning } from '../core/instrument.js';
 import { DEFAULT_VIEW, isView } from './views.js';
@@ -344,6 +351,39 @@ export function createStore(initial = {}) {
 
     setView(id) {
       return store.set({ view: isView(id) ? id : DEFAULT_VIEW });
+    },
+
+    /**
+     * Which set of voicings a song is being read with, on one tuning.
+     *
+     * App state rather than song text, which is the one place this app keeps a
+     * choice outside the text (§2.13): the song carries every set, and which
+     * one you are working in is yours. It rides in prefs, so a backup carries
+     * it even though a shared link does not.
+     */
+    voicingSetFor(sheetId, tuning) {
+      const chosen = state.prefs.voicingSets?.[`${sheetId}|${normaliseTuning(tuning)}`];
+      return chosen ?? null;
+    },
+
+    /**
+     * The set to read with: the one chosen, or the song's first for this tuning.
+     *
+     * The fallback matters because the choice lives outside the text: a set can
+     * be renamed or deleted in the editor while a stale name sits in prefs, and
+     * the answer then has to be the song's, not the app's memory.
+     */
+    activeVoicingSet(sheetId, tuning, sets) {
+      const stored = store.voicingSetFor(sheetId, tuning);
+      return sets.some((entry) => entry.name === stored) ? stored : (sets[0]?.name ?? null);
+    },
+
+    chooseVoicingSet(sheetId, tuning, name) {
+      const key = `${sheetId}|${normaliseTuning(tuning)}`;
+      const voicingSets = { ...(state.prefs.voicingSets ?? {}) };
+      if (name === null) delete voicingSets[key];
+      else voicingSets[key] = name;
+      return store.setPrefs({ voicingSets });
     },
 
     setPrefs(patch) {

@@ -342,6 +342,21 @@ export default {
   },
 
   editor: {
+    setInUse: 'Desenhos:',
+    setLabel: 'Qual conjunto de desenhos usar',
+    setDefault: 'Padrão',
+    setAdd: 'Adicionar conjunto',
+    setHelp:
+      'Um instrumento pode ter vários conjuntos de desenhos numa música — um fácil e um mais ' +
+      'cheio, por exemplo. Todos ficam no texto, cada um sob o seu título; em qual você está ' +
+      'trabalhando fica guardado por música.',
+    setName: 'Nome deste conjunto',
+    setPlaceholder: 'Mais acima no braço',
+    setCopy: 'Começar dos desenhos de “{name}”',
+    setNeedsName: 'Dê um nome ao conjunto.',
+    setTaken: 'Já existe um conjunto chamado “{name}” para este instrumento.',
+    setCancel: 'Cancelar',
+    setConfirm: 'Adicionar',
     chartBarNumbers: 'Mostrar os números dos compassos',
     chartVoicedAs: 'Nomear os acordes da cifra pelo que os desenhos soam',
     back: '← Todas as músicas',
@@ -381,6 +396,14 @@ export default {
           'avisada. Um título pode levar o número, e um número numa linha sozinha vale para o ' +
           'compasso seguinte.',
         example: '# A @9\nDm | G7 | @17 Em | A7',
+      },
+      sets: {
+        term: 'Mais de um conjunto',
+        text: 'A palavra antes dos dois-pontos dá nome a um conjunto, então um instrumento ' +
+          'pode ter vários numa música — uma versão fácil e uma mais cheia, por exemplo. Um ' +
+          'título só com Voicings é o conjunto padrão. Em qual você trabalha se escolhe acima ' +
+          'dos desenhos.',
+        example: '# Voicings: E2, A2, D3, G3, B3, E4\nC = x32010\n\n# Mais acima: E2, A2, D3, G3, B3, E4\nC = x35553',
       },
       voicings: {
         term: 'Voicings',

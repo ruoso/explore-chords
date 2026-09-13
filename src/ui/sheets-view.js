@@ -33,6 +33,7 @@ import {
   measureCount,
   compareVoicings,
   voicingsFor,
+  voicingSetsFor,
   songTunings,
   normaliseTuning,
 } from '../core/song.js';
@@ -45,7 +46,16 @@ import { renderSongPages } from './song-pages.js';
 import { EXAMPLE_BODY } from '../state/sheets.js';
 import { openVoicingDialog } from './voicing-dialog.js';
 import { openWizardDialog } from './wizard-dialog.js';
+import { openSetDialog } from './set-dialog.js';
 import { t } from '../i18n/index.js';
+
+/**
+ * Every way of writing a line, in the order the help shows them.
+ *
+ * Named here rather than inline so adding one is a single edit, and so the
+ * order is a decision rather than an accident of the markup.
+ */
+const HELP_TOPICS = ['sections', 'chart', 'words', 'either', 'bars', 'voicings', 'sets'];
 
 /** The list of sheets for the active instrument, with create and delete. */
 /** The name of whichever of the user's instruments has this tuning, else the tuning. */
@@ -139,7 +149,9 @@ export function renderSheetList(container, { store, onOpen, onChange, nudge }) {
     const list = el('ul', { class: 'ec-sheet-list' });
     for (const sheet of sheets) {
       const song = parseSong(sheet.body, dialect);
-      const chosen = song.symbols.length - unvoicedKeys(song, tuning).length;
+      const sets = voicingSetsFor(song, tuning);
+      const set = store.activeVoicingSet(sheet.id, tuning, sets);
+      const chosen = song.symbols.length - unvoicedKeys(song, tuning, set).length;
       const bars = measureCount(song);
       const voicedFor = songTunings(song).map((t) => labelForTuning(store, t));
 
@@ -319,7 +331,16 @@ export function renderSheetView(
   const sheetBox = el('div', { class: 'ec-song-view' });
   page.append(sheetBox);
   container.append(page);
-  renderSongPages(sheetBox, { store, sheet, instrument });
+  renderSongPages(sheetBox, {
+    store,
+    sheet,
+    instrument,
+    set: store.activeVoicingSet(
+      sheet.id,
+      formatTuning(instrument.strings),
+      voicingSetsFor(parseSong(sheet.body, store.state.prefs.dialect), formatTuning(instrument.strings))
+    ),
+  });
 
   return page;
 }
@@ -335,8 +356,10 @@ export function renderSheetEditor(
   const dialect = store.state.prefs.dialect;
   const tuning = formatTuning(instrument.strings);
   const song = parseSong(sheet.body, dialect);
-  const chosenHere = voicingsFor(song, tuning);
-  const resolved = resolveSongVoicings(song, instrument, dialect);
+  const sets = voicingSetsFor(song, tuning);
+  const activeSet = store.activeVoicingSet(sheet.id, tuning, sets);
+  const chosenHere = voicingsFor(song, tuning, activeSet);
+  const resolved = resolveSongVoicings(song, instrument, dialect, activeSet);
   const page = el('div', { class: 'ec-page' });
 
   page.append(
@@ -439,7 +462,7 @@ export function renderSheetEditor(
       el(
         'dl',
         { class: 'ec-song-help', id: 'song-help' },
-        ...['sections', 'chart', 'words', 'either', 'bars', 'voicings'].flatMap((key) => [
+        ...HELP_TOPICS.flatMap((key) => [
           el('dt', {}, t(`editor.help.${key}.term`)),
           el(
             'dd',
@@ -477,7 +500,11 @@ export function renderSheetEditor(
       chosen: chosenHere.get(chord.key) ?? null,
       current: resolved.get(chord.key)?.fingering.frets ?? null,
       onChoose: (frets) => {
-        const next = setVoicing(sheet.body, chord.start, frets, { tuning, dialect });
+        const next = setVoicing(sheet.body, chord.start, frets, {
+          tuning,
+          dialect,
+          set: activeSet,
+        });
         store.updateSheet(sheet.id, (s) => ({ ...s, body: next }));
         onChange();
       },
@@ -622,7 +649,7 @@ export function renderSheetEditor(
           class: 'ec-button ec-button-small',
           id: 'voicing-wizard',
           onClick: () =>
-            openWizardDialog({ store, sheet, instrument, tuning, dialect, onChange }),
+            openWizardDialog({ store, sheet, instrument, tuning, dialect, set: activeSet, onChange }),
         },
         t('wizard.open')
       ),
@@ -653,6 +680,54 @@ export function renderSheetEditor(
         )
       : null
   );
+
+  /**
+   * Which set of voicings this song is being worked in, and a way to add one.
+   *
+   * One instrument may want several: an easy version and a fuller one, or two
+   * runs of the wizard kept side by side. The song text holds them all, named
+   * by their headings; which one you are in is app state (§2.13).
+   */
+  const setBar = el('div', { class: 'ec-set-bar' });
+  if (sets.length > 1) {
+    const select = el('select', { id: 'voicing-set', 'aria-label': t('editor.setLabel') });
+    for (const entry of sets) {
+      select.append(
+        el(
+          'option',
+          { value: entry.name, selected: entry.name === activeSet || null },
+          entry.name || t('editor.setDefault')
+        )
+      );
+    }
+    select.addEventListener('change', () => {
+      store.chooseVoicingSet(sheet.id, tuning, select.value);
+      onChange();
+    });
+    setBar.append(el('span', { class: 'ec-set-label' }, t('editor.setInUse')), select);
+  }
+  setBar.append(
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'ec-button ec-button-small',
+        id: 'voicing-set-add',
+        onClick: () =>
+          openSetDialog({
+            store,
+            sheet,
+            tuning,
+            dialect,
+            from: activeSet,
+            fromLabel: activeSet || t('editor.setDefault'),
+            onAdd: onChange,
+          }),
+      },
+      t('editor.setAdd')
+    )
+  );
+  chordsPanel.append(setBar);
 
   if (entries.length === 0) {
     chordsPanel.append(
@@ -701,7 +776,11 @@ export function renderSheetEditor(
                   scope: 'all',
                   usedIn,
                   onChoose: (frets) => {
-                    const next = setVoicingForKey(sheet.body, entry.key, frets, { tuning, dialect });
+                    const next = setVoicingForKey(sheet.body, entry.key, frets, {
+                      tuning,
+                      dialect,
+                      set: activeSet,
+                    });
                     store.updateSheet(sheet.id, (s) => ({ ...s, body: next }));
                     onChange();
                   },

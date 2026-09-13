@@ -38,7 +38,7 @@ const RESIZE_SLACK = 0.25;
  * @param {{store: object, sheet: object, instrument: object}} options
  * @returns {number} how many pages the song came to
  */
-export function renderSongPages(container, { store, sheet, instrument, startAt = 0 }) {
+export function renderSongPages(container, { store, sheet, instrument, set, startAt = 0 }) {
   clear(container);
   const pages = el('div', { class: 'ec-song-pages' });
   container.append(pages);
@@ -49,7 +49,7 @@ export function renderSongPages(container, { store, sheet, instrument, startAt =
   pages.append(stage);
   // No cap on the columns: a page here is as wide as the screen, and on screen
   // there is no page to turn, so the width is worth using (sheet-print.js).
-  const article = renderSheetPrint(stage, { store, sheet, instrument, maxColumns: null });
+  const article = renderSheetPrint(stage, { store, sheet, instrument, set, maxColumns: null });
   if (!article) return 0;
 
   const source = article.querySelector('.ec-print-body');
@@ -166,7 +166,7 @@ export function renderSongPages(container, { store, sheet, instrument, startAt =
   renderPager(container, sheets);
   // Laid out again after a resize: stay on the page that was being read.
   if (startAt > 0) turnToPage(sheets, startAt, false);
-  watchResize(container, { store, sheet, instrument }, geometry, sheets);
+  watchResize(container, { store, sheet, instrument, set }, geometry, sheets);
   return sheets.length;
 }
 

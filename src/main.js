@@ -28,7 +28,8 @@ import { renderSheetList, renderSheetEditor, renderSheetView } from './ui/sheets
 import { renderSheetPrint } from './ui/sheet-print.js';
 import { sheetForSharing, sheetFromSharing } from './state/sheets.js';
 import { encodeSheetLink, decodeSheetLink } from './state/codec.js';
-import { instrumentInstance } from './core/instrument.js';
+import { instrumentInstance, formatTuning } from './core/instrument.js';
+import { parseSong, voicingSetsFor } from './core/song.js';
 import { createZip, readZip } from './state/zip.js';
 import { backupFiles, backupFileName, readBackup, backupDue } from './state/backup.js';
 import {
@@ -280,7 +281,14 @@ function printSheet() {
   const sheet = store.activeSheet;
   const instrument = store.effectiveInstrument;
   if (!sheet || !instrument) return;
-  renderSheetPrint(document.querySelector('#print-root'), { store, sheet, instrument });
+  const tuning = formatTuning(instrument.strings);
+  const sets = voicingSetsFor(parseSong(sheet.body, store.state.prefs.dialect), tuning);
+  renderSheetPrint(document.querySelector('#print-root'), {
+    store,
+    sheet,
+    instrument,
+    set: store.activeVoicingSet(sheet.id, tuning, sets),
+  });
   document.body.classList.add('ec-printing');
   const done = () => {
     document.body.classList.remove('ec-printing');

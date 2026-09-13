@@ -45,13 +45,18 @@ export function defaultVoicing(chord, instrument) {
  * falls back to the `default`. A chord the search cannot voice at all is
  * absent, as is one that does not parse — the caller reports those separately.
  *
+ * One instrument may have several sets of voicings in a song; `set` names which
+ * one to read. A chord the set does not mention takes the app's default, not
+ * another set's shape: a set means what it says on its own (§2.13).
+ *
  * @param {import('./song.js').ParsedSong} parsed
  * @param {object} instrument
  * @param {string} [dialect]
+ * @param {string} [set]  set name; without it, the song's first for this tuning
  * @returns {Map<string, ResolvedVoicing>}  key -> resolution, in chart order
  */
-export function resolveSongVoicings(parsed, instrument, dialect) {
-  const chosen = voicingsFor(parsed, formatTuning(instrument.strings));
+export function resolveSongVoicings(parsed, instrument, dialect, set) {
+  const chosen = voicingsFor(parsed, formatTuning(instrument.strings), set);
   /** @type {Map<string, ResolvedVoicing>} */
   const out = new Map();
   /** @type {Map<string, import('./search.js').Fingering|null>} */
@@ -111,9 +116,10 @@ export function unvoiceableKeys(parsed, resolved) {
  * @param {{chordText:string, frets:(number|'x')[]}[]} options.favorites  newest first
  * @param {object} options.instrument
  * @param {string} [options.dialect]
+ * @param {string} [options.set]  which set of voicings to write into
  * @returns {string}
  */
-export function applySavedVoicings(text, { symbols, favorites, instrument, dialect }) {
+export function applySavedVoicings(text, { symbols, favorites, instrument, dialect, set }) {
   if (!symbols?.length || !favorites?.length) return text;
   const tuning = formatTuning(instrument.strings);
   let out = text;
@@ -121,7 +127,7 @@ export function applySavedVoicings(text, { symbols, favorites, instrument, diale
   for (const symbol of new Set(symbols)) {
     const parsed = parseSong(out, dialect);
     if (!parsed.occurrences.some((c) => c.key === symbol)) continue; // not a bare key in the chart
-    if (voicingsFor(parsed, tuning).has(symbol)) continue; // already chosen
+    if (voicingsFor(parsed, tuning, set).has(symbol)) continue; // already chosen
 
     const chord = parseChord(symbol, dialect).chord;
     if (!chord) continue;
@@ -135,7 +141,7 @@ export function applySavedVoicings(text, { symbols, favorites, instrument, diale
     });
     if (!saved) continue;
 
-    out = setVoicingForKey(out, symbol, saved.frets, { tuning, dialect });
+    out = setVoicingForKey(out, symbol, saved.frets, { tuning, dialect, set });
   }
 
   return out;

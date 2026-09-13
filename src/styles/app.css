@@ -1427,6 +1427,41 @@ body {
   font-size: 0.85rem;
 }
 
+/* --- sets of voicings (DESIGN.md 2.13) ---------------------------------- */
+
+/* Which set is being worked in, and a way to add one. Above the shapes,
+   because it decides what all of them are. */
+.ec-set-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+}
+
+.ec-set-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.ec-set-bar select {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--panel);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.ec-dialog-set {
+  width: min(26rem, 92vw);
+}
+
+.ec-set-form {
+  margin-top: 0.75rem;
+}
+
 /* --- entering a shape by hand (DESIGN.md 2.11) -------------------------- */
 
 .ec-dialog-shape {

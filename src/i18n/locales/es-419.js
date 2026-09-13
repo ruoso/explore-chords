@@ -342,6 +342,21 @@ export default {
   },
 
   editor: {
+    setInUse: 'Formas:',
+    setLabel: 'Qué conjunto de formas usar',
+    setDefault: 'Predeterminado',
+    setAdd: 'Agregar conjunto',
+    setHelp:
+      'Un instrumento puede tener varios conjuntos de formas en una canción: uno fácil y uno ' +
+      'más lleno, por ejemplo. Todos viven en el texto, cada uno bajo su propio título; en ' +
+      'cuál estás trabajando se recuerda por canción.',
+    setName: 'Nombre de este conjunto',
+    setPlaceholder: 'Más arriba del mástil',
+    setCopy: 'Empezar desde las formas de «{name}»',
+    setNeedsName: 'Ponele un nombre al conjunto.',
+    setTaken: 'Ya hay un conjunto llamado «{name}» para este instrumento.',
+    setCancel: 'Cancelar',
+    setConfirm: 'Agregar',
     chartBarNumbers: 'Mostrar los números de compás',
     chartVoicedAs: 'Nombrar los acordes de la cifra por lo que suenan las formas',
     back: '← Todas las canciones',
@@ -382,6 +397,14 @@ export default {
           'cuenta. Un título puede llevar el número, y un número en una línea sola vale para ' +
           'el compás siguiente.',
         example: '# A @9\nDm | G7 | @17 Em | A7',
+      },
+      sets: {
+        term: 'Más de un conjunto',
+        text: 'La palabra antes de los dos puntos nombra un conjunto, así que un instrumento ' +
+          'puede tener varios en una canción: una versión fácil y una más llena, por ejemplo. ' +
+          'Un título que sólo dice Voicings es el conjunto predeterminado. En cuál trabajás se ' +
+          'elige arriba de las formas.',
+        example: '# Voicings: E2, A2, D3, G3, B3, E4\nC = x32010\n\n# Más arriba: E2, A2, D3, G3, B3, E4\nC = x35553',
       },
       voicings: {
         term: 'Voicings',

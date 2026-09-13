@@ -13,6 +13,8 @@ import {
   chartKey,
   canMergeSongs,
   mergeSongs,
+  voicingSetsFor,
+  addVoicingSet,
 } from './song.js';
 import { shorthandOf, parseShorthand } from './fretstring.js';
 
@@ -903,5 +905,129 @@ describe('counting bars', () => {
     for (const line of sung) {
       for (const measure of line.measures) expect(measure.bar).toBeUndefined();
     }
+  });
+});
+
+/**
+ * Several sets of voicings for one instrument (docs/DESIGN.md §2.13).
+ *
+ * One song may want an easy version and a fuller one, or two runs of the
+ * wizard kept side by side. A set is named by its heading.
+ */
+describe('sets of voicings', () => {
+  const tuning = 'E2, A2, D3, G3, B3, E4';
+  const two = [
+    '# A',
+    'C | G',
+    '',
+    '---',
+    '',
+    `# Simple: ${tuning}`,
+    'C = x32010',
+    'G = 320003',
+    '',
+    `# Up the neck: ${tuning}`,
+    'C = x35553',
+    'G = 355433',
+    '',
+  ].join('\n');
+
+  it('reads each set by the name on its heading', () => {
+    const song = parseSong(two, 'brazilian');
+    expect(voicingSetsFor(song, tuning)).toEqual([
+      { name: 'Simple', count: 2 },
+      { name: 'Up the neck', count: 2 },
+    ]);
+    expect(shorthandOf(voicingsFor(song, tuning, 'Simple').get('C'))).toBe('x32010');
+    expect(shorthandOf(voicingsFor(song, tuning, 'Up the neck').get('C'))).toBe('x35553');
+  });
+
+  it('takes the first set when none is named, as a one-set song always has', () => {
+    const song = parseSong(two, 'brazilian');
+    expect(shorthandOf(voicingsFor(song, tuning).get('C'))).toBe('x32010');
+  });
+
+  it('leaves the other set alone when one is edited', () => {
+    // This is what the feature is for. Keyed by tuning alone, an edit merged
+    // the two blocks and let the later one's shapes overwrite the earlier
+    // one's, under the earlier one's name.
+    const after = setVoicingForKey(two, 'C', ['x', 3, 5, 5, 5, 3], {
+      tuning,
+      dialect: 'brazilian',
+      set: 'Simple',
+    });
+    const song = parseSong(after, 'brazilian');
+    expect(voicingSetsFor(song, tuning).length).toBe(2);
+    expect(shorthandOf(voicingsFor(song, tuning, 'Simple').get('C'))).toBe('x35553');
+    expect(shorthandOf(voicingsFor(song, tuning, 'Simple').get('G'))).toBe('320003');
+    expect(shorthandOf(voicingsFor(song, tuning, 'Up the neck').get('G'))).toBe('355433');
+  });
+
+  it('still merges two blocks that are the same set', () => {
+    const doubled = [
+      '# A',
+      'C | G',
+      '',
+      '---',
+      '',
+      `# Simple: ${tuning}`,
+      'C = x32010',
+      '',
+      `# Simple: ${tuning}`,
+      'G = 320003',
+      '',
+    ].join('\n');
+    const song = parseSong(setVoicingForKey(doubled, 'C', ['x', 3, 2, 0, 1, 0], {
+      tuning,
+      dialect: 'brazilian',
+      set: 'Simple',
+    }), 'brazilian');
+    expect(voicingSetsFor(song, tuning)).toEqual([{ name: 'Simple', count: 2 }]);
+  });
+
+  it('adds a set copied from another', () => {
+    const after = addVoicingSet(two, {
+      tuning,
+      name: 'Third way',
+      copyFrom: 'Up the neck',
+      dialect: 'brazilian',
+    });
+    const song = parseSong(after, 'brazilian');
+    expect(voicingSetsFor(song, tuning).map((e) => e.name)).toContain('Third way');
+    expect(shorthandOf(voicingsFor(song, tuning, 'Third way').get('C'))).toBe('x35553');
+  });
+
+  it('adds an empty set, and keeps it even with nothing in it', () => {
+    // Its existence is the information: it was added to be filled in, and
+    // every chord sits on its default until then.
+    const after = addVoicingSet(two, { tuning, name: 'Bare', dialect: 'brazilian' });
+    const song = parseSong(after, 'brazilian');
+    expect(voicingSetsFor(song, tuning)).toContainEqual({ name: 'Bare', count: 0 });
+    expect(after).toContain(`# Bare: ${tuning}`);
+  });
+
+  it('does nothing when the set is already there', () => {
+    const once = addVoicingSet(two, { tuning, name: 'Bare', dialect: 'brazilian' });
+    expect(addVoicingSet(once, { tuning, name: 'Bare', dialect: 'brazilian' })).toBe(once);
+  });
+
+  it('refuses a set with no name, since the name is its identity', () => {
+    expect(() => addVoicingSet(two, { tuning, name: '  ', dialect: 'brazilian' })).toThrow();
+    expect(() => addVoicingSet(two, { name: 'X', dialect: 'brazilian' })).toThrow();
+  });
+
+  it('drops an empty unnamed block, as it always has', () => {
+    const one = ['C | G', '', '---', '', `# Voicings: ${tuning}`, 'C = x32010', ''].join('\n');
+    const cleared = setVoicingForKey(one, 'C', null, { tuning, dialect: 'brazilian' });
+    expect(cleared).not.toContain('Voicings');
+  });
+
+  it('keeps a set on one tuning clear of another tuning', () => {
+    const uke = 'G4, C4, E4, A4';
+    let text = addVoicingSet(two, { tuning: uke, name: 'Simple', dialect: 'brazilian' });
+    text = setVoicingForKey(text, 'C', [0, 0, 0, 3], { tuning: uke, dialect: 'brazilian', set: 'Simple' });
+    const song = parseSong(text, 'brazilian');
+    expect(shorthandOf(voicingsFor(song, tuning, 'Simple').get('C'))).toBe('x32010');
+    expect(shorthandOf(voicingsFor(song, uke, 'Simple').get('C'))).toBe('0003');
   });
 });

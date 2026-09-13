@@ -146,6 +146,9 @@ export const DEFAULT_PREFS = {
   // Off: the numbers are for relating a chart to the score it came from, not
   // for playing from (§2.12).
   chartBarNumbers: false,
+  // Which set of voicings each song is being read with, keyed by song and
+  // tuning. The only choice this app keeps outside the song text (§2.13).
+  voicingSets: {},
 };
 
 export function loadPrefs() {

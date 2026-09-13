@@ -125,6 +125,20 @@ test.describe('axe finds no violations', () => {
     expect(await scan(page)).toEqual([]);
   });
 
+  test('inside the dialog that adds a set of voicings', async ({ page }) => {
+    await freshVisit(page);
+    await completeSetup(page);
+    await goToView(page, 'sheets');
+    await page.fill('#new-sheet-title', 'Lesson');
+    await page.getByRole('button', { name: 'New song' }).click();
+    await page.fill('#sheet-body', 'C | G');
+    await page.locator('#sheet-body').blur();
+
+    await page.locator('#voicing-set-add').click();
+    await expect(page.locator('#set-dialog')).toBeVisible();
+    expect(await scan(page)).toEqual([]);
+  });
+
   test('inside the shape editor, which is a diagram you click', async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page);

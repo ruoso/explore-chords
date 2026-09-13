@@ -580,6 +580,9 @@ export function parseSong(text, dialect) {
           tuning,
           id: tuning ? normaliseTuning(tuning) : null,
           label,
+          // The set's name is the heading's own label. A plain `# Voicings:`
+          // heading has none, and is the default set (§2.13).
+          name: label,
           voicings: new Map(),
           range: { start: lineStart, end: source.length },
         };
@@ -728,15 +731,40 @@ function splitKey(key) {
 
 // --- reading -----------------------------------------------------------------
 
-/** The block for a tuning, or null. */
-export function blockFor(parsed, tuning) {
+/**
+ * The block for a tuning, or null.
+ *
+ * One instrument may have several sets of voicings in a song — an easy one and
+ * a harder one, say, or the output of two runs of the wizard — each named by its
+ * heading. `set` picks one by name; without it the first for that tuning is
+ * taken, which is what a song with a single set has always done (§2.13).
+ */
+export function blockFor(parsed, tuning, set) {
   const id = normaliseTuning(tuning);
-  return parsed.blocks.find((b) => b.id === id) ?? null;
+  const mine = parsed.blocks.filter((b) => b.id === id);
+  if (set === undefined || set === null) return mine[0] ?? null;
+  return mine.find((b) => (b.name ?? '') === set) ?? null;
 }
 
 /** The chosen voicings for a tuning, keyed as in the chart. Empty if none. */
-export function voicingsFor(parsed, tuning) {
-  return blockFor(parsed, tuning)?.voicings ?? new Map();
+export function voicingsFor(parsed, tuning, set) {
+  return blockFor(parsed, tuning, set)?.voicings ?? new Map();
+}
+
+/**
+ * The sets of voicings this song holds for a tuning, in the order written.
+ *
+ * A name is the heading's own label: `# Up the neck: E2, A2, …` is a set called
+ * "Up the neck". The empty name is the one a plain `# Voicings:` heading makes,
+ * and is the default.
+ *
+ * @returns {{name: string, count: number}[]}
+ */
+export function voicingSetsFor(parsed, tuning) {
+  const id = normaliseTuning(tuning);
+  return parsed.blocks
+    .filter((b) => b.id === id)
+    .map((b) => ({ name: b.name ?? '', count: b.voicings.size }));
 }
 
 /** Every tuning the song has chosen voicings for, as written. */
@@ -758,8 +786,8 @@ export function compareVoicings(a, b) {
 }
 
 /** Each distinct voicing the chart uses on this tuning, alphabetically. */
-export function songLegend(parsed, tuning) {
-  const voicings = voicingsFor(parsed, tuning);
+export function songLegend(parsed, tuning, set) {
+  const voicings = voicingsFor(parsed, tuning, set);
   const seen = new Set();
   const out = [];
   for (const chord of parsed.occurrences) {
@@ -772,8 +800,8 @@ export function songLegend(parsed, tuning) {
 }
 
 /** Chart chords with no voicing chosen on this tuning, alphabetically. */
-export function unvoicedKeys(parsed, tuning) {
-  const voicings = voicingsFor(parsed, tuning);
+export function unvoicedKeys(parsed, tuning, set) {
+  const voicings = voicingsFor(parsed, tuning, set);
   const seen = new Set();
   const out = [];
   for (const chord of parsed.occurrences) {
@@ -807,8 +835,8 @@ export function measureCount(parsed) {
  * @param {(number|'x')[]|null} frets  null clears the choice
  * @param {{ tuning: string, dialect?: string }} options
  */
-export function setVoicing(text, offset, frets, { tuning, dialect } = {}) {
-  return applyEdit(text, { kind: 'occurrence', offset, frets }, tuning, dialect);
+export function setVoicing(text, offset, frets, { tuning, dialect, set } = {}) {
+  return applyEdit(text, { kind: 'occurrence', offset, frets, set }, tuning, dialect);
 }
 
 /**
@@ -823,8 +851,8 @@ export function setVoicing(text, offset, frets, { tuning, dialect } = {}) {
  * @param {(number|'x')[]|null} frets  null clears it everywhere on this tuning
  * @param {{ tuning: string, dialect?: string }} options
  */
-export function setVoicingForKey(text, key, frets, { tuning, dialect } = {}) {
-  return applyEdit(text, { kind: 'key', key, frets }, tuning, dialect);
+export function setVoicingForKey(text, key, frets, { tuning, dialect, set } = {}) {
+  return applyEdit(text, { kind: 'key', key, frets, set }, tuning, dialect);
 }
 
 /**
@@ -843,21 +871,91 @@ export function setVoicingForKey(text, key, frets, { tuning, dialect } = {}) {
  *   it falls back to the default. The marker stays, since the variant may still
  *   mean something on another tuning.
  */
+/** The key a block is held under while a song is being rewritten. */
+function setKey(tuningId, name) {
+  return `${tuningId}|${name ?? ''}`;
+}
+
+/**
+ * Working copies of every block, keyed by tuning *and* set name.
+ *
+ * Keying by tuning alone merged two sets of one instrument into a single block
+ * and let the later one's shapes overwrite the earlier one's — under the earlier
+ * one's name. Two blocks that really are the same set still merge (§2.13).
+ *
+ * @returns {Map<string, {tuning:string, label:string|null, name:string|null,
+ *                        voicings:Map<string,(number|'x')[]>}>}
+ */
+function blocksBySet(parsed) {
+  const blocks = new Map();
+  for (const b of parsed.blocks) {
+    if (!b.id) continue;
+    const key = setKey(b.id, b.name);
+    if (!blocks.has(key)) {
+      blocks.set(key, { tuning: b.tuning, label: b.label, name: b.name, voicings: new Map() });
+    }
+    for (const [k, v] of b.voicings) blocks.get(key).voicings.set(k, v);
+  }
+  return blocks;
+}
+
+/**
+ * Add a set of voicings for a tuning, empty or copied from another.
+ *
+ * Copying is the usual need — "the same, but with these three changed" — and an
+ * empty set is the other: every chord on its default until one is chosen, which
+ * is how a song with no voicings at all already behaves.
+ *
+ * @param {string} text
+ * @param {{tuning: string, name: string, copyFrom?: string|null, dialect?: string}} options
+ * @returns {string} the text unchanged if that set is already there
+ */
+export function addVoicingSet(text, { tuning, name, copyFrom = null, dialect } = {}) {
+  if (!tuning) throw new Error('A tuning is needed to add a set of voicings.');
+  const wanted = String(name ?? '').trim();
+  if (!wanted) throw new Error('A set of voicings needs a name.');
+
+  const parsed = parseSong(text, dialect);
+  const id = normaliseTuning(tuning);
+  const blocks = blocksBySet(parsed);
+  const key = setKey(id, wanted);
+  if (blocks.has(key)) return text;
+
+  const source = copyFrom === null ? null : blocks.get(setKey(id, copyFrom));
+  blocks.set(key, {
+    tuning: String(tuning).trim(),
+    label: wanted,
+    name: wanted,
+    voicings: new Map(source ? source.voicings : []),
+  });
+  return writeBlocks(text, blocks, dialect);
+}
+
 function applyEdit(text, edit, tuning, dialect) {
   if (!tuning) throw new Error('A tuning is needed to edit voicings.');
   const parsed = parseSong(text, dialect);
   const id = normaliseTuning(tuning);
 
-  // Working copies of every block, keyed by tuning id, with this tuning present.
-  /** @type {Map<string, {tuning:string, voicings:Map<string,(number|'x')[]>}>} */
-  const blocks = new Map();
-  for (const b of parsed.blocks) {
-    if (!b.id) continue;
-    if (!blocks.has(b.id)) blocks.set(b.id, { tuning: b.tuning, label: b.label, voicings: new Map() });
-    for (const [k, v] of b.voicings) blocks.get(b.id).voicings.set(k, v);
+  // Working copies of every block, keyed by tuning *and* set name. Keying by
+  // tuning alone merged two sets of one instrument into one block and let the
+  // later one's shapes overwrite the earlier one's — under the earlier one's
+  // name (§2.13).
+  const blocks = blocksBySet(parsed);
+
+  // Which set this edit lands in: the one asked for, else the first for this
+  // tuning, else a new unnamed one.
+  const existing = parsed.blocks.filter((b) => b.id === id);
+  const target = edit.set ?? existing[0]?.name ?? null;
+  const mineKey = setKey(id, target);
+  if (!blocks.has(mineKey)) {
+    blocks.set(mineKey, {
+      tuning: String(tuning).trim(),
+      label: target,
+      name: target,
+      voicings: new Map(),
+    });
   }
-  if (!blocks.has(id)) blocks.set(id, { tuning: String(tuning).trim(), voicings: new Map() });
-  const mine = blocks.get(id).voicings;
+  const mine = blocks.get(mineKey).voicings;
 
   const occurrences = parsed.occurrences;
   const slots = occurrences.map((c) => c.index);
@@ -878,8 +976,8 @@ function applyEdit(text, edit, tuning, dialect) {
     return used;
   };
   const distinguishedElsewhere = (sym, a, b) => {
-    for (const [otherId, other] of blocks) {
-      if (otherId === id) continue;
+    for (const [otherKey, other] of blocks) {
+      if (otherKey === mineKey) continue;
       const va = other.voicings.get(keyFor(sym, a));
       const vb = other.voicings.get(keyFor(sym, b));
       if (va && vb && !sameShape(va, vb)) return true;
@@ -1013,13 +1111,18 @@ function writeBlocks(text, blocks, dialect) {
   const rendered = [];
   for (const [, b] of [...blocks.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
     const entries = [...b.voicings.entries()].map(([k, v]) => ({ ...splitKey(k), frets: v }));
-    if (entries.length === 0) continue;
+    // An empty block is dropped, because no choices means nothing to say — but
+    // an empty *named* set is kept, since its existence is the information: it
+    // was added to be filled in, and every chord in it is on its default until
+    // then (§2.13).
+    if (entries.length === 0 && !b.name) continue;
     const lines = entries
       .sort(compareVoicings)
       .map((e) => `${keyFor(e.symbol, e.index)} = ${shorthandOf(e.frets)}`);
     // The heading keeps the word the song used, so a block written in
     // Portuguese stays in Portuguese; only a new block gets the canonical one.
-    rendered.push(`# ${b.label || VOICINGS_SECTION}: ${b.tuning}\n${lines.join('\n')}\n`);
+    const heading = `# ${b.label || VOICINGS_SECTION}: ${b.tuning}`;
+    rendered.push(lines.length > 0 ? `${heading}\n${lines.join('\n')}\n` : `${heading}\n`);
   }
 
   if (rendered.length === 0) return out ? `${out}\n` : out;

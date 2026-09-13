@@ -340,6 +340,21 @@ export default {
   },
 
   editor: {
+    setInUse: 'Voicings:',
+    setLabel: 'Which set of voicings to use',
+    setDefault: 'Default',
+    setAdd: 'Add a set',
+    setHelp:
+      'One instrument can have several sets of voicings in a song — an easy one and a fuller ' +
+      'one, say. They all live in the text, each under its own heading; which one you are ' +
+      'working in is remembered per song.',
+    setName: 'Name for this set',
+    setPlaceholder: 'Up the neck',
+    setCopy: 'Start from the shapes in “{name}”',
+    setNeedsName: 'Give the set a name.',
+    setTaken: 'There is already a set called “{name}” for this instrument.',
+    setCancel: 'Cancel',
+    setConfirm: 'Add',
     chartBarNumbers: 'Show bar numbers',
     chartVoicedAs: 'Name the chords in the chart by what the shapes sound',
     back: '← All songs',
@@ -378,6 +393,13 @@ export default {
           'the same bars appear twice, and the count has to be told. A heading can carry it ' +
           'instead, and a number on its own line applies to the bar after it.',
         example: '# A @9\nDm | G7 | @17 Em | A7',
+      },
+      sets: {
+        term: 'More than one set of them',
+        text: 'The word before the colon names a set, so one instrument can have several in ' +
+          'one song — an easy version and a fuller one, say. A plain Voicings heading is the ' +
+          'default set. Which one you are working in is chosen above the shapes.',
+        example: '# Voicings: E2, A2, D3, G3, B3, E4\nC = x32010\n\n# Up the neck: E2, A2, D3, G3, B3, E4\nC = x35553',
       },
       voicings: {
         term: 'Voicings',
