@@ -1427,11 +1427,11 @@ body {
   font-size: 0.85rem;
 }
 
-/* --- sets of voicings (DESIGN.md 2.13) ---------------------------------- */
+/* --- variations of a song's voicings (DESIGN.md 2.13) ------------------- */
 
-/* Which set is being worked in, and a way to add one. Above the shapes,
+/* Which variation is being worked in, and a way to add one. Above the shapes,
    because it decides what all of them are. */
-.ec-set-bar {
+.ec-variation-bar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -1439,12 +1439,12 @@ body {
   margin: 0.5rem 0 0;
 }
 
-.ec-set-label {
+.ec-variation-label {
   color: var(--muted);
   font-size: 0.8rem;
 }
 
-.ec-set-bar select {
+.ec-variation-bar select {
   padding: 0.2rem 0.4rem;
   border: 1px solid var(--border);
   border-radius: 0.35rem;
@@ -1454,11 +1454,11 @@ body {
   font-size: 0.8rem;
 }
 
-.ec-dialog-set {
+.ec-dialog-variation {
   width: min(26rem, 92vw);
 }
 
-.ec-set-form {
+.ec-variation-form {
   margin-top: 0.75rem;
 }
 

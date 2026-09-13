@@ -342,21 +342,21 @@ export default {
   },
 
   editor: {
-    setInUse: 'Formas:',
-    setLabel: 'Qué conjunto de formas usar',
-    setDefault: 'Predeterminado',
-    setAdd: 'Agregar conjunto',
-    setHelp:
-      'Un instrumento puede tener varios conjuntos de formas en una canción: uno fácil y uno ' +
-      'más lleno, por ejemplo. Todos viven en el texto, cada uno bajo su propio título; en ' +
+    variationInUse: 'Variación:',
+    variationLabel: 'Qué variación usar',
+    variationDefault: 'Predeterminado',
+    variationAdd: 'Agregar variación',
+    variationHelp:
+      'Un instrumento puede tener varias variaciones en una canción: una fácil y una ' +
+      'más llena, por ejemplo. Todas viven en el texto, cada una bajo su propio título; en ' +
       'cuál estás trabajando se recuerda por canción.',
-    setName: 'Nombre de este conjunto',
-    setPlaceholder: 'Más arriba del mástil',
-    setCopy: 'Empezar desde las formas de «{name}»',
-    setNeedsName: 'Ponele un nombre al conjunto.',
-    setTaken: 'Ya hay un conjunto llamado «{name}» para este instrumento.',
-    setCancel: 'Cancelar',
-    setConfirm: 'Agregar',
+    variationName: 'Nombre de esta variación',
+    variationPlaceholder: 'Más arriba del mástil',
+    variationCopy: 'Empezar desde las formas de «{name}»',
+    variationNeedsName: 'Ponele un nombre a la variación.',
+    variationTaken: 'Ya hay una variación llamada «{name}» para este instrumento.',
+    variationCancel: 'Cancelar',
+    variationConfirm: 'Agregar',
     chartBarNumbers: 'Mostrar los números de compás',
     chartVoicedAs: 'Nombrar los acordes de la cifra por lo que suenan las formas',
     back: '← Todas las canciones',
@@ -398,12 +398,12 @@ export default {
           'el compás siguiente.',
         example: '# A @9\nDm | G7 | @17 Em | A7',
       },
-      sets: {
-        term: 'Más de un conjunto',
-        text: 'La palabra antes de los dos puntos nombra un conjunto, así que un instrumento ' +
-          'puede tener varios en una canción: una versión fácil y una más llena, por ejemplo. ' +
-          'Un título que sólo dice Voicings es el conjunto predeterminado. En cuál trabajás se ' +
-          'elige arriba de las formas.',
+      variations: {
+        term: 'Más de una variación',
+        text: 'La palabra antes de los dos puntos nombra una variación, así que un ' +
+          'instrumento puede tener varias en una canción: una versión fácil y una más llena. ' +
+          'Un título que sólo dice Voicings es la variación predeterminada. En cuál trabajás ' +
+          'se elige arriba de las formas.',
         example: '# Voicings: E2, A2, D3, G3, B3, E4\nC = x32010\n\n# Más arriba: E2, A2, D3, G3, B3, E4\nC = x35553',
       },
       voicings: {

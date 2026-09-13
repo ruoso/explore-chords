@@ -63,7 +63,15 @@ function howItWorks(plannerId) {
   return details;
 }
 
-export function openWizardDialog({ store, sheet, instrument, tuning, dialect, set, onChange }) {
+export function openWizardDialog({
+  store,
+  sheet,
+  instrument,
+  tuning,
+  dialect,
+  variation,
+  onChange,
+}) {
   const existing = document.querySelector('#wizard-dialog');
   if (existing) existing.remove();
 
@@ -124,7 +132,7 @@ export function openWizardDialog({ store, sheet, instrument, tuning, dialect, se
 
   /** Step two: the shapes it chose, exactly as the song would carry them. */
   const previewStep = (plannerId) => {
-    const already = voicingsFor(song, tuning, set);
+    const already = voicingsFor(song, tuning, variation);
     const plan = planVoicings(plannerId, song, instrument, { dialect, existing: already });
     const changing = plan.chosen.size - plan.unchanged.length;
 
@@ -224,7 +232,7 @@ export function openWizardDialog({ store, sheet, instrument, tuning, dialect, se
             // would to thirty separate choices.
             let text = sheet.body;
             for (const [key, frets] of plan.chosen) {
-              text = setVoicingForKey(text, key, frets, { tuning, dialect, set });
+              text = setVoicingForKey(text, key, frets, { tuning, dialect, variation });
             }
             store.updateSheet(sheet.id, (s) => ({ ...s, body: text }));
             close();

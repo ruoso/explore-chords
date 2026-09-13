@@ -7,6 +7,23 @@
  */
 
 /**
+ * Append children, skipping the ones that are not there.
+ *
+ * `el()` has always dropped a null child, while the DOM's own `append` turns
+ * one into the text "null". That asymmetry is a trap, because a child behind a
+ * condition is the most ordinary thing to write — and it had put a literal
+ * "null" on the reading page and in the voicings panel. So this is the one to
+ * reach for whenever a child might be absent.
+ */
+export function add(parent, ...children) {
+  for (const child of children.flat()) {
+    if (child === null || child === undefined || child === false) continue;
+    parent.append(child instanceof Node ? child : document.createTextNode(String(child)));
+  }
+  return parent;
+}
+
+/**
  * Create an element with attributes and children.
  * `hidden` is set as a property so `[hidden]` behaves, and event handlers are
  * passed as `on*` keys.
@@ -23,11 +40,7 @@ export function el(tag, attrs = {}, ...children) {
     } else if (value === true) node.setAttribute(key, '');
     else node.setAttribute(key, String(value));
   }
-  for (const child of children.flat()) {
-    if (child === null || child === undefined || child === false) continue;
-    node.append(child instanceof Node ? child : document.createTextNode(String(child)));
-  }
-  return node;
+  return add(node, ...children);
 }
 
 export function clear(node) {

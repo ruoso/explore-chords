@@ -125,7 +125,7 @@ test.describe('axe finds no violations', () => {
     expect(await scan(page)).toEqual([]);
   });
 
-  test('inside the dialog that adds a set of voicings', async ({ page }) => {
+  test('inside the dialog that adds a variation', async ({ page }) => {
     await freshVisit(page);
     await completeSetup(page);
     await goToView(page, 'sheets');
@@ -134,8 +134,8 @@ test.describe('axe finds no violations', () => {
     await page.fill('#sheet-body', 'C | G');
     await page.locator('#sheet-body').blur();
 
-    await page.locator('#voicing-set-add').click();
-    await expect(page.locator('#set-dialog')).toBeVisible();
+    await page.locator('#variation-add').click();
+    await expect(page.locator('#variation-dialog')).toBeVisible();
     expect(await scan(page)).toEqual([]);
   });
 
@@ -161,6 +161,35 @@ test.describe('axe finds no violations', () => {
     await expect(page.locator('.ec-empty')).toBeVisible();
     expect(await scan(page)).toEqual([]);
   });
+});
+
+/**
+ * A child behind a condition is ordinary, and `node.append(null)` writes the
+ * text "null". It had reached the reading page and the voicings panel before
+ * anyone noticed, so this looks for it across the screens.
+ */
+test.describe('no screen prints a stray null', () => {
+  const songs = {
+    chart: '# A\nC | G',
+    sung: '# Verse\nG            D\nWhen I first saw you',
+    bare: '# A\n',
+  };
+
+  for (const [what, body] of Object.entries(songs)) {
+    test(`not while reading or editing a ${what} song`, async ({ page }) => {
+      await freshVisit(page);
+      await completeSetup(page);
+      await goToView(page, 'sheets');
+      await page.fill('#new-sheet-title', what);
+      await page.getByRole('button', { name: 'New song' }).click();
+      await page.fill('#sheet-body', body);
+      await page.locator('#sheet-body').blur();
+
+      await expect(page.locator('#app')).not.toContainText('null');
+      await page.locator('#sheet-view').click();
+      await expect(page.locator('#app')).not.toContainText('null');
+    });
+  }
 });
 
 test.describe('every diagram describes itself', () => {

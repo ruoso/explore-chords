@@ -23,7 +23,7 @@
  * block for this tuning yet simply shows defaults until something is chosen.
  */
 
-import { el, clear } from './dom.js';
+import { el, add, clear } from './dom.js';
 import {
   parseSong,
   setVoicing,
@@ -33,7 +33,7 @@ import {
   measureCount,
   compareVoicings,
   voicingsFor,
-  voicingSetsFor,
+  variationsFor,
   songTunings,
   normaliseTuning,
 } from '../core/song.js';
@@ -46,7 +46,7 @@ import { renderSongPages } from './song-pages.js';
 import { EXAMPLE_BODY } from '../state/sheets.js';
 import { openVoicingDialog } from './voicing-dialog.js';
 import { openWizardDialog } from './wizard-dialog.js';
-import { openSetDialog } from './set-dialog.js';
+import { openVariationDialog } from './variation-dialog.js';
 import { t } from '../i18n/index.js';
 
 /**
@@ -55,7 +55,7 @@ import { t } from '../i18n/index.js';
  * Named here rather than inline so adding one is a single edit, and so the
  * order is a decision rather than an accident of the markup.
  */
-const HELP_TOPICS = ['sections', 'chart', 'words', 'either', 'bars', 'voicings', 'sets'];
+const HELP_TOPICS = ['sections', 'chart', 'words', 'either', 'bars', 'voicings', 'variations'];
 
 /** The list of sheets for the active instrument, with create and delete. */
 /** The name of whichever of the user's instruments has this tuning, else the tuning. */
@@ -149,8 +149,8 @@ export function renderSheetList(container, { store, onOpen, onChange, nudge }) {
     const list = el('ul', { class: 'ec-sheet-list' });
     for (const sheet of sheets) {
       const song = parseSong(sheet.body, dialect);
-      const sets = voicingSetsFor(song, tuning);
-      const set = store.activeVoicingSet(sheet.id, tuning, sets);
+      const sets = variationsFor(song, tuning);
+      const set = store.activeVariation(sheet.id, tuning, sets);
       const chosen = song.symbols.length - unvoicedKeys(song, tuning, set).length;
       const bars = measureCount(song);
       const voicedFor = songTunings(song).map((t) => labelForTuning(store, t));
@@ -252,8 +252,37 @@ export function renderSheetView(
   const instrument = store.effectiveInstrument;
   if (!sheet || !instrument) return;
 
+  const song = parseSong(sheet.body, store.state.prefs.dialect);
+  const tuning = formatTuning(instrument.strings);
+  const variations = variationsFor(song, tuning);
+  const variation = store.activeVariation(sheet.id, tuning, variations);
+
+  // Which variation to read with. The same choice as the editor's, in the place
+  // you are reading from: switching here is what you do to hear the other one
+  // (§2.13).
+  const variationSelect = el('select', {
+    id: 'view-variation',
+    'aria-label': t('editor.variationLabel'),
+  });
+  for (const entry of variations) {
+    variationSelect.append(
+      el(
+        'option',
+        { value: entry.name, selected: entry.name === variation || null },
+        entry.name || t('editor.variationDefault')
+      )
+    );
+  }
+  variationSelect.addEventListener('change', () => {
+    store.chooseVariation(sheet.id, tuning, variationSelect.value);
+    onChange?.();
+  });
+
   const page = el('div', { class: 'ec-page' });
-  page.append(
+  // add() rather than append(): two of these children are conditional, and the
+  // DOM's own append writes "null" for one that is not there (ui/dom.js).
+  add(
+    page,
     el(
       'button',
       {
@@ -307,7 +336,7 @@ export function renderSheetView(
     ),
     // Not offered for a song that reads words: a chord over a syllable says
     // nothing about how many bars it lasts, so there is no count to show.
-    parseSong(sheet.body, store.state.prefs.dialect).sung
+    song.sung
       ? null
       : el(
           'label',
@@ -322,7 +351,18 @@ export function renderSheetView(
             },
           }),
           t('editor.chartBarNumbers')
+        ),
+    // Which variation to read with. The same choice as the editor's, in the
+    // place you are reading from: switching here is what you do to hear the
+    // other one (§2.13).
+    variations.length > 1
+      ? el(
+          'label',
+          { class: 'ec-song-option', for: 'view-variation' },
+          t('editor.variationInUse'),
+          variationSelect
         )
+      : null
   );
 
   // In the document first: the sheet measures itself, both to size its columns
@@ -331,16 +371,7 @@ export function renderSheetView(
   const sheetBox = el('div', { class: 'ec-song-view' });
   page.append(sheetBox);
   container.append(page);
-  renderSongPages(sheetBox, {
-    store,
-    sheet,
-    instrument,
-    set: store.activeVoicingSet(
-      sheet.id,
-      formatTuning(instrument.strings),
-      voicingSetsFor(parseSong(sheet.body, store.state.prefs.dialect), formatTuning(instrument.strings))
-    ),
-  });
+  renderSongPages(sheetBox, { store, sheet, instrument, variation });
 
   return page;
 }
@@ -356,10 +387,10 @@ export function renderSheetEditor(
   const dialect = store.state.prefs.dialect;
   const tuning = formatTuning(instrument.strings);
   const song = parseSong(sheet.body, dialect);
-  const sets = voicingSetsFor(song, tuning);
-  const activeSet = store.activeVoicingSet(sheet.id, tuning, sets);
-  const chosenHere = voicingsFor(song, tuning, activeSet);
-  const resolved = resolveSongVoicings(song, instrument, dialect, activeSet);
+  const sets = variationsFor(song, tuning);
+  const activeVariation = store.activeVariation(sheet.id, tuning, sets);
+  const chosenHere = voicingsFor(song, tuning, activeVariation);
+  const resolved = resolveSongVoicings(song, instrument, dialect, activeVariation);
   const page = el('div', { class: 'ec-page' });
 
   page.append(
@@ -503,7 +534,7 @@ export function renderSheetEditor(
         const next = setVoicing(sheet.body, chord.start, frets, {
           tuning,
           dialect,
-          set: activeSet,
+          variation: activeVariation,
         });
         store.updateSheet(sheet.id, (s) => ({ ...s, body: next }));
         onChange();
@@ -649,7 +680,15 @@ export function renderSheetEditor(
           class: 'ec-button ec-button-small',
           id: 'voicing-wizard',
           onClick: () =>
-            openWizardDialog({ store, sheet, instrument, tuning, dialect, set: activeSet, onChange }),
+            openWizardDialog({
+              store,
+              sheet,
+              instrument,
+              tuning,
+              dialect,
+              variation: activeVariation,
+              onChange,
+            }),
         },
         t('wizard.open')
       ),
@@ -670,7 +709,8 @@ export function renderSheetEditor(
   const defaults = entries.filter((e) => e.source === 'default').length;
 
   const chordsPanel = el('section', { class: 'ec-panel', 'aria-labelledby': 'sheet-chords' });
-  chordsPanel.append(
+  add(
+    chordsPanel,
     el('h3', { class: 'ec-panel-title', id: 'sheet-chords' }, t('editor.voicings')),
     entries.length > 0
       ? el(
@@ -682,52 +722,52 @@ export function renderSheetEditor(
   );
 
   /**
-   * Which set of voicings this song is being worked in, and a way to add one.
+   * Which variation of this song's voicings is being worked in, and a way to add one.
    *
    * One instrument may want several: an easy version and a fuller one, or two
    * runs of the wizard kept side by side. The song text holds them all, named
    * by their headings; which one you are in is app state (§2.13).
    */
-  const setBar = el('div', { class: 'ec-set-bar' });
+  const variationBar = el('div', { class: 'ec-variation-bar' });
   if (sets.length > 1) {
-    const select = el('select', { id: 'voicing-set', 'aria-label': t('editor.setLabel') });
+    const select = el('select', { id: 'voicing-variation', 'aria-label': t('editor.variationLabel') });
     for (const entry of sets) {
       select.append(
         el(
           'option',
-          { value: entry.name, selected: entry.name === activeSet || null },
-          entry.name || t('editor.setDefault')
+          { value: entry.name, selected: entry.name === activeVariation || null },
+          entry.name || t('editor.variationDefault')
         )
       );
     }
     select.addEventListener('change', () => {
-      store.chooseVoicingSet(sheet.id, tuning, select.value);
+      store.chooseVariation(sheet.id, tuning, select.value);
       onChange();
     });
-    setBar.append(el('span', { class: 'ec-set-label' }, t('editor.setInUse')), select);
+    variationBar.append(el('span', { class: 'ec-variation-label' }, t('editor.variationInUse')), select);
   }
-  setBar.append(
+  variationBar.append(
     el(
       'button',
       {
         type: 'button',
         class: 'ec-button ec-button-small',
-        id: 'voicing-set-add',
+        id: 'variation-add',
         onClick: () =>
-          openSetDialog({
+          openVariationDialog({
             store,
             sheet,
             tuning,
             dialect,
-            from: activeSet,
-            fromLabel: activeSet || t('editor.setDefault'),
+            from: activeVariation,
+            fromLabel: activeVariation || t('editor.variationDefault'),
             onAdd: onChange,
           }),
       },
-      t('editor.setAdd')
+      t('editor.variationAdd')
     )
   );
-  chordsPanel.append(setBar);
+  chordsPanel.append(variationBar);
 
   if (entries.length === 0) {
     chordsPanel.append(
@@ -779,7 +819,7 @@ export function renderSheetEditor(
                     const next = setVoicingForKey(sheet.body, entry.key, frets, {
                       tuning,
                       dialect,
-                      set: activeSet,
+                      variation: activeVariation,
                     });
                     store.updateSheet(sheet.id, (s) => ({ ...s, body: next }));
                     onChange();

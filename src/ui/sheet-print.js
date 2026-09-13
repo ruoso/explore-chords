@@ -100,7 +100,7 @@ function fitColumns(container, body, maxColumns) {
   for (const section of spanning) section.classList.add('is-full-width');
 }
 
-export function renderSheetPrint(container, { store, sheet, instrument, maxColumns, set }) {
+export function renderSheetPrint(container, { store, sheet, instrument, maxColumns, variation }) {
   clear(container);
   if (!sheet || !instrument) return;
 
@@ -120,7 +120,7 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
   const body = el('div', { class: 'ec-print-body' });
   article.append(body);
 
-  const resolved = resolveSongVoicings(song, instrument, dialect, set);
+  const resolved = resolveSongVoicings(song, instrument, dialect, variation);
 
   /**
    * What each chord reads as, where the shape sounds something else.
