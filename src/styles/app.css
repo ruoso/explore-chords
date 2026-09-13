@@ -1361,6 +1361,15 @@ body {
   margin-top: 0.9rem;
 }
 
+/* A row of actions that sits above what it acts on, rather than under it.
+   Ranged left, because at the top of a dialog these read as the alternatives
+   on offer and not as the footer of a form. */
+.ec-dialog-actions.is-top {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin: 0.6rem 0 0.2rem;
+}
+
 /* --- instrument form and destructive actions --------------------------- */
 
 .ec-instrument-form {

@@ -169,9 +169,13 @@ export function openVoicingDialog({
       },
     });
 
+  // Above the list, not below it. The list of shapes for a chord is as long as
+  // the chord has shapes, and on a phone that put every one of these buttons
+  // past the bottom of the screen: the way to enter a shape by hand was there
+  // and unfindable.
   const actions = el(
     'div',
-    { class: 'ec-dialog-actions' },
+    { class: 'ec-dialog-actions is-top' },
     el(
       'button',
       {
@@ -218,7 +222,7 @@ export function openVoicingDialog({
     )
   );
 
-  dialog.append(heading, body, actions);
+  dialog.append(heading, actions, body);
   // Clicking the backdrop closes, matching what a modal looks like it does.
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog) close();

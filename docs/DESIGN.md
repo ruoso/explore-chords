@@ -687,6 +687,12 @@ again to take it off.
 It opens either on nothing or on the shape in effect, because a shape that is
 nearly right is quicker to correct than to build.
 
+**The way in sits above the list, not under it.** A chord has as many shapes as
+it has — forty-three for a C on a guitar — so buttons after that list are on
+screen and unfindable, which is where these started. At the top of the dialog
+they read as the alternatives on offer rather than as the footer of a form,
+which is also why they range left there.
+
 **The click targets come from the renderer**, emitted by the same code that
 draws the grid (`render/chord-box.js`, the `hits` option). A separate set of
 coordinates would drift from the lines on screen the moment either moved. They

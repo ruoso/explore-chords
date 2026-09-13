@@ -21,6 +21,31 @@ test.describe('entering a shape by hand', () => {
     await page.locator('#sheet-body').blur();
   });
 
+  /**
+   * A chord has as many shapes as it has shapes — 43 of them for a C on a
+   * guitar. With the buttons under that list, the way in was on screen and
+   * unfindable.
+   */
+  test('offers the way in above the list, not past the end of it', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 727 });
+    await page.locator('.ec-measure-chord', { hasText: 'Gm' }).first().click();
+    await expect(page.locator('#voicing-dialog')).toBeVisible();
+
+    const placement = await page.evaluate(() => {
+      const enter = document.querySelector('#voicing-enter').getBoundingClientRect();
+      const first = document.querySelector('.ec-dialog-choice').getBoundingClientRect();
+      return {
+        choices: document.querySelectorAll('.ec-dialog-choice').length,
+        onScreen: enter.top >= 0 && enter.bottom <= window.innerHeight,
+        aboveTheList: enter.bottom <= first.top,
+      };
+    });
+    // Enough shapes that the list is longer than the screen.
+    expect(placement.choices).toBeGreaterThan(10);
+    expect(placement.onScreen).toBe(true);
+    expect(placement.aboveTheList).toBe(true);
+  });
+
   test('builds a shape from nothing and writes it into the song', async ({ page }) => {
     await page.locator('.ec-measure-chord', { hasText: 'Gm' }).first().click();
     await page.locator('#voicing-enter').click();
