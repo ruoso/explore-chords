@@ -911,5 +911,28 @@ export default {
         },
       ],
     },
+    '0.13.0': {
+      title: 'What changed in 0.13',
+      sections: [
+        {
+          heading: 'More than one way to play the same song',
+          text:
+            'A song used to hold one set of shapes per instrument. Now it can hold several — ' +
+            'an easy version and a fuller one, or two runs of the wizard kept side by side to ' +
+            'compare. The word before the colon on a voicings heading names the variation, so ' +
+            '“# Up the neck: E2, A2, …” is a variation called Up the neck. Add one above the ' +
+            'shapes, starting from the one you are in or from nothing, and switch between ' +
+            'them there or on the reading page. A chord a variation says nothing about sits on ' +
+            'its default, exactly as before.',
+        },
+        {
+          heading: 'A stray “null” is gone',
+          text:
+            'The reading page of a song with words in it printed the word null under the ' +
+            'title, and so did the shapes panel of a song with no chords yet. Both are fixed, ' +
+            'along with the reason they happened at all.',
+        },
+      ],
+    },
   },
 };

@@ -27,6 +27,7 @@ export const ANNOUNCEMENTS = [
   { id: '0.10.0', kind: 'release' },
   { id: '0.11.0', kind: 'release' },
   { id: '0.12.0', kind: 'release' },
+  { id: '0.13.0', kind: 'release' },
 ];
 
 /**

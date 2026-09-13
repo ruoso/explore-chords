@@ -921,5 +921,28 @@ export default {
         },
       ],
     },
+    '0.13.0': {
+      title: 'Qué cambió en 0.13',
+      sections: [
+        {
+          heading: 'Más de una manera de tocar la misma canción',
+          text:
+            'Una canción guardaba un conjunto de formas por instrumento. Ahora puede guardar ' +
+            'varios: una versión fácil y una más llena, o dos pasadas del asistente lado a ' +
+            'lado para comparar. La palabra antes de los dos puntos en el título de las formas ' +
+            'nombra la variación, así que «# Más arriba: E2, A2, …» es una variación llamada ' +
+            'Más arriba. Agregá una arriba de las formas, partiendo de la que estás usando o ' +
+            'de cero, y cambiá entre ellas ahí o en la página de lectura. Un acorde del que la ' +
+            'variación no dice nada queda en su forma predeterminada, igual que antes.',
+        },
+        {
+          heading: 'Se fue un «null» perdido',
+          text:
+            'La página de lectura de una canción con letra mostraba la palabra null debajo del ' +
+            'título, y el panel de formas de una canción sin acordes también. Los dos están ' +
+            'arreglados, junto con la razón por la que pasaba.',
+        },
+      ],
+    },
   },
 };

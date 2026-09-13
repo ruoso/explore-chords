@@ -917,5 +917,28 @@ export default {
         },
       ],
     },
+    '0.13.0': {
+      title: 'O que mudou na 0.13',
+      sections: [
+        {
+          heading: 'Mais de um jeito de tocar a mesma música',
+          text:
+            'Uma música guardava um conjunto de desenhos por instrumento. Agora pode guardar ' +
+            'vários — uma versão fácil e uma mais cheia, ou dois usos do assistente lado a ' +
+            'lado para comparar. A palavra antes dos dois-pontos no título dos desenhos dá ' +
+            'nome à variação, então “# Mais acima: E2, A2, …” é uma variação chamada Mais ' +
+            'acima. Adicione uma acima dos desenhos, partindo da que você está usando ou do ' +
+            'zero, e alterne entre elas ali ou na página de leitura. Um acorde sobre o qual a ' +
+            'variação não diz nada fica no seu padrão, como antes.',
+        },
+        {
+          heading: 'Um “null” perdido saiu',
+          text:
+            'A página de leitura de uma música com letra mostrava a palavra null embaixo do ' +
+            'título, e o painel de desenhos de uma música sem acordes também. Os dois foram ' +
+            'corrigidos, junto com o motivo de acontecerem.',
+        },
+      ],
+    },
   },
 };

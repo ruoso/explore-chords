@@ -921,5 +921,28 @@ export default {
         },
       ],
     },
+    '0.13.0': {
+      title: 'Cosa è cambiato nella 0.13',
+      sections: [
+        {
+          heading: 'Più di un modo di suonare lo stesso brano',
+          text:
+            'Un brano teneva un insieme di forme per strumento. Ora può tenerne più di uno: ' +
+            'una versione facile e una più piena, o due passaggi dell’assistente affiancati ' +
+            'per confrontarli. La parola prima dei due punti nel titolo delle forme dà il nome ' +
+            'alla variazione, così “# Più su: E2, A2, …” è una variazione chiamata Più su. ' +
+            'Aggiungine una sopra le forme, partendo da quella in cui sei o da zero, e passa ' +
+            'fra loro lì o nella pagina di lettura. Un accordo di cui la variazione non dice ' +
+            'niente resta sulla sua forma predefinita, come prima.',
+        },
+        {
+          heading: 'Via un “null” di troppo',
+          text:
+            'La pagina di lettura di un brano con il testo mostrava la parola null sotto il ' +
+            'titolo, e così il pannello delle forme di un brano senza accordi. Entrambi sono ' +
+            'corretti, insieme al motivo per cui succedeva.',
+        },
+      ],
+    },
   },
 };
