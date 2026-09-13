@@ -18,6 +18,9 @@
  * @property {boolean} lyrics  whether this line carries words
  * @property {boolean} blank   whether it is a stanza break
  * @property {Cell[][]} measures
+ * @property {{bar: number, stated: boolean}[]} bars
+ *   one per measure, parallel to `measures`: which bar of the song it is, and
+ *   whether that number was stated in the text rather than counted (§2.12)
  */
 
 /**
@@ -43,6 +46,12 @@ export function layoutSection(section) {
   return section.lines.map((line) => ({
     lyrics: Boolean(line.lyrics),
     blank: Boolean(line.blank),
+    // Kept beside the cells rather than inside them: a bar number belongs to
+    // the measure, and a measure can be several cells wide.
+    bars: line.measures.map((measure) => ({
+      bar: measure.bar,
+      stated: Boolean(measure.stated),
+    })),
     measures: line.measures.map((measure, i) => {
       const count = measure.segments.length;
       if (line.lyrics) return measure.segments.map((segment) => ({ segment, span: 1 }));

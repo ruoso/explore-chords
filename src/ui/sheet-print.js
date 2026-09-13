@@ -150,6 +150,10 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
     }
   }
   const renamed = store.state.prefs.chartVoicedAs;
+  // Bars are only counted for a song that is all chart. Under a line of words a
+  // chord can last four bars or half of one, and the text does not say which,
+  // so a count there would be a guess dressed as a fact (§2.12).
+  const bars = store.state.prefs.chartBarNumbers && !song.sung;
   const chartName = (segment) => soundedNames.get(segment.chord.key) ?? segment.chord.raw;
 
   for (const section of song.sections) {
@@ -209,8 +213,22 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
         table = { el: node, body };
       }
       const line = el('tr', { class: 'ec-print-line' });
-      for (const cells of row.measures) {
+      // Which bar the line starts on, in the margin. Not part of the chart: it
+      // carries no bar line of its own, because it is an annotation about the
+      // music rather than a part of it (§2.12).
+      if (bars) {
+        line.append(
+          el('td', { class: 'ec-print-barnum' }, row.bars[0] ? String(row.bars[0].bar) : '')
+        );
+      }
+      row.measures.forEach((cells, measureIndex) => {
         cells.forEach(({ segment, span }, j) => {
+          // A number stated in the text, shown where it was stated. The count
+          // jumps there, and a margin number alone would leave that invisible.
+          const jump =
+            bars && j === 0 && measureIndex > 0 && row.bars[measureIndex]?.stated
+              ? el('span', { class: 'ec-bar-stated' }, String(row.bars[measureIndex].bar))
+              : null;
           line.append(
             el(
               'td',
@@ -218,11 +236,12 @@ export function renderSheetPrint(container, { store, sheet, instrument, maxColum
                 class: `ec-print-cell${j === 0 ? ' is-measure-start' : ''}`,
                 colspan: span > 1 ? String(span) : null,
               },
+              jump,
               segment.chord ? chartName(segment) : segment.mark
             )
           );
         });
-      }
+      });
       table.body.append(line);
     }
     closeTable();

@@ -64,6 +64,17 @@ const BRACKET_HEADING = /^(\s*\[\s*([^\]]*?)\s*\]\s*)(.*)$/;
  * instruction to keep playing, and it is shown as one.
  */
 const REPEAT = '%';
+/**
+ * A bar number stated outright: `@9` as the first word of a measure.
+ *
+ * Bars count on their own, so this is needed only where the chart stops
+ * agreeing with the score it was taken from — which is the whole reason to have
+ * it. A player transcribing a repeat writes it out straight, so the same source
+ * bars appear twice and the count has to be told (§2.12).
+ */
+const BAR_ANCHOR = /^@(\d+)$/;
+/** The same thing on a heading: `# A @9`, sugar for an anchor on its first bar. */
+const HEADING_ANCHOR = /\s*@(\d+)\s*$/;
 /** `Intro: C  G`, the other way a cifra names a section. */
 const LABEL_HEADING = /^(\s*([^\s:|]+)\s*:\s*)(.*)$/;
 /** A leading `>` forces a line to be read as words. Kept in the text. */
@@ -139,6 +150,19 @@ function isTuning(text) {
  * @property {{start:number,end:number}|null} legacyTuningRange
  */
 
+/**
+ * A heading's own bar number, taken off the name: `# A @9`.
+ *
+ * Sugar for an anchor on the section's first bar, which is where it is wanted
+ * most of the time — a section written out twice starts at the same source bar
+ * both times.
+ */
+function takeAnchor(name) {
+  const found = HEADING_ANCHOR.exec(name);
+  if (!found) return { name, anchor: null };
+  return { name: name.slice(0, found.index).trim(), anchor: Number(found[1]) };
+}
+
 /** Tunings compare by their pitches, not by spacing or case. */
 export function normaliseTuning(text) {
   return String(text ?? '')
@@ -198,12 +222,18 @@ function scanChords(raw, lineStart, dialect, collect) {
   const measures = [];
   const tokens = [];
   let cursor = 0;
+  // A stated number with nothing in its measure belongs to whatever bar comes
+  // next — `@9 | Dm` and a bare `@9` on its own line both mean the same thing.
+  // Dropping it would be the worst of the options, since nothing would look
+  // wrong (§2.12).
+  let carry = null;
 
   for (const chunk of raw.split('|')) {
     const chunkStart = cursor;
     cursor += chunk.length + 1;
 
     const segments = [];
+    let anchor = null;
     const add = (segment, column) => {
       segments.push(segment);
       tokens.push({ segment, column });
@@ -213,6 +243,13 @@ function scanChords(raw, lineStart, dialect, collect) {
     let match;
     while ((match = wordRe.exec(chunk)) !== null) {
       const start = chunkStart + match.index;
+      // A stated bar number belongs to the measure, not to anything in it, so
+      // it never becomes a segment and never reaches the chord parser.
+      const stated = BAR_ANCHOR.exec(match[0]);
+      if (stated) {
+        anchor = Number(stated[1]);
+        continue;
+      }
       const { before, chord: word, after } = splitMarks(match[0]);
 
       if (before) add({ chord: null, mark: before, lyric: '' }, start);
@@ -227,16 +264,27 @@ function scanChords(raw, lineStart, dialect, collect) {
       if (after) add({ chord: null, mark: after, lyric: '' }, start + before.length + word.length);
     }
 
-    if (segments.length > 0) measures.push({ segments });
+    const stated = anchor ?? carry;
+    if (segments.length === 0) {
+      if (anchor !== null) carry = anchor;
+      continue;
+    }
+    carry = null;
+    measures.push(stated === null ? { segments } : { segments, anchor: stated });
   }
 
-  return { measures, tokens };
+  return { measures, tokens, trailing: carry };
 }
 
 /** A line of chords alone: measures of segments, no words. */
 function chartLine(raw, lineStart, dialect, collect) {
-  const { measures } = scanChords(raw, lineStart, dialect, collect);
-  return measures.length > 0 ? { measures, lyrics: false } : null;
+  const { measures, trailing } = scanChords(raw, lineStart, dialect, collect);
+  if (measures.length > 0) {
+    return trailing === null ? { measures, lyrics: false } : { measures, lyrics: false, trailing };
+  }
+  // Nothing but a stated bar number. Kept so the next bar can have it, and
+  // dropped again by numberBars once it has been used.
+  return trailing === null ? null : { measures: [], lyrics: false, anchor: trailing };
 }
 
 /**
@@ -511,7 +559,7 @@ export function parseSong(text, dialect) {
     if (bracket && bracket[2] && !/^\d+$/.test(bracket[2])) {
       closeBlock(lineStart);
       flush();
-      current = { name: bracket[2], pending: [] };
+      current = { ...takeAnchor(bracket[2]), pending: [] };
       if (bracket[3].trim() !== '') {
         current.pending.push({ raw: bracket[3], lineStart: lineStart + bracket[1].length });
       }
@@ -546,7 +594,7 @@ export function parseSong(text, dialect) {
       }
 
       flush();
-      current = { name, pending: [] };
+      current = { ...takeAnchor(name), pending: [] };
       continue;
     }
 
@@ -579,7 +627,7 @@ export function parseSong(text, dialect) {
     if (label && label[2] && isChordRun(label[3], dialect)) {
       closeBlock(lineStart);
       flush();
-      current = { name: label[2], pending: [] };
+      current = { ...takeAnchor(label[2]), pending: [] };
       if (label[3].trim() !== '') {
         current.pending.push({ raw: label[3], lineStart: lineStart + label[1].length });
       }
@@ -602,9 +650,14 @@ export function parseSong(text, dialect) {
     delete section.pending;
   });
   const kept = sections.filter((section) => section.lines.length > 0 || section.name);
+  numberBars(kept);
 
   return {
     sections: kept,
+    // Whether this song reads words at all. Bars are only counted in a song
+    // that is all chart: under a line of words a chord can last four bars or
+    // half of one, and the text does not say which (§2.12).
+    sung,
     blocks,
     occurrences,
     symbols,
@@ -613,6 +666,53 @@ export function parseSong(text, dialect) {
     legacyTuning,
     legacyTuningRange,
   };
+}
+
+/**
+ * Give every measure the number of the bar it is, counting through the song.
+ *
+ * Continuous from bar 1, the way a score numbers bars, because that is what the
+ * numbers are for: relating the chart to the sheet music it came from, and to
+ * whoever else is counting. A stated number sets the count from there on.
+ *
+ * A sung line neither takes a number nor advances the count. A chord over a
+ * syllable says nothing about how many bars it lasts, so counting it would be a
+ * guess dressed as a fact — which is why the app only offers bar numbers for a
+ * song that is all chart.
+ */
+function numberBars(sections) {
+  let bar = 1;
+  let pending = null;
+  for (const section of sections) {
+    if (section.anchor !== null && section.anchor !== undefined) bar = section.anchor;
+    const kept = [];
+    for (const line of section.lines) {
+      // A line that was nothing but a number: used here and then dropped, so
+      // no empty row reaches the chart.
+      if (!line.lyrics && line.measures.length === 0) {
+        if (line.anchor !== undefined) bar = line.anchor;
+        continue;
+      }
+      kept.push(line);
+      if (line.lyrics) continue;
+
+      for (const measure of line.measures) {
+        if (pending !== null) {
+          bar = pending;
+          pending = null;
+        }
+        if (measure.anchor !== undefined) bar = measure.anchor;
+        measure.bar = bar;
+        // Set where the number was stated rather than counted, which is the
+        // only place the chart shows one mid-line.
+        measure.stated = measure.anchor !== undefined;
+        bar += 1;
+      }
+      // A number written after the last bar of a line applies to the next one.
+      if (line.trailing !== undefined) pending = line.trailing;
+    }
+    section.lines = kept;
+  }
 }
 
 /** The voicings-block key for a symbol and index. Index 1 is the bare form. */

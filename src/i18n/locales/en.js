@@ -340,6 +340,7 @@ export default {
   },
 
   editor: {
+    chartBarNumbers: 'Show bar numbers',
     chartVoicedAs: 'Name the chords in the chart by what the shapes sound',
     back: '← All songs',
     titleLabel: 'Song title',
@@ -369,6 +370,14 @@ export default {
         term: 'When a line could be either',
         text: 'A vertical bar makes it a chart. A leading > makes it words, and is the only way to settle a line that reads as a chord.',
         example: 'G\n> A',
+      },
+      bars: {
+        term: 'Bar numbers',
+        text: 'Bars count on their own. Write @9 at the start of a measure where the chart ' +
+          'stops agreeing with the score it came from — writing a repeat out straight means ' +
+          'the same bars appear twice, and the count has to be told. A heading can carry it ' +
+          'instead, and a number on its own line applies to the bar after it.',
+        example: '# A @9\nDm | G7 | @17 Em | A7',
       },
       voicings: {
         term: 'Voicings',

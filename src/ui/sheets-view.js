@@ -277,8 +277,8 @@ export function renderSheetView(
       )
     ),
     el('div', { class: 'ec-share-slot', id: 'sheet-share-out' }),
-    // A reading choice, so it lives with the reading page — and because the
-    // printed sheet is this same renderer, it goes to paper too (§6.2).
+    // Reading choices, so they live with the reading page — and because the
+    // printed sheet is this same renderer, they go to paper too (§6.2, §2.12).
     el(
       'label',
       { class: 'ec-song-option', for: 'chart-voiced-as' },
@@ -292,7 +292,25 @@ export function renderSheetView(
         },
       }),
       t('editor.chartVoicedAs')
-    )
+    ),
+    // Not offered for a song that reads words: a chord over a syllable says
+    // nothing about how many bars it lasts, so there is no count to show.
+    parseSong(sheet.body, store.state.prefs.dialect).sung
+      ? null
+      : el(
+          'label',
+          { class: 'ec-song-option', for: 'chart-bar-numbers' },
+          el('input', {
+            type: 'checkbox',
+            id: 'chart-bar-numbers',
+            checked: store.state.prefs.chartBarNumbers || null,
+            onChange: (event) => {
+              store.setPrefs({ chartBarNumbers: event.target.checked });
+              onChange?.();
+            },
+          }),
+          t('editor.chartBarNumbers')
+        )
   );
 
   // In the document first: the sheet measures itself, both to size its columns
@@ -421,7 +439,7 @@ export function renderSheetEditor(
       el(
         'dl',
         { class: 'ec-song-help', id: 'song-help' },
-        ...['sections', 'chart', 'words', 'either', 'voicings'].flatMap((key) => [
+        ...['sections', 'chart', 'words', 'either', 'bars', 'voicings'].flatMap((key) => [
           el('dt', {}, t(`editor.help.${key}.term`)),
           el(
             'dd',

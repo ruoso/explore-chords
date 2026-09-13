@@ -342,6 +342,7 @@ export default {
   },
 
   editor: {
+    chartBarNumbers: 'Mostrar los números de compás',
     chartVoicedAs: 'Nombrar los acordes de la cifra por lo que suenan las formas',
     back: '← Todas las canciones',
     titleLabel: 'Título de la canción',
@@ -372,6 +373,15 @@ export default {
         term: 'Cuando la línea podría ser las dos cosas',
         text: 'Una barra vertical la hace cifrado. Un > al principio la hace letra, y es la única manera de resolver una línea que se lee como acorde.',
         example: 'G\n> A',
+      },
+      bars: {
+        term: 'Números de compás',
+        text: 'Los compases se cuentan solos. Escribí @9 al principio de un compás donde la ' +
+          'cifra deja de coincidir con la partitura de la que salió: escribir una repetición ' +
+          'completa hace que los mismos compases aparezcan dos veces, y hay que avisarle a la ' +
+          'cuenta. Un título puede llevar el número, y un número en una línea sola vale para ' +
+          'el compás siguiente.',
+        example: '# A @9\nDm | G7 | @17 Em | A7',
       },
       voicings: {
         term: 'Voicings',

@@ -143,6 +143,9 @@ export const DEFAULT_PREFS = {
   // Off: the chart names the harmony, which is what it is for. Turning this on
   // makes it name what the chosen shapes actually sound instead (§6.2).
   chartVoicedAs: false,
+  // Off: the numbers are for relating a chart to the score it came from, not
+  // for playing from (§2.12).
+  chartBarNumbers: false,
 };
 
 export function loadPrefs() {

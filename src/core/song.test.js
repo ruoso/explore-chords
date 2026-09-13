@@ -817,3 +817,91 @@ describe('merging copies of one song', () => {
     expect(canMergeSongs(['# Verse\nC | G', '# Verse\nC | G'])).toBe(false);
   });
 });
+
+/**
+ * Bar numbers (docs/DESIGN.md §2.12).
+ *
+ * A player transcribing from a score writes repeats out straight, because that
+ * reads better to play from. The chart's bar positions then stop matching the
+ * score's numbers, so the numbers have to be assertable — and they may repeat
+ * and jump.
+ */
+describe('counting bars', () => {
+  const bars = (text) =>
+    parseSong(text, 'brazilian').sections.map((section) =>
+      section.lines
+        .filter((line) => !line.lyrics)
+        .map((line) => line.measures.map((m) => m.bar + (m.stated ? '*' : '')).join(' '))
+    );
+
+  it('counts through the whole song, the way a score numbers bars', () => {
+    expect(bars('# A\nDm | G7 | C7 | F\n\n# B\nBb | A7')).toEqual([
+      ['1 2 3 4'],
+      ['5 6'],
+    ]);
+  });
+
+  it('counts a repeat sign as the bar it is', () => {
+    expect(bars('Dm | % | G7')).toEqual([['1 2 3']]);
+  });
+
+  it('counts a measure with several chords once', () => {
+    expect(bars('Dm G7 | C7')).toEqual([['1 2']]);
+  });
+
+  it('takes a stated number and carries on from it', () => {
+    expect(bars('# A\n@9 Dm | G7 | C7')).toEqual([['9* 10 11']]);
+  });
+
+  it('takes one in the middle of a line, which is where a chart jumps', () => {
+    expect(bars('# A\nDm | G7 | @17 Em | A7')).toEqual([['1 2 17* 18']]);
+  });
+
+  it('reads a number on a heading as one on its first bar', () => {
+    expect(bars('# A @9\nDm | G7')).toEqual([['9 10']]);
+  });
+
+  it('keeps the heading name when it carries a number', () => {
+    const song = parseSong('# A second time @1\nDm', 'brazilian');
+    expect(song.sections[0].name).toBe('A second time');
+  });
+
+  it('lets two written-out sections carry the same numbers', () => {
+    // The case this exists for: a repeat written out straight, so the source's
+    // bars 1-4 appear twice.
+    expect(bars('# A\nDm | G7\n\n# A again @1\nDm | G7')).toEqual([['1 2'], ['1 2']]);
+  });
+
+  it('gives a number with no bar of its own to the bar that follows', () => {
+    // Dropping it would be the worst outcome: nothing would look wrong.
+    expect(bars('# A\n@9\nDm | G7')).toEqual([['9 10']]);
+    expect(bars('# A\n@9 | Dm | G7')).toEqual([['9* 10']]);
+    expect(bars('# A\nDm | @9\nG7 | C7')).toEqual([['1', '9 10']]);
+  });
+
+  it('drops the line a lone number was written on', () => {
+    const song = parseSong('# A\n@9\nDm | G7', 'brazilian');
+    expect(song.sections[0].lines.length).toBe(1);
+  });
+
+  it('never reads a stated number as a chord', () => {
+    const song = parseSong('# A\n@9 Dm | @17 Em', 'brazilian');
+    expect(song.unknown).toEqual([]);
+    expect(song.symbols).toEqual(['Dm', 'Em']);
+  });
+
+  it('says whether the song reads words, since then bars cannot be counted', () => {
+    // A chord over a syllable says nothing about how many bars it lasts.
+    expect(parseSong('Dm | G7', 'brazilian').sung).toBe(false);
+    expect(parseSong('G            D\nWhen I first saw you', 'brazilian').sung).toBe(true);
+  });
+
+  it('neither numbers a sung line nor lets it advance the count', () => {
+    const song = parseSong('# A\nDm | G7\n\n# B\nG            D\nWhen I first saw you', 'brazilian');
+    const sung = song.sections[1].lines.filter((line) => line.lyrics);
+    expect(sung.length).toBeGreaterThan(0);
+    for (const line of sung) {
+      for (const measure of line.measures) expect(measure.bar).toBeUndefined();
+    }
+  });
+});

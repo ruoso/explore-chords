@@ -342,6 +342,7 @@ export default {
   },
 
   editor: {
+    chartBarNumbers: 'Mostrare i numeri di battuta',
     chartVoicedAs: 'Chiamare gli accordi della cifra come suonano le forme',
     back: '← Tutte le canzoni',
     titleLabel: 'Titolo della canzone',
@@ -372,6 +373,15 @@ export default {
         term: 'Quando una riga potrebbe essere entrambe',
         text: 'Una barra verticale la rende schema. Un > iniziale la rende testo, ed è l’unico modo di risolvere una riga che si legge come accordo.',
         example: 'G\n> A',
+      },
+      bars: {
+        term: 'Numeri di battuta',
+        text: 'Le battute si contano da sole. Scrivi @9 all’inizio di una battuta dove la ' +
+          'cifra smette di corrispondere allo spartito da cui viene: scrivere per esteso una ' +
+          'ripetizione fa comparire due volte le stesse battute, e il conteggio va avvertito. ' +
+          'Un titolo può portare il numero, e un numero su una riga da sola vale per la ' +
+          'battuta successiva.',
+        example: '# A @9\nDm | G7 | @17 Em | A7',
       },
       voicings: {
         term: 'Voicing',

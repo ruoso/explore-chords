@@ -182,6 +182,41 @@
   border-left: 1px solid var(--border);
 }
 
+/* Which bar the line starts on, in the margin (DESIGN.md 2.12).
+
+   A different face from the chords, smaller and quieter, because it is an
+   annotation about the music and not a part of it. Tabular figures so the
+   numbers line up as a column down the page. */
+.ec-print-barnum {
+  padding: 0 0.5rem 0 0;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.65rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  text-align: right;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+/* The margin number is not a bar, so the first real bar keeps no line before
+   it — which it would otherwise gain by no longer being the first cell. */
+.ec-print-barnum + .ec-print-cell.is-measure-start {
+  border-left: 0;
+}
+
+/* A number the text stated, shown at the bar that states it: the count jumps
+   there, and a margin number alone would leave that invisible. Same face as
+   the margin, so the two read as the same kind of thing. */
+.ec-bar-stated {
+  margin-right: 0.3rem;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.65rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
 @media print {
   @page {
     margin: 1.5cm;

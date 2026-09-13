@@ -342,6 +342,7 @@ export default {
   },
 
   editor: {
+    chartBarNumbers: 'Mostrar os números dos compassos',
     chartVoicedAs: 'Nomear os acordes da cifra pelo que os desenhos soam',
     back: '← Todas as músicas',
     titleLabel: 'Nome da música',
@@ -371,6 +372,15 @@ export default {
         term: 'Quando a linha poderia ser as duas coisas',
         text: 'Uma barra vertical faz dela uma cifra. Um > no começo faz dela letra, e é o único jeito de resolver uma linha que se lê como acorde.',
         example: 'G\n> A',
+      },
+      bars: {
+        term: 'Números dos compassos',
+        text: 'Os compassos são contados sozinhos. Escreva @9 no início de um compasso onde ' +
+          'a cifra deixa de concordar com a partitura de origem — escrever uma repetição por ' +
+          'extenso faz os mesmos compassos aparecerem duas vezes, e a contagem precisa ser ' +
+          'avisada. Um título pode levar o número, e um número numa linha sozinha vale para o ' +
+          'compasso seguinte.',
+        example: '# A @9\nDm | G7 | @17 Em | A7',
       },
       voicings: {
         term: 'Voicings',

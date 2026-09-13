@@ -718,6 +718,78 @@ chord marked — in a word and a glyph, not only a colour (§6.1).
 
 ---
 
+### 2.12 Bar numbers
+
+A player transcribing from a score often rewrites its structure: a repeat gets
+written out straight, because that reads better to play from. The chart's bar
+positions then stop matching the score's bar numbers — and bar numbers are how
+musicians find each other. "From bar 9" has to mean bar 9 of the score, not the
+ninth thing on the page.
+
+So a bar number **cannot be derived from position**. It has to be assertable,
+and it has to be allowed to repeat and to jump.
+
+**Bars count on their own, and a stated number overrides the count.** Nothing to
+write in the ordinary case; one token where the chart diverges from its source.
+Continuous from bar 1 through the whole song, the way a score numbers bars,
+rather than restarting per section.
+
+**`@9` as the first word of a measure** states that bar's number. Every other
+candidate collides with something the format already uses: `[9]` is the footnote
+marker and `[Intro]` is a heading, `(9)` is the repeat-group mark, and a bare
+`9.` is indistinguishable from a numbered lyric line. `@` appears nowhere else
+in the format or the chord parser. A heading may carry it instead — `# A @9` —
+which is sugar for an anchor on that section's first bar. A number with no bar
+of its own, on a line by itself or in an empty measure, belongs to the bar that
+follows; dropping it would be the worst of the options, since nothing would look
+wrong. The line it was written on is then dropped, so no empty row reaches the
+chart.
+
+**Only for a song that is all chart.** Under a line of words a chord can last
+four bars or half of one, and the text does not say which, so a count there
+would be a guess dressed as a fact. `parseSong` reports `sung`, and the option
+is not offered at all for such a song. This also spares the numbers from the
+column-alignment problem that `realign` exists for: nothing is inserted into a
+sung line.
+
+#### How they read
+
+Off by default and turned on by a checkbox on the reading page, inherited by
+print because that is the same renderer (§2.11, §6.2). They are for relating a
+chart to a score, not for playing from.
+
+**The line's first bar shows in the margin**, in a smaller, quieter, tabular
+monospace face — a different face from the chord names, because it annotates the
+music rather than being part of it, and tabular so the numbers line up as a
+column down the page. It carries no bar line of its own, and the first real bar
+keeps none before it: `.ec-print-barnum + .ec-print-cell` suppresses the border
+that cell would otherwise gain by no longer being the first child.
+
+**A stated number also shows at the bar that states it**, inline ahead of the
+chord in the same face. A margin number alone would leave a mid-line jump
+invisible: a reader would count 5, 6, 7, 8 across `Dm | G7 | @17 Em | A7` when
+the truth is 5, 6, 17, 18, which is worse than no numbering at all. Only stated
+numbers appear inline, so the chart stays quiet and never lies.
+
+The whole point, in one example — a sixteen-bar section whose repeat is written
+out straight, so the source's bars appear twice:
+
+```
+# A
+ 1  Dm │ G7 │ C7 │ F
+ 5  Bb │ A7 │ Dm │ %
+
+# A second time @1
+ 1  Dm │ G7 │ C7 │ F
+ 5  Cm │ F7 │ 15 Bb │ %
+```
+
+**Not in the editor's chart.** The editor is where the text is, and the text
+says the numbers outright; the reading page is where a chart is read against a
+score.
+
+---
+
 ## 3. Architecture
 
 ### 3.1 Stack
