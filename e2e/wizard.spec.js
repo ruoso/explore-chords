@@ -76,9 +76,12 @@ test.describe('the voicing wizard', () => {
     // The rules it actually applies, not a paraphrase of them.
     await expect(how.locator('.ec-wizard-rules li').first()).toContainText('enumerated');
     const sources = how.locator('.ec-wizard-sources li');
-    await expect(sources).toHaveCount(5);
+    await expect(sources).toHaveCount(6);
     await expect(sources.first()).toContainText('Universidade de Brasília');
     await expect(sources.first().locator('a')).toHaveAttribute('href', /\.pdf$/);
+    // A work with no link still gets its full reference, so it can be checked.
+    await expect(sources.nth(1)).toContainText('Época de Ouro');
+    await expect(sources.nth(1).locator('a')).toHaveCount(0);
 
     // The sources belong to the algorithm, not to the wizard: a rule of thumb
     // about hands claims no authority it does not have.
@@ -108,21 +111,21 @@ test.describe('the voicing wizard', () => {
     await page.locator('#wizard-choroCentro').click();
 
     // The choro texture leaves one question open; the others do not ask any.
-    const option = page.locator('#wizard-option-whenThirdRepeats');
+    const option = page.locator('#wizard-option-whenNoThirdAbove');
     await expect(option).toBeVisible();
-    await expect(page.locator('#wizard-whenThirdRepeats-repeat')).toBeChecked();
+    await expect(page.locator('#wizard-whenNoThirdAbove-sixth')).toBeChecked();
 
     // The rules answer to the choice, so the list never contradicts the control.
     await page.locator('.ec-wizard-how > summary').click();
-    await expect(page.locator('.ec-wizard-rules')).toContainText('it is played again');
+    await expect(page.locator('.ec-wizard-rules')).toContainText('a sixth');
 
-    await page.locator('#wizard-whenThirdRepeats-thirdBelow').check();
+    await page.locator('#wizard-whenNoThirdAbove-thirdBelow').check();
     await expect(page.locator('#wizard-preview')).toBeVisible();
-    await expect(page.locator('.ec-wizard-rules')).toContainText('a third below');
+    await expect(page.locator('.ec-wizard-rules')).toContainText('a third BELOW');
 
     await page.locator('#wizard-back').click();
     await page.locator('#wizard-smoothest').click();
-    await expect(page.locator('#wizard-option-whenThirdRepeats')).toHaveCount(0);
+    await expect(page.locator('#wizard-option-whenNoThirdAbove')).toHaveCount(0);
   });
 
   test('keeps a policy off an instrument it makes no sense on', async ({ page }) => {

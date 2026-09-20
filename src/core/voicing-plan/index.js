@@ -38,7 +38,13 @@ import {
   stringChange,
 } from './shape.js';
 
-const pcOf = (midi) => ((midi % 12) + 12) % 12;
+/**
+ * Where the centro's own bass sits, measured off Becker's transcriptions of the
+ * Época de Ouro six-string: nothing below E2, the weight of it between G2 and
+ * D3, and a thin tail above. Letting the grip climb past that is what opening
+ * the fourth string to a four-voice thumb would otherwise do.
+ */
+const CENTRO_BASS_HIGH = 50;
 
 /**
  * @typedef {object} PlanRequest
@@ -145,22 +151,25 @@ export const PLANNERS = [
     //
     // Unlike the other two, this one claims to reproduce a documented practice,
     // so it has to be able to say whose. See src/data/sources.js.
-    sources: ['camposRamos2016', 'korver2020', 'vilelaMangueira2023', 'botelho2018', 'faria'],
+    sources: [
+      'camposRamos2016',
+      'becker1996',
+      'korver2020',
+      'vilelaMangueira2023',
+      'botelho2018',
+      'faria',
+    ],
     appliesTo: (instrument) => stringCount(instrument) >= 5,
     options: [
       {
-        // What to do where the third above the other guitar's bass is the note
-        // this guitar just played. Repeating it is documented and defended
-        // (p.125), and dropping a third below is a documented move too (p.161)
-        // — though the sources give that one for a third that does not work at
-        // all, so applying it to one that merely repeats is our extension.
-        //
-        // The octave, which the sources name alongside the third, is not
-        // offered: it needs the thumb on the fourth string, which the
-        // contiguous-string rule does not currently allow (§2.10).
-        id: 'whenThirdRepeats',
-        values: ['repeat', 'thirdBelow'],
-        default: 'repeat',
+        // Which remedy, where a third above the other guitar's bass is not in
+        // the chord. Campos names a sixth or an octave first and then, "em
+        // alguns casos", a third below onto the fifth — all three for the same
+        // situation, so which one a player wants is a preference and not a
+        // fact (§2.10).
+        id: 'whenNoThirdAbove',
+        values: ['sixth', 'thirdBelow'],
+        default: 'sixth',
         sources: ['camposRamos2016'],
       },
     ],
@@ -181,7 +190,7 @@ export const PLANNERS = [
         }
 
         const all = centroCandidates(entry.chord, instrument, { bassPc: entry.bassPc });
-        const wanted = intervalOrder(entry, reading, all, previous, choices);
+        const wanted = intervalOrder(choices);
 
         let options = [];
         for (const interval of wanted) {
@@ -223,6 +232,8 @@ function centroCost(candidate, previous, strings) {
     movement(candidate, previous) * 1.0 +
     stringChange(candidate, previous) * 1.5 +
     doubling(candidate) * 1.2 +
+    // A grip whose own bass climbs above the register the transcriptions show.
+    (Math.max(0, lowest(candidate) - CENTRO_BASS_HIGH) / 12) * 3.0 +
     // The transcriptions put the fingers on the second, third and fourth
     // strings, so the grip reaches the second from the top. A run that stops
     // on the middle of the neck is the same notes with no top voice, which
@@ -235,24 +246,14 @@ function centroCost(candidate, previous, strings) {
  * Which relations to the other guitar's bass this chord may use, in preference
  * order.
  *
- * The third is the idiom; the sixth, the octave and then a third *below* are
- * its documented remedies where a third above that bass is not in the chord,
- * in the order the literature offers them (§2.10). The one decision that needs
- * the passage rather than the chord is whether to leave the third early: where
- * the bass is walking and the third would land on the note this guitar just
- * played, a player who has asked for it can drop below instead.
+ * The third is the idiom, always first. What follows it is the player's, since
+ * the literature gives three remedies for the same situation and no ranking
+ * between them beyond the order it happens to list them in (§2.10).
  */
-function intervalOrder(entry, reading, all, previous, choices) {
-  const ordinary = ['third', 'sixth', 'octave', 'thirdBelow'];
-  if (choices.whenThirdRepeats !== 'thirdBelow' || !previous) return ordinary;
-  if (reading.spansAt(entry.at, 'walking').length === 0) return ordinary;
-
-  const thirds = all.filter((c) => c.intervals.includes('third'));
-  if (thirds.length === 0) return ordinary;
-  const held = pcOf(lowest(previous));
-  if (!thirds.every((c) => pcOf(lowest(c.fingering)) === held)) return ordinary;
-
-  return ['thirdBelow', ...ordinary];
+function intervalOrder(choices) {
+  return choices.whenNoThirdAbove === 'thirdBelow'
+    ? ['third', 'thirdBelow', 'sixth', 'octave']
+    : ['third', 'sixth', 'octave', 'thirdBelow'];
 }
 
 export function plannerById(id) {

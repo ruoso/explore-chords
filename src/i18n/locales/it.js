@@ -506,24 +506,27 @@ export default {
             'sette corde.',
           'Quattro corde che suonano, o cinque. Quattro è la norma in questo idioma e cinque ' +
             'l’eccezione occasionale: un basso col pollice e il resto con tre dita.',
-          'Oppure tre note, col pollice sulla quarta corda e la corda bassa soppressa, che è ' +
-            'l’altra tessitura dell’idioma. Solo per un accordo con settima: quel che esce è ' +
-            'una fondamentale o una quinta, e le fonti lo permettono perché il tritono — la ' +
-            'terza e la settima — continua a suonare.',
-          'Le corde che suonano sono vicine, col pollice sulla più bassa o sulla seconda più ' +
-            'bassa e la presa che arriva alla seconda corda dall’alto. Un buco in mezzo è una ' +
-            'decisione che puoi ancora prendere; una forma che ne ha bisogno non si disfa.',
-          'Niente sopra il settimo tasto, e le corde a vuoto sono benvenute. Le fonti mettono ' +
-            'questo lavoro nel primo quarto del manico.',
+          'Oppure tre note, col pollice sulla quarta corda e la corda bassa soppressa, che ' +
+            'una fonte dà come l’altra tessitura dell’idioma. Solo per un accordo con settima: ' +
+            'quel che esce è una fondamentale o una quinta, ed è permesso perché il tritono — ' +
+            'la terza e la settima — continua a suonare. Offerta, non preferita: le ' +
+            'trascrizioni mostrano quattro voci in quella posizione.',
+          'Le corde che suonano sono vicine, col pollice sulla più bassa, sulla seconda più ' +
+            'bassa o sulla quarta, e la presa che arriva almeno alla seconda corda dall’alto. ' +
+            'Un buco in mezzo è una decisione che puoi ancora prendere; una forma che ne ha ' +
+            'bisogno non si disfa.',
+          'Niente sopra il settimo tasto, corde a vuoto benvenute, e il basso della presa fra ' +
+            'il mi grave e il re sopra di esso. È il tratto di manico che le fonti nominano e ' +
+            'il registro in cui le trascrizioni dell’Época de Ouro stanno davvero.',
           'La nota più bassa sta una terza sopra quello che suona la sette corde — la nota ' +
             'dopo la barra quando la cifra ne scrive una, la fondamentale altrimenti — ' +
             'nell’ottava in cui si trova quella chitarra. È tutto qui: le due chitarre ' +
             'prendono rivolti diversi per non raddoppiarsi.',
-          'Dove una terza sopra quel basso non appartiene all’accordo, si usa una sesta, ' +
-            'poi un’ottava, poi una terza SOTTO di esso — posandosi sulla quinta ' +
-            'dell’accordo. Sono i rimedi che dà la letteratura, nell’ordine in cui li dà: ' +
-            'una terza sopra la settima di una dominante che risolve su un accordo maggiore ' +
-            'cade su una nota che lo stile non usa.',
+          'Dove una terza sopra quel basso non appartiene all’accordo, un’altra relazione ne ' +
+            'prende il posto — quale, lo decide la scelta qui sotto. Il caso è nominato nella ' +
+            'letteratura, non è una lacuna di qui: una terza sopra la settima di una ' +
+            'dominante che risolve su un accordo maggiore cade su una nota che lo stile non ' +
+            'usa.',
           'Ogni nota dell’accordo è mantenuta tranne la quinta, che è quella che questo ' +
             'idioma lascia — a meno che quella quinta sia diminuita o aumentata, perché una ' +
             '5b o una 5# è ciò che rende l’accordo quell’accordo.',
@@ -534,25 +537,23 @@ export default {
             'più pieno batte uno che spende una corda a raddoppiare una nota.',
         ],
         options: {
-          whenThirdRepeats: {
-            label: 'Quando la terza ripete la nota precedente',
+          whenNoThirdAbove: {
+            label: 'Quando nessuna terza sopra l’altra chitarra è nell’accordo',
             values: {
-              repeat: 'Suonarla di nuovo',
-              thirdBelow: 'Scendere a una terza sotto',
+              sixth: 'Una sesta, poi un’ottava',
+              thirdBelow: 'Una terza sotto',
             },
             rules: {
-              repeat:
-                'Dove quella terza è la nota che questa chitarra ha appena suonato, la si suona ' +
-                'di nuovo. Armonizzare per terze un basso che cammina ripete una nota ogni ' +
-                'volta che una terza maggiore si stringe in minore, e le fonti dicono ' +
-                'esplicitamente che questo non toglie nulla al contrappunto, perché a muoversi ' +
-                'è l’altra chitarra.',
+              sixth:
+                'Dove una terza sopra il basso dell’altra chitarra non appartiene ' +
+                'all’accordo, si usa una sesta sopra di esso, e in mancanza di quella ' +
+                'un’ottava. Sono i primi rimedi che la letteratura dà per quel caso.',
               thirdBelow:
-                'Dove quella terza è la nota che questa chitarra ha appena suonato e il ' +
-                'basso sta camminando, la presa scende a una terza sotto l’altra chitarra. ' +
-                'Le fonti registrano quella mossa come in perfetto accordo con lo stile, ' +
-                'benché la diano per una terza che non funziona affatto, non per una che si ' +
-                'ripete.',
+                'Dove una terza sopra il basso dell’altra chitarra non appartiene ' +
+                'all’accordo, la presa scende a una terza SOTTO di esso, posandosi sulla ' +
+                'quinta — il secondo rivolto. La letteratura lo dà per lo stesso caso, lo ' +
+                'descrive come in perfetto accordo con lo stile e nomina la registrazione da ' +
+                'cui viene.',
             },
           },
         },
@@ -1019,6 +1020,50 @@ export default {
             'richiede, e scrive da sé il segno di rimando. L’anteprima mostra il brano come ' +
             'sarà — le forme che porterà e quante battute copre ciascuna — così un accordo ' +
             'diviso in due è qualcosa che vedi prima di accettare e non dopo.',
+        },
+      ],
+    },
+    '0.15.0': {
+      title: 'Cosa è cambiato nella 0.15',
+      sections: [
+        {
+          heading: 'Una tesi che non si trovava',
+          text:
+            'L’assistente choro segue fonti scritte, e l’unico lavoro dedicato interamente ' +
+            'alla parte della chitarra a sei corde — José Paulo Becker sull’Época de Ouro, ' +
+            '1996 — non si trovava da nessuna parte. È saltato fuori. Tutto quel che segue ' +
+            'viene dal leggerlo, ed è per questo che questa versione corregge cose che la ' +
+            '0.14 aveva solo a metà. Ora è elencato in “Da dove viene”, con le altre.',
+        },
+        {
+          heading: 'La domanda che ti fa è migliore',
+          text:
+            'Prima chiedeva cosa fare quando la terza sopra l’altra chitarra ripeteva la nota ' +
+            'appena suonata. Nessuna fonte lo chiede — e Becker, che documenta questa parte ' +
+            'nel dettaglio, non mette mai la sei corde sotto la sette corde. Così la domanda ' +
+            'è ora quella che la letteratura pone davvero: quando nessuna terza sopra ' +
+            'l’altra chitarra è nell’accordo, vuoi una sesta e poi un’ottava, o la terza ' +
+            'sotto? C7/Bb diretto a F è il caso, e si sentono entrambe.',
+        },
+        {
+          heading: 'Arriva al cantino, e resta nel suo registro',
+          text:
+            'Due fonti non concordano su dove vadano le dita, e ha vinto quella che trascrive ' +
+            'esecuzioni reali. La chitarra di Becker nell’Época de Ouro usa il cantino di ' +
+            'continuo — un re minore col re sotto la, re e fa, di traverso sulle prime quattro ' +
+            'corde — così l’assistente ora offre quelle forme. Misurare le sue trascrizioni ha ' +
+            'dato anche il registro in cui la parte sta davvero, mai sotto il mi a vuoto e per ' +
+            'lo più fra il sol e il re sopra, e l’assistente ora ci resta invece di salire sul ' +
+            'manico.',
+        },
+        {
+          heading: 'E una cosa lasciata apposta com’era',
+          text:
+            'La dominante di tre note col pollice sulla quarta corda, novità della 0.14, si ' +
+            'regge su una fonte sola. Becker non parla mai di sopprimere una corda, e le sue ' +
+            'trascrizioni mostrano quattro voci in quella posizione. Così la forma è ancora ' +
+            'offerta e non è più preferita. Dove “Come sceglie” dipende da una fonte sola, o ' +
+            'dalla nostra lettura e non dalla loro, ora lo dice.',
         },
       ],
     },

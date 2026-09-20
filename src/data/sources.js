@@ -23,6 +23,14 @@ export const SOURCES = {
     year: 2016,
     url: 'https://www.ceart.udesc.br/arquivos/id_submenu/739/lucas_campos_dissertacao.pdf',
   },
+  becker1996: {
+    author: 'José Paulo Thaumaturgo Becker',
+    title:
+      'O acompanhamento do violão de 6 cordas no Choro a partir de sua visão no conjunto ' +
+      'Época de Ouro',
+    where: 'Universidade Federal do Rio de Janeiro',
+    year: 1996,
+  },
   korver2020: {
     author: 'Ines Körver',
     title: '150 Years of Choro – Where Are We Now?',

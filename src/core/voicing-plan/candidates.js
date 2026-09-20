@@ -50,33 +50,39 @@ export function searched(chord, instrument, config) {
 /**
  * Contiguous runs of strings a thumb-and-fingers grip can use.
  *
- * Four voices is the norm in this idiom and five the occasional departure, the
- * thumb takes the lowest or second-lowest string, and the top string is left
- * spare (§2.10). On six strings that is E-A-D-G and A-D-G-B, plus the two
- * five-string runs.
+ * Four voices is the norm in this idiom and five the occasional departure, and
+ * the thumb takes the lowest string, the second-lowest, or the fourth (§2.10).
+ * On six strings that is E-A-D-G, A-D-G-B and D-G-B-E, plus the two five-string
+ * runs.
  *
- * `upperTetrad` adds the idiom's other texture: the thumb up on the fourth
- * string with the low string dropped, giving a three-voice grip. The sources
- * give it for dominants in chromatic conduction, where the notes lost are
- * roots and fifths and the tritone still sounds, so it is offered only for a
- * chord that has a seventh to make that tritone with.
+ * The fourth-string grips are Becker's. His transcriptions of the Época de Ouro
+ * six-string put the top string in constant use — a D minor as D3 under
+ * A3-D4-F4, straight across the top four — where Campos describes the fingers
+ * as going on the second, third and fourth strings. Two sources differing, and
+ * the one measuring performances wins the benefit of the doubt; the cost
+ * function still prefers the lower texture, so this widens what is available
+ * rather than what is usual.
+ *
+ * `upperTetrad` adds the other texture: the same fourth-string thumb with the
+ * low string dropped, giving a three voice grip. Campos gives it for dominants
+ * in chromatic conduction, where the notes lost are roots and fifths and the
+ * tritone still sounds, so it is offered only for a chord that has a seventh to
+ * make that tritone with.
  */
 function centroStringSets(count, { upperTetrad } = {}) {
   const sets = [];
+  // Counted from the top, so it is the fourth string of a six-string and the
+  // fourth of a seven-string too, rather than whatever index that happens to be.
+  const fourth = count - 4;
   for (const size of [4, 5]) {
-    for (const start of [0, 1]) {
+    for (const start of size === 4 ? [0, 1, fourth] : [0, 1]) {
       const end = start + size - 1;
-      if (end > count - 1) continue;
-      // The top string stays out of a four-voice grip; a five-voice one may
-      // reach it, since it is the wider texture that occasionally appears.
-      if (size === 4 && end === count - 1) continue;
+      if (start < 0 || start > 1 + fourth || end > count - 1) continue;
+      if (sets.some((set) => set[0] === start && set.length === size)) continue;
       sets.push(Array.from({ length: size }, (_, i) => start + i));
     }
   }
-  // Counted from the top, so it is the fourth string of a six-string and the
-  // fourth of a seven-string too, rather than whatever index that happens to be.
-  const start = count - 4;
-  if (upperTetrad && start > 1) sets.push([start, start + 1, start + 2]);
+  if (upperTetrad && fourth > 1) sets.push([fourth, fourth + 1, fourth + 2]);
   return sets;
 }
 

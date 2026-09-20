@@ -507,23 +507,25 @@ export default {
           'Cuatro cuerdas sonando, o cinco. Cuatro es la norma en este idioma y cinco la ' +
             'excepción ocasional: un bajo con el pulgar y el resto con tres dedos.',
           'O tres notas, con el pulgar en la cuarta cuerda y la cuerda grave suprimida, que ' +
-            'es la otra textura del idioma. Solo para un acorde con séptima: lo que sale es ' +
-            'fundamental o quinta, y las fuentes lo permiten porque el trítono — la tercera ' +
-            'y la séptima — sigue sonando.',
-          'Las cuerdas que suenan son vecinas, con el pulgar en la más grave o la segunda más ' +
-            'grave y la toma llegando a la segunda cuerda desde arriba. Un hueco en el medio ' +
-            'es una decisión que todavía podés tomar; una forma que lo necesita no se deshace.',
-          'Nada arriba del séptimo traste, y las cuerdas al aire son bienvenidas. Las fuentes ' +
-            'ubican este trabajo en el primer cuarto del mástil.',
+            'una fuente da como la otra textura del idioma. Solo para un acorde con séptima: ' +
+            'lo que sale es fundamental o quinta, y se permite porque el trítono — la tercera ' +
+            'y la séptima — sigue sonando. Se ofrece, no se prefiere: las transcripciones ' +
+            'muestran cuatro voces en esa posición.',
+          'Las cuerdas que suenan son vecinas, con el pulgar en la más grave, la segunda más ' +
+            'grave o la cuarta, y la toma llegando al menos a la segunda cuerda desde arriba. ' +
+            'Un hueco en el medio es una decisión que todavía podés tomar; una forma que lo ' +
+            'necesita no se deshace.',
+          'Nada arriba del séptimo traste, cuerdas al aire bienvenidas, y el bajo de la toma ' +
+            'entre el mi grave y el re que le sigue. Es el tramo de mástil que nombran las ' +
+            'fuentes y la región donde las transcripciones de Época de Ouro realmente están.',
           'La nota más grave queda una tercera arriba de lo que toca la siete cuerdas — la ' +
             'nota tras la barra cuando la cifra escribe una, la fundamental si no — en la ' +
             'octava en que esté esa guitarra. De eso se trata: las dos guitarras toman ' +
             'inversiones distintas para no duplicarse.',
-          'Cuando una tercera arriba de ese bajo no pertenece al acorde, se usa una sexta, ' +
-            'después una octava, y después una tercera ABAJO de él — quedando en la quinta ' +
-            'del acorde. Son los remedios que da la literatura, en el orden en que los da: ' +
-            'una tercera arriba de la séptima de un dominante que resuelve en acorde mayor ' +
-            'cae en una nota que el estilo no usa.',
+          'Cuando una tercera arriba de ese bajo no pertenece al acorde, otra relación ocupa ' +
+            'su lugar — cuál es la elección de abajo. El caso está nombrado en la literatura ' +
+            'y no es una falla de acá: una tercera arriba de la séptima de un dominante que ' +
+            'resuelve en acorde mayor cae en una nota que el estilo no usa.',
           'Se conserva toda nota del acorde salvo la quinta, que es la que este idioma ' +
             'deja — a menos que esa quinta esté disminuida o aumentada, porque una 5b o ' +
             '5# es lo que hace que el acorde sea ese acorde.',
@@ -534,24 +536,22 @@ export default {
             'más lleno le gana a uno que gasta una cuerda duplicando una nota.',
         ],
         options: {
-          whenThirdRepeats: {
-            label: 'Cuando la tercera repite la nota anterior',
+          whenNoThirdAbove: {
+            label: 'Cuando no hay tercera arriba de la otra guitarra dentro del acorde',
             values: {
-              repeat: 'Tocarla de nuevo',
-              thirdBelow: 'Bajar a una tercera abajo',
+              sixth: 'Una sexta, después una octava',
+              thirdBelow: 'Una tercera abajo',
             },
             rules: {
-              repeat:
-                'Cuando esa tercera es la nota que esta guitarra acaba de tocar, se toca de ' +
-                'nuevo. Armonizar en terceras un bajo que camina repite nota cada vez que una ' +
-                'tercera mayor se estrecha en menor, y las fuentes dicen expresamente que eso ' +
-                'no le quita nada al contrapunto, porque la que se mueve es la otra guitarra.',
+              sixth:
+                'Cuando una tercera arriba del bajo de la otra guitarra no pertenece al ' +
+                'acorde, se usa una sexta arriba de él, y en su defecto una octava. Son los ' +
+                'primeros remedios que la literatura da para ese caso.',
               thirdBelow:
-                'Cuando esa tercera es la nota que esta guitarra acaba de tocar y el bajo ' +
-                'está caminando, la toma baja a una tercera abajo de la otra guitarra. Las ' +
-                'fuentes registran ese movimiento como en perfecta consonancia con el ' +
-                'estilo, aunque lo dan para una tercera que no funciona, no para una que ' +
-                'repite.',
+                'Cuando una tercera arriba del bajo de la otra guitarra no pertenece al ' +
+                'acorde, la toma baja a una tercera ABAJO de él, quedando en la quinta — la ' +
+                'segunda inversión. La literatura la da para el mismo caso, la describe como ' +
+                'en perfecta consonancia con el estilo y nombra la grabación de donde viene.',
             },
           },
         },
@@ -1019,6 +1019,50 @@ export default {
             'escribe la marca al pie solo. La vista previa muestra la canción como va a quedar ' +
             '— las formas que va a llevar y cuántos compases cubre cada una — así que un acorde ' +
             'partido en dos es algo que ves antes de aceptar y no después.',
+        },
+      ],
+    },
+    '0.15.0': {
+      title: 'Qué cambió en 0.15',
+      sections: [
+        {
+          heading: 'Una tesis que no encontrábamos',
+          text:
+            'El asistente de choro sigue fuentes escritas, y el único trabajo dedicado por ' +
+            'entero a la parte de la guitarra de seis — José Paulo Becker sobre Época de ' +
+            'Ouro, 1996 — no aparecía por ningún lado. Apareció. Todo lo de abajo sale de ' +
+            'leerlo, y por eso esta versión corrige cosas que la 0.14 tenía a medias. Ahora ' +
+            'figura en “De dónde viene esto”, con las demás.',
+        },
+        {
+          heading: 'La pregunta que te hace es mejor ahora',
+          text:
+            'Antes preguntaba qué hacer cuando la tercera arriba de la otra guitarra repetía ' +
+            'la nota que acababas de tocar. Ninguna fuente pregunta eso — y Becker, que ' +
+            'documenta esta parte en detalle, nunca pone la seis cuerdas por debajo de la ' +
+            'siete. Así que la pregunta es ahora la que la literatura sí hace: cuando ninguna ' +
+            'tercera arriba de la otra guitarra está en el acorde, ¿querés una sexta y luego ' +
+            'una octava, o la tercera abajo? C7/Bb camino a F es el caso, y se oyen las dos.',
+        },
+        {
+          heading: 'Llega a la prima, y se queda en su registro',
+          text:
+            'Dos fuentes discrepan sobre dónde van los dedos, y ganó la que transcribe ' +
+            'ejecuciones reales. La guitarra de Becker en Época de Ouro usa la prima todo el ' +
+            'tiempo — un re menor con re debajo de la, re y fa, sobre las cuatro primeras ' +
+            'cuerdas — así que el asistente ahora ofrece esas formas. Medir sus ' +
+            'transcripciones también dio el registro en que la parte realmente está, nunca ' +
+            'bajo el mi al aire y casi siempre entre el sol y el re que le sigue, y el ' +
+            'asistente ahora se queda ahí en vez de subir por el mástil.',
+        },
+        {
+          heading: 'Y algo dejado a propósito como estaba',
+          text:
+            'El dominante de tres notas con el pulgar en la cuarta cuerda, nuevo en 0.14, se ' +
+            'apoya en una sola fuente. Becker nunca habla de suprimir una cuerda, y sus ' +
+            'transcripciones muestran cuatro voces en esa posición. Así que la forma se sigue ' +
+            'ofreciendo y dejó de preferirse. Donde “Cómo elige esto” depende de una sola ' +
+            'fuente, o de nuestra lectura y no de la de ellas, ahora lo dice.',
         },
       ],
     },

@@ -140,33 +140,64 @@ describe('the choro centro planner', () => {
       const played = frets.map((f, i) => (f === 'x' ? -1 : i)).filter((i) => i >= 0);
       // Contiguous either way: no muted string inside the grip.
       expect(played[played.length - 1] - played[0], key).toBe(played.length - 1);
-      if (played.length === 3) {
-        // The idiom's other texture: the thumb up on the fourth string.
-        expect(played[0], key).toBe(2);
-      } else {
-        expect(played.length, key).toBeGreaterThanOrEqual(4);
-        expect(played.length, key).toBeLessThanOrEqual(5);
-        // A thumb on the lowest or second-lowest string.
-        expect(played[0], key).toBeLessThanOrEqual(1);
+      expect(played.length, key).toBeGreaterThanOrEqual(3);
+      expect(played.length, key).toBeLessThanOrEqual(5);
+      // A thumb on the lowest string, the second-lowest, or the fourth.
+      expect(played[0], key).toBeLessThanOrEqual(2);
+      // Three voices belong to the fourth-string texture only, and the widest
+      // grip stays down where a thumb can reach its bass.
+      if (played.length === 3) expect(played[0], key).toBe(2);
+      if (played.length === 5) expect(played[0], key).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('offers a dominant as three notes up on the fourth string', () => {
+    // The idiom's other texture (Campos p.128-129): with the bass up on the
+    // fourth string the low string goes, and what is lost is a root or a
+    // fifth. The tritone has to sound, which is the whole reason it costs
+    // nothing. Becker's transcriptions show four voices in that position, so
+    // this is offered rather than preferred — see §2.10.
+    const chord = parseChord('G7/F', 'brazilian').chord;
+    const all = centroCandidates(chord, guitar, { bassPc: pitchClass(bassNote(chord)) });
+    const three = all.filter((c) => c.fingering.midis.filter((m) => m !== null).length === 3);
+    expect(three.length).toBeGreaterThan(0);
+
+    for (const candidate of three) {
+      const played = candidate.fingering.frets
+        .map((f, i) => (f === 'x' ? -1 : i))
+        .filter((i) => i >= 0);
+      expect(played).toEqual([2, 3, 4]);
+      const pcs = new Set(
+        candidate.fingering.midis.filter((m) => m !== null).map((m) => ((m % 12) + 12) % 12)
+      );
+      for (const tone of chordTones(chord)) {
+        if (tone.role === 'third' || tone.role === 'seventh') {
+          expect(pcs.has(tone.pitchClass), `no ${tone.role}, so no tritone`).toBe(true);
+        }
       }
     }
   });
 
-  it('plays a dominant as three notes where the grip sits on the fourth string', () => {
-    // The idiom's other texture (p.128-129): with the bass up on the fourth
-    // string the low string goes, and what is lost is a root or a fifth. The
-    // tritone has to sound, which is the whole reason it costs nothing.
-    const out = plan('choroCentro', 'Eb | Bb7/Ab | Eb');
-    const frets = byKey(out).get('Bb7/Ab');
-    expect(frets.map((f, i) => (f === 'x' ? -1 : i)).filter((i) => i >= 0)).toEqual([2, 3, 4]);
+  it('puts a four-voice grip on the top four strings too, which Becker measured', () => {
+    // A D minor as D3 under A3-D4-F4, straight across the top four strings.
+    // Campos puts the fingers on the second, third and fourth; Becker's
+    // transcriptions of Época de Ouro use the top string constantly (§2.10).
+    const chord = parseChord('Dm', 'brazilian').chord;
+    const all = centroCandidates(chord, guitar, { bassPc: pitchClass(bassNote(chord)) });
+    const shorthands = all.map((c) => shorthandOf(c.fingering.frets));
+    expect(shorthands).toContain('xx0231');
+  });
 
-    const chord = parseChord('Bb7/Ab', 'brazilian').chord;
-    const fingering = fingeringFromFrets(frets, chord, guitar);
-    const pcs = new Set(fingering.midis.filter((m) => m !== null).map((m) => ((m % 12) + 12) % 12));
-    for (const tone of chordTones(chord)) {
-      if (tone.role === 'third' || tone.role === 'seventh') {
-        expect(pcs.has(tone.pitchClass), `no ${tone.role}, so no tritone`).toBe(true);
-      }
+  it('keeps its own bass in the register the transcriptions show', () => {
+    // Becker measured the six-string's bass between E2 and D3 across forty-odd
+    // pages, with nothing below E2 at all. Opening the fourth string to a
+    // four-voice thumb would otherwise let the whole texture climb (§2.10).
+    for (const [key, frets] of byKey(result)) {
+      const chord = parseChord(key.replace(/\/[A-G][b#]?$/, ''), 'brazilian').chord;
+      const fingering = fingeringFromFrets(frets, chord, guitar);
+      const low = Math.min(...fingering.midis.filter((m) => m !== null));
+      expect(low, key).toBeGreaterThanOrEqual(40);
+      expect(low, key).toBeLessThanOrEqual(50);
     }
   });
 
@@ -256,19 +287,15 @@ describe('the choro centro planner', () => {
     }
   });
 
-  it('drops below where nothing above the other guitar will do', () => {
-    // C7/Bb heading to a major chord. The third above Bb is Db or D, neither in
-    // C7; the sixth and the octave land where the thumb cannot reach. The
-    // sources give this case a third *below* — resting on the fifth, C7/G —
-    // and name the recording it comes from (§2.10).
+  it('finds a remedy where a third above the other guitar will not do', () => {
+    // C7/Bb heading to a major chord: the third above Bb is Db or D, neither in
+    // C7. The literature names a sixth or an octave, and then a third below
+    // onto the fifth. Either way the note is G — the question is which G.
     const out = plan('choroCentro', 'C7/Bb | F');
     expect(out.missing).toEqual([]);
     const chord = parseChord('C7/Bb', 'brazilian').chord;
     const fingering = fingeringFromFrets(byKey(out).get('C7/Bb'), chord, guitar);
-    const low = Math.min(...fingering.midis.filter((m) => m !== null));
-    // G below the Bb the other guitar is on, not the G a sixth above it.
     expect(formatNote(voicedAs(chord, fingering.midis).bass)).toBe('G');
-    expect(low).toBeLessThan(46);
   });
 });
 
@@ -277,55 +304,44 @@ describe('the choro centro planner', () => {
  * declares it and the player decides (docs/DESIGN.md §2.10).
  */
 describe('stylistic choices', () => {
-  const WALK = 'F | F#° | Gm';
+  // C7/Bb is the case the literature discusses: a dominant with its seventh in
+  // the bass, heading for a major chord, where no third above the other
+  // guitar's Bb is in the chord. It names a sixth or an octave, and then "em
+  // alguns casos" a third below onto the fifth — three remedies for one
+  // situation, so which you want is a preference (§2.10).
+  const WITHOUT = 'C7/Bb | F';
+  const lowOf = (result, key) => {
+    const chord = parseChord(key, 'brazilian').chord;
+    const fingering = fingeringFromFrets(byKey(result).get(key), chord, guitar);
+    return Math.min(...fingering.midis.filter((m) => m !== null));
+  };
 
   it('answers an unasked question with the default', () => {
     const centro = plannerById('choroCentro');
-    expect(optionDefaults(centro)).toEqual({ whenThirdRepeats: 'repeat' });
-    expect(shapes(plan('choroCentro', WALK))).toEqual(
-      shapes(plan('choroCentro', WALK, guitar, { whenThirdRepeats: 'repeat' }))
+    expect(optionDefaults(centro)).toEqual({ whenNoThirdAbove: 'sixth' });
+    expect(shapes(plan('choroCentro', WITHOUT))).toEqual(
+      shapes(plan('choroCentro', WITHOUT, guitar, { whenNoThirdAbove: 'sixth' }))
     );
   });
 
-  it('repeats the third by default, because the sources defend it', () => {
-    // Under F and F#° the other guitar walks F to F#, and A is the only chord
-    // tone a third above either, so the centro sits on A twice.
-    const out = byKey(plan('choroCentro', WALK));
-    const lows = ['F', 'F#°'].map((key) => {
-      const chord = parseChord(key, 'brazilian').chord;
-      const fingering = fingeringFromFrets(out.get(key), chord, guitar);
-      return Math.min(...fingering.midis.filter((m) => m !== null)) % 12;
-    });
-    expect(lows[0]).toBe(lows[1]);
+  it('takes the sixth above by default, which the literature names first', () => {
+    // G3, a sixth above the Bb2 the other guitar is resting on.
+    expect(lowOf(plan('choroCentro', WITHOUT), 'C7/Bb')).toBe(55);
   });
 
-  it('drops to a third below instead when asked to', () => {
-    // G walks to G# to A, and B is a third above both G and G#, so the centro
-    // would sit on B twice. Asked to, it takes F underneath the G#° instead.
-    const run = 'G | G#\u00b0 | Am';
-    const repeated = shapes(plan('choroCentro', run));
-    const dropped = shapes(plan('choroCentro', run, guitar, { whenThirdRepeats: 'thirdBelow' }));
-    expect(dropped.get('G#\u00b0')).not.toBe(repeated.get('G#\u00b0'));
-    // Only where the third would have repeated. The first chord of the run has
-    // nothing before it, and by the third the bass has moved on.
-    expect(dropped.get('G')).toBe(repeated.get('G'));
-    expect(dropped.get('Am')).toBe(repeated.get('Am'));
+  it('takes the third below instead when asked to', () => {
+    // The same G, an octave down and under the other guitar: C7/G, the second
+    // inversion, which is what Campos describes at p.161.
+    const dropped = plan('choroCentro', WITHOUT, guitar, { whenNoThirdAbove: 'thirdBelow' });
+    expect(lowOf(dropped, 'C7/Bb')).toBe(43);
   });
 
-  it('leaves the third alone where it does not repeat', () => {
-    // Dm-D#°-Em walks too, but the centro's own line moves with it: F, F#, G.
-    // Nothing repeats, so there is nothing for the preference to answer.
-    const run = 'Dm | D#\u00b0 | Em';
-    expect(shapes(plan('choroCentro', run, guitar, { whenThirdRepeats: 'thirdBelow' }))).toEqual(
+  it('changes nothing where a third above the other guitar works', () => {
+    // The preference is a choice between remedies. Where no remedy is needed
+    // there is nothing for it to decide.
+    const run = 'Gm | Cm | Dm6';
+    expect(shapes(plan('choroCentro', run, guitar, { whenNoThirdAbove: 'thirdBelow' }))).toEqual(
       shapes(plan('choroCentro', run))
-    );
-  });
-
-  it('leaves a chord alone where the bass is not walking', () => {
-    // A leap, so the option has nothing to answer to.
-    const leap = 'C | Ab | C';
-    expect(shapes(plan('choroCentro', leap, guitar, { whenThirdRepeats: 'thirdBelow' }))).toEqual(
-      shapes(plan('choroCentro', leap))
     );
   });
 });

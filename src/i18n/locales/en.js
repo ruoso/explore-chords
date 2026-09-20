@@ -503,23 +503,25 @@ export default {
           'Four sounding strings, or five. Four is the norm in this idiom and five the ' +
             'occasional departure: a bass note under the thumb and the rest under three fingers.',
           'Or three notes with the thumb up on the fourth string and the low string ' +
-            'dropped, which is the idiom’s other texture. Offered only for a chord with a ' +
-            'seventh: what goes is a root or a fifth, and the sources allow it because the ' +
-            'tritone — the third and the seventh — still sounds.',
-          'The strings sounded are next to each other, with the thumb on the lowest or ' +
-            'second-lowest and the grip reaching the second string from the top. A hole in the ' +
-            'middle is a decision you can still make; a shape that needs one cannot be undone.',
-          'Nothing above the seventh fret, and open strings welcome. The sources put this work ' +
-            'in the first quarter of the neck.',
+            'dropped, which one source gives as the idiom’s other texture. Offered only for ' +
+            'a chord with a seventh: what goes is a root or a fifth, and it is allowed ' +
+            'because the tritone — the third and the seventh — still sounds. Offered rather ' +
+            'than preferred, since the transcriptions show four voices in that position.',
+          'The strings sounded are next to each other, with the thumb on the lowest, the ' +
+            'second-lowest or the fourth, and the grip reaching at least the second string ' +
+            'from the top. A hole in the middle is a decision you can still make; a shape ' +
+            'that needs one cannot be undone.',
+          'Nothing above the seventh fret, open strings welcome, and the grip’s own bass ' +
+            'between the low E and the D above it. That is the stretch of neck the sources ' +
+            'name, and the register the transcriptions of Época de Ouro actually sit in.',
           'The lowest note is a third above whatever the seven-string is playing — the slash ' +
             'note where the chart writes one, the root otherwise — in whichever octave that ' +
             'guitar is in. This is the whole point: the two guitars take different inversions ' +
             'so they do not double each other.',
-          'Where a third above that bass is not in the chord, a sixth is used instead, then ' +
-            'an octave, then a third *below* it — resting on the fifth of the chord. Those ' +
-            'are the remedies the literature gives, in the order it gives them: a third above ' +
-            'the seventh of a dominant resolving to a major chord lands on a note the style ' +
-            'does not use.',
+          'Where a third above that bass is not in the chord, another relation stands in for ' +
+            'it — which one is the choice below. The case is named in the literature rather ' +
+            'than a gap here: a third above the seventh of a dominant resolving to a major ' +
+            'chord lands on a note the style does not use.',
           'Every note of the chord is kept except the fifth, which is the one this idiom ' +
             'drops — unless that fifth is flattened or sharpened, since a ♭5 or a ♯5 is what ' +
             'makes the chord that chord.',
@@ -530,23 +532,22 @@ export default {
             'chord beats one that spends a string doubling a note.',
         ],
         options: {
-          whenThirdRepeats: {
-            label: 'Where the third repeats the note before',
+          whenNoThirdAbove: {
+            label: 'Where no third above the other guitar is in the chord',
             values: {
-              repeat: 'Play it again',
-              thirdBelow: 'Drop to a third below',
+              sixth: 'A sixth, then an octave',
+              thirdBelow: 'A third below',
             },
             rules: {
-              repeat:
-                'Where that third is the note this guitar just played, it is played again. ' +
-                'Harmonising a walking bass in thirds repeats a note wherever a major third ' +
-                'narrows to a minor one, and the sources are explicit that this costs the ' +
-                'counterpoint nothing, because the other guitar is the one moving.',
+              sixth:
+                'Where a third above the other guitar’s bass is not in the chord, a sixth ' +
+                'above it is used, and failing that an octave. These are the first remedies ' +
+                'the literature names for that case.',
               thirdBelow:
-                'Where that third is the note this guitar just played and the bass is ' +
-                'walking, the grip drops to a third below the other guitar instead. The ' +
-                'sources record that move as in perfect keeping with the style, though they ' +
-                'give it for a third that does not work at all rather than one that repeats.',
+                'Where a third above the other guitar’s bass is not in the chord, the grip ' +
+                'drops a third BELOW it instead, resting on the fifth — the second ' +
+                'inversion. The literature gives this for the same case, describing it as in ' +
+                'perfect keeping with the style, and names the recording it comes from.',
             },
           },
         },
@@ -1008,6 +1009,49 @@ export default {
             'writes the footnote marker itself. The preview shows the song as it will actually ' +
             'be — the shapes it will carry, and how many bars each one covers — so a chord it ' +
             'has split in two is something you see before you accept it rather than after.',
+        },
+      ],
+    },
+    '0.15.0': {
+      title: 'What changed in 0.15',
+      sections: [
+        {
+          heading: 'A dissertation we could not find last time',
+          text:
+            'The choro wizard follows written sources, and the one work devoted entirely to ' +
+            'the six-string’s part — José Paulo Becker on the Época de Ouro, 1996 — was not ' +
+            'to be had. It turned up. Everything below comes out of reading it, which is why ' +
+            'this release corrects things 0.14 had only half right. It is now listed under ' +
+            '“Where this comes from” with the rest.',
+        },
+        {
+          heading: 'The question it asks you is a better one now',
+          text:
+            'It used to ask what to do when the third above the other guitar repeated the ' +
+            'note you had just played. No source asks that — and Becker, who documents this ' +
+            'part in detail, never has the six-string go below the seven-string at all. So ' +
+            'the question is now the one the literature does ask: when no third above the ' +
+            'other guitar is in the chord, do you want a sixth and then an octave, or the ' +
+            'third below? C7/B♭ on its way to F is the case, and you can hear both.',
+        },
+        {
+          heading: 'It reaches the top string, and stays in its own register',
+          text:
+            'Two sources disagree about where the fingers go, and the one transcribing actual ' +
+            'performances won. Becker’s Época de Ouro guitar uses the first string constantly ' +
+            '— a D minor as D under A, D and F, straight across the top four — so the wizard ' +
+            'now offers those shapes. Measuring his transcriptions also gave the register the ' +
+            'part really sits in, never below the open sixth string and mostly between G and ' +
+            'the D above it, and the wizard now keeps to it instead of drifting up the neck.',
+        },
+        {
+          heading: 'And one thing deliberately left as it was',
+          text:
+            'The three-note dominant with the thumb on the fourth string, new in 0.14, rests ' +
+            'on a single source. Becker never mentions dropping a string, and his ' +
+            'transcriptions show four voices in that position. So the shape is still offered ' +
+            'and is no longer preferred. Where “How it works” tells you something rests on ' +
+            'one source, or on our reading rather than theirs, it now says so.',
         },
       ],
     },

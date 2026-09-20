@@ -506,24 +506,26 @@ export default {
             'o sete cordas as tem.',
           'Quatro cordas soando, ou cinco. Quatro é o padrão nesse idioma e cinco a exceção ' +
             'ocasional: um baixo no polegar e o resto em três dedos.',
-          'Ou três notas, com o polegar na quarta corda e a corda grave suprimida, que é a ' +
-            'outra textura do idioma. Só para acorde com sétima: o que sai é tônica ou ' +
-            'quinta, e as fontes permitem porque o trítono — a terça e a sétima — continua ' +
-            'soando.',
-          'As cordas que soam são vizinhas, com o polegar na mais grave ou na segunda mais ' +
-            'grave e a pega alcançando a segunda corda de cima. Um buraco no meio é uma ' +
-            'decisão que você ainda pode tomar; um desenho que precisa de um não se desfaz.',
-          'Nada acima da sétima casa, e cordas soltas são bem-vindas. As fontes situam esse ' +
-            'trabalho no primeiro quádruplo do braço.',
+          'Ou três notas, com o polegar na quarta corda e a corda grave suprimida, que uma ' +
+            'fonte dá como a outra textura do idioma. Só para acorde com sétima: o que sai é ' +
+            'tônica ou quinta, e é permitido porque o trítono — a terça e a sétima — continua ' +
+            'soando. Oferecido, não preferido: as transcrições mostram quatro vozes nessa ' +
+            'posição.',
+          'As cordas que soam são vizinhas, com o polegar na mais grave, na segunda mais ' +
+            'grave ou na quarta, e a pega alcançando ao menos a segunda corda de cima. Um ' +
+            'buraco no meio é uma decisão que você ainda pode tomar; um desenho que precisa ' +
+            'de um não se desfaz.',
+          'Nada acima da sétima casa, cordas soltas bem-vindas, e o baixo da própria pega ' +
+            'entre o mi grave e o ré acima dele. É o trecho de braço que as fontes nomeiam e ' +
+            'a região em que as transcrições do Época de Ouro de fato ficam.',
           'A nota mais grave fica uma terça acima do que o sete cordas toca — a nota depois da ' +
             'barra quando a cifra escreve uma, a fundamental caso contrário — na oitava em que ' +
             'aquele violão estiver. É disso que se trata: os dois violões pegam inversões ' +
             'diferentes para não se dobrarem.',
-          'Quando uma terça acima desse baixo não pertence ao acorde, usa-se uma sexta, ' +
-            'depois uma oitava, e depois uma terça ABAIXO dele — repousando na quinta do ' +
-            'acorde. São os remédios que a literatura dá, na ordem em que os dá: uma terça ' +
-            'acima da sétima de um dominante que resolve em acorde maior cai numa nota que ' +
-            'o estilo não usa.',
+          'Quando uma terça acima desse baixo não pertence ao acorde, outra relação entra no ' +
+            'lugar dela — qual delas é a escolha abaixo. O caso está nomeado na literatura, ' +
+            'não é falha daqui: uma terça acima da sétima de um dominante que resolve em ' +
+            'acorde maior cai numa nota que o estilo não usa.',
           'Toda nota do acorde é mantida, exceto a quinta, que é a que esse idioma ' +
             'dispensa — a não ser que essa quinta seja diminuta ou aumentada, pois uma 5b ' +
             'ou 5# é o que faz o acorde ser aquele acorde.',
@@ -534,23 +536,22 @@ export default {
             'mais cheio vence um que gasta uma corda dobrando nota.',
         ],
         options: {
-          whenThirdRepeats: {
-            label: 'Quando a terça repete a nota anterior',
+          whenNoThirdAbove: {
+            label: 'Quando não há terça acima do outro violão dentro do acorde',
             values: {
-              repeat: 'Tocar de novo',
-              thirdBelow: 'Descer a uma terça abaixo',
+              sixth: 'Uma sexta, depois uma oitava',
+              thirdBelow: 'Uma terça abaixo',
             },
             rules: {
-              repeat:
-                'Quando essa terça é a nota que este violão acabou de tocar, ela é tocada de ' +
-                'novo. Harmonizar em terças um baixo que caminha repete nota sempre que uma ' +
-                'terça maior se estreita em menor, e as fontes dizem com todas as letras que ' +
-                'isso não tira nada do contraponto, pois quem se move é o outro violão.',
+              sixth:
+                'Quando uma terça acima do baixo do outro violão não pertence ao acorde, ' +
+                'usa-se uma sexta acima dele, e na falta dela uma oitava. São os primeiros ' +
+                'remédios que a literatura dá para esse caso.',
               thirdBelow:
-                'Quando essa terça é a nota que este violão acabou de tocar e o baixo está ' +
-                'caminhando, a pega desce a uma terça abaixo do outro violão. As fontes ' +
-                'registram esse movimento como em perfeita consonância com o estilo, embora ' +
-                'o deem para uma terça que não funciona, não para uma que repete.',
+                'Quando uma terça acima do baixo do outro violão não pertence ao acorde, a ' +
+                'pega desce a uma terça ABAIXO dele, repousando na quinta — a segunda ' +
+                'inversão. A literatura dá isso para o mesmo caso, descreve como em perfeita ' +
+                'consonância com o estilo e nomeia a gravação de onde vem.',
             },
           },
         },
@@ -1014,6 +1015,50 @@ export default {
             'pedir, e escreve a marca de rodapé sozinho. A prévia mostra a música como ela vai ' +
             'ficar — os desenhos que ela vai carregar e quantos compassos cada um cobre — ' +
             'então um acorde dividido em dois é coisa que você vê antes de aceitar, não depois.',
+        },
+      ],
+    },
+    '0.15.0': {
+      title: 'O que mudou na 0.15',
+      sections: [
+        {
+          heading: 'Uma dissertação que não achávamos',
+          text:
+            'O assistente de choro segue fontes escritas, e o único trabalho dedicado ' +
+            'inteiramente à parte do violão de seis — José Paulo Becker sobre o Época de ' +
+            'Ouro, 1996 — não se achava em lugar nenhum. Apareceu. Tudo o que vem abaixo sai ' +
+            'da leitura dele, e é por isso que esta versão corrige coisas que a 0.14 tinha ' +
+            'só meio certas. Ele agora está em “De onde isto vem”, com os demais.',
+        },
+        {
+          heading: 'A pergunta que ele te faz ficou melhor',
+          text:
+            'Antes ele perguntava o que fazer quando a terça acima do outro violão repetia a ' +
+            'nota que você acabara de tocar. Nenhuma fonte pergunta isso — e Becker, que ' +
+            'documenta essa parte em detalhe, nunca põe o seis cordas abaixo do sete cordas. ' +
+            'Então a pergunta agora é a que a literatura de fato faz: quando nenhuma terça ' +
+            'acima do outro violão está no acorde, você quer uma sexta e depois uma oitava, ' +
+            'ou a terça abaixo? C7/Bb a caminho de F é o caso, e dá para ouvir os dois.',
+        },
+        {
+          heading: 'Ele alcança a prima, e fica na região que é dele',
+          text:
+            'Duas fontes discordam sobre onde vão os dedos, e ganhou a que transcreve ' +
+            'execuções de verdade. O violão de Becker no Época de Ouro usa a prima o tempo ' +
+            'todo — um ré menor com ré embaixo de lá, ré e fá, em cima das quatro primeiras ' +
+            'cordas — então o assistente agora oferece esses desenhos. Medir as transcrições ' +
+            'dele também deu a região em que a parte realmente fica, nunca abaixo do mi ' +
+            'solto e quase sempre entre o sol e o ré acima dele, e o assistente agora se ' +
+            'mantém nela em vez de subir o braço.',
+        },
+        {
+          heading: 'E uma coisa deixada de propósito como estava',
+          text:
+            'O dominante de três notas com o polegar na quarta corda, novidade da 0.14, se ' +
+            'apoia numa fonte só. Becker nunca fala em suprimir corda, e as transcrições dele ' +
+            'mostram quatro vozes nessa posição. Então o desenho continua sendo oferecido e ' +
+            'deixou de ser preferido. Onde “Como esta escolha é feita” depende de uma fonte ' +
+            'só, ou da nossa leitura e não da delas, agora está dito.',
         },
       ],
     },

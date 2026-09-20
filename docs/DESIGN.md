@@ -703,7 +703,7 @@ it starts choosing shapes, in its own code, where you can read it:
 plan({ reading, instrument, choices }) {
   // Which interval families each bar may use — read off the spans, once, for
   // the whole song, before any shape is chosen.
-  const allowed = intervalPlan(reading, choices.whenThirdRepeats);
+  const allowed = intervalPlan(reading, choices.whenNoThirdAbove);
   // … the same loop, picking from
   //   centroCandidates(entry.chord, instrument, { bassPc: entry.bassPc })
   //     .filter((c) => allowed.get(entry.at).includes(c.interval))
@@ -827,7 +827,7 @@ So a planner may declare its options:
 ```js
 /**
  * @typedef {object} StyleOption
- * @property {string}   id           'whenThirdRepeats'
+ * @property {string}   id           'whenNoThirdAbove'
  * @property {string[]} values       ['repeat','thirdBelow'] — the order shown
  * @property {string}   default      one of `values`
  * @property {string[]} [sources]
@@ -925,16 +925,20 @@ seven-string carries the bass line. The rules, and where each comes from:
   note under the thumb and the rest under three fingers. Four is called the
   predominant pattern of the style and five the occasional departure. The third
   case is the thumb up on the fourth string with the low string dropped, which
-  the sources give for dominants: what is lost is a root or a fifth, and it
-  costs nothing because the tritone still sounds. So it is offered only for a
-  chord with a seventh to make that tritone with.
-- **Contiguous strings**, thumb on the lowest or second-lowest — or on the
-  fourth string in that other texture — and the grip reaching the second string
-  from the top. Contiguity is our rule rather than the idiom's — the
-  transcriptions do show gapped grips — on the reasoning that a hole is a
-  decision the player can still make, while a shape that needs one cannot be
-  undone. Reaching the second string from the top is the idiom: the fingers go
-  on the second, third and fourth strings.
+  Campos gives for dominants: what is lost is a root or a fifth, and it costs
+  nothing because the tritone still sounds. So it is offered only for a chord
+  with a seventh to make that tritone with — and offered rather than preferred,
+  for reasons below.
+- **Contiguous strings**, thumb on the lowest, the second-lowest or the fourth,
+  and the grip reaching at least the second string from the top. Contiguity is
+  our rule rather than the idiom's — the transcriptions do show gapped grips,
+  and Becker's Época de Ouro A minor is one, A2 under A3-C4-E4 with the D string
+  silent — on the reasoning that a hole is a decision the player can still make,
+  while a shape that needs one cannot be undone.
+- **The grip's own bass between the low E and the D above it.** Becker's
+  transcriptions were measured across forty-odd pages: nothing below E2 anywhere,
+  and the weight of the line between G2 and D3. Without this the fourth-string
+  grips below would let the whole texture climb out of its register.
 - **Nothing above the seventh fret, open strings welcome.** The sources put this
   work in the first quarter of the neck. This is the rule that most contradicted
   our first attempt, which had been mid-neck with no open strings.
@@ -992,17 +996,23 @@ A third option appears where the exact third fails: the V6 may drop a third
 consonância com o estilo", observed in Época de Ouro's recording of *Sofres
 porque queres* (p.161). Our enumeration only ever looked upward.
 
-The third below is also what the `whenThirdRepeats` option offers, and taking
-either meant the interval cascade had to become a set of tagged candidates
-rather than an early return: relations the planner never sees cannot be
-preferences.
+All three are remedies for one situation, and the literature ranks them only by
+the order it happens to list them in. That is what makes the choice between them
+a preference rather than a fact, and it is what `whenNoThirdAbove` offers: a
+sixth then an octave, or the third below. Taking either meant the interval
+cascade had to become a set of tagged candidates rather than an early return —
+relations the planner never sees cannot be preferences.
 
-**The extrapolation in that option is ours, and is worth naming.** The sources
-give the third below as a remedy for a third that *does not work*, not for one
-that merely repeats. Offering it where the third repeats extends their remedy to
-a situation they do not discuss, in the same way the contiguous-string rule is
-ours rather than the idiom's. The option's own text says so, so nobody reads it
-as a claim about how anyone plays.
+**An earlier version of this option asked a different question**, and it is worth
+recording why it went. It offered the third below wherever the third *repeated*
+the note the six-string had just played — which is not a case any source
+discusses. Campos gives the third below for a third that does not work at all,
+and Becker, who is the dedicated study of this six-string part, has nothing on
+repeated notes and nothing on the six-string going below the seven-string at
+all. His one voice-leading principle points the other way ("procurando não
+cruzar as vozes", p.91), and where he does describe two guitars harmonising a
+bass, the second is explicitly above (p.123). A planner that claims documented
+practice should not ship a question the documents never ask.
 
 ##### What `C7/Bb` resolves to, and how long it took to find out
 
@@ -1035,18 +1045,26 @@ Three caveats belong with it. The author flags his own uncertainty about which
 guitar is which on that recording. His reason for the move is about where the
 whole phrase lands — "para evitar ter de terminar com o baixo uma terça acima da
 m7" — while we encode only the chord it rests on. And "oitavas ou sextas" is
-named in the same breath but never exemplified or given a direction anywhere in
-the literature, so our reading of the sixth as *above* is an interpretation, not
-a citation.
+named in the same breath without a direction, which for a while left our reading
+of the sixth as *above* an interpretation rather than a citation. Becker settles
+it (p.94), describing the full three-guitar texture:
+
+> "o 1º violão de seis faz a voz principal da baixaria, o 2º faz terça acima e
+> o de sete faz **sexta abaixo** da melodia principal, ou seja oitava abaixo da
+> voz do 2º violão."
+
+The seven-string is a sixth *below*, so the six-string is a sixth above it — and
+the sentence checks itself, since a sixth below the first six-string's voice is
+the same note as an octave below the second's.
 
 ##### The second texture: three notes, thumb on the fourth string
 
-The transcriptions carry no tablature at all — the author says so (p.63): he
-notates the bass alone, because full fingerings "geraria uma quantidade de
-informações que acabaria por dificultar a visualização". So almost nothing about
-grips is directly documented. One thing is, and for a while we had it wrong.
-For the second chromatic path through a cycle of dominants — A/G, D7/F♯, G/F,
-C7/E — the centro's bass is on the *fourth* string and the low string is dropped
+Campos carries no tablature at all — he says so (p.63): he notates the bass
+alone, because full fingerings "geraria uma quantidade de informações que
+acabaria por dificultar a visualização". So almost nothing about grips is
+directly documented there. One thing is, and for a while we had it wrong. For
+the second chromatic path through a cycle of dominants — A/G, D7/F♯, G/F, C7/E —
+the centro's bass is on the *fourth* string and the low string is dropped
 (p.128–129):
 
 > "Neste segundo caso, com o baixo na **quarta corda**, é comum que os chorões
@@ -1061,20 +1079,38 @@ and a triad has none to keep, so thinning one would be our idea rather than
 theirs.
 
 This is not a correction to the ordinary texture but a second one beside it. The
-four-and-five-voice grips still cover the ordinary case, which is why nothing
-had shown the rules to be wrong; the three-voice family is reached where the
-centro's bass has to sit high, and it does two useful things there. It is what
-the octave relation needs — an octave above the other guitar's F2 is F3, which
-inside the first seven frets lives nowhere but the fourth string. And it fills
-a hole we had not noticed: `Cm7` had no third at all before, because a third
-above C2 is E♭2, below the guitar, and the E♭3 an octave up is only on the
-fourth string. It now voices as `xx131x`.
+four-and-five-voice grips still cover the ordinary case; the three-voice family
+is reached where the centro's bass has to sit high, and it does two useful things
+there. It is what the octave relation needs — an octave above the other guitar's
+F2 is F3, which inside the first seven frets lives nowhere but the fourth
+string. And it fills a hole we had not noticed: `Cm7` had no third at all
+before, because a third above C2 is E♭2, below the guitar, and the E♭3 an octave
+up is only on the fourth string. It now voices as `xx131x`.
 
-One thing our model still cannot say. In the source, that chromatic path is the
+**Becker does not corroborate it, which is why it is offered and not preferred.**
+He never mentions dropping a string; his account of the right hand is the thumb
+on the bass and "os dedos i, m, a realizando o restante do acorde" (pp.106–107),
+and a sweep of his forty-eight transcription pages finds bass-plus-three-voices
+as the constant — including with the bass on the fourth string, where he has
+*Ingênuo* as F3 under A3-C4-F4. The one departure he does record goes the other
+way: the thumb sounding two or three notes at once (p.109). So Campos's
+three-note grip stands on Campos alone. Two sources, one of them silent, is
+enough to make a shape available and not enough to make it the usual answer.
+
+That same sweep is why the four-voice grip can now sit on the top four strings.
+Campos puts the fingers on the second, third and fourth; Becker's Época de Ouro
+six-string uses the top string constantly — a D minor as D3 under A3-D4-F4,
+straight across. Where two sources differ and one of them is measuring
+performances, the measurement wins.
+
+One thing our model still cannot say. In Campos, that chromatic path is the
 *centro's own* line — the six-string walking G, F♯, F, E while the other guitar
 is elsewhere. We always place the centro relative to the chart's bass, which we
 read as the seven-string's, so a passage where the six-string leads is outside
-what a planner here can express. Recorded rather than solved.
+what a planner here can express. Becker puts the same limit differently and more
+bluntly: he transcribes only one guitar, and of the two instruments says "vemos
+a utilização de uma mesma linguagem, um mesmo estilo" (p.133), the difference
+being freedom rather than register. Recorded rather than solved.
 
 One more rule of the idiom we do not yet implement, recorded so it is not
 rediscovered: the triad outranks the exact third. Where the interval would land
