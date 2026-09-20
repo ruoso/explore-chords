@@ -502,6 +502,10 @@ export default {
             'has them.',
           'Four sounding strings, or five. Four is the norm in this idiom and five the ' +
             'occasional departure: a bass note under the thumb and the rest under three fingers.',
+          'Or three notes with the thumb up on the fourth string and the low string ' +
+            'dropped, which is the idiom’s other texture. Offered only for a chord with a ' +
+            'seventh: what goes is a root or a fifth, and the sources allow it because the ' +
+            'tritone — the third and the seventh — still sounds.',
           'The strings sounded are next to each other, with the thumb on the lowest or ' +
             'second-lowest and the grip reaching the second string from the top. A hole in the ' +
             'middle is a decision you can still make; a shape that needs one cannot be undone.',
@@ -511,20 +515,50 @@ export default {
             'note where the chart writes one, the root otherwise — in whichever octave that ' +
             'guitar is in. This is the whole point: the two guitars take different inversions ' +
             'so they do not double each other.',
-          'Where a third above that bass is not in the chord, a sixth is used instead, and ' +
-            'failing that an octave. That case is named in the literature, not a gap here: a ' +
-            'third above the seventh of a dominant resolving to a major chord lands on a note ' +
-            'the style does not use.',
-          'Every note of the chord is kept except the fifth, which is the one this idiom drops.',
+          'Where a third above that bass is not in the chord, a sixth is used instead, then ' +
+            'an octave, then a third *below* it — resting on the fifth of the chord. Those ' +
+            'are the remedies the literature gives, in the order it gives them: a third above ' +
+            'the seventh of a dominant resolving to a major chord lands on a note the style ' +
+            'does not use.',
+          'Every note of the chord is kept except the fifth, which is the one this idiom ' +
+            'drops — unless that fifth is flattened or sharpened, since a ♭5 or a ♯5 is what ' +
+            'makes the chord that chord.',
           'The chart is walked in reading order, preferring shapes that keep the same strings ' +
             'sounding, which is what turns a run like Gm, Gm6, Gm7 into one grip with one ' +
             'finger moving.',
+          'Where two shapes cost the same, the one lower on the neck wins, and a fuller ' +
+            'chord beats one that spends a string doubling a note.',
         ],
+        options: {
+          whenThirdRepeats: {
+            label: 'Where the third repeats the note before',
+            values: {
+              repeat: 'Play it again',
+              thirdBelow: 'Drop to a third below',
+            },
+            rules: {
+              repeat:
+                'Where that third is the note this guitar just played, it is played again. ' +
+                'Harmonising a walking bass in thirds repeats a note wherever a major third ' +
+                'narrows to a minor one, and the sources are explicit that this costs the ' +
+                'counterpoint nothing, because the other guitar is the one moving.',
+              thirdBelow:
+                'Where that third is the note this guitar just played and the bass is ' +
+                'walking, the grip drops to a third below the other guitar instead. The ' +
+                'sources record that move as in perfect keeping with the style, though they ' +
+                'give it for a third that does not work at all rather than one that repeats.',
+            },
+          },
+        },
       },
     },
     summary: {
       one: '{count} of {total} chords would change.',
       other: '{count} of {total} chords would change.',
+    },
+    covers: {
+      one: '{count} bar',
+      other: '{count} bars',
     },
     nothing: 'Every chord already has the shape this would choose.',
     missing: 'No shape for {list}.',
@@ -931,6 +965,49 @@ export default {
             'The reading page of a song with words in it printed the word null under the ' +
             'title, and so did the shapes panel of a song with no chords yet. Both are fixed, ' +
             'along with the reason they happened at all.',
+        },
+      ],
+    },
+    '0.14.0': {
+      title: 'What changed in 0.14',
+      sections: [
+        {
+          heading: 'The choro wizard asks how you want it played',
+          text:
+            'Some questions in this style have no right answer, only a preference. When the ' +
+            'seven-string walks up a semitone — F to F♯, under a bar of F and a bar of F♯° — a ' +
+            'third above it is A both times, so the six-string takes the same bass note twice. ' +
+            'A chorão might do exactly that, or drop to a third below instead. Both are in the ' +
+            'literature. That choice now sits beside the shapes: turn it and watch the whole ' +
+            'song answer. The “How this chooses” list turns with it, so what it says is always ' +
+            'what it is about to do.',
+        },
+        {
+          heading: 'Chords it used to leave blank',
+          text:
+            'A dominant with its seventh in the bass — C7/B♭ on its way to F — came back with ' +
+            'no shape at all. There is a documented answer: the six-string goes a third BELOW ' +
+            'the other guitar and rests on the fifth, C7/G. It plays that now. Cm7 was quietly ' +
+            'missing its third for a related reason. And a dominant can now be played as three ' +
+            'notes with the thumb up on the fourth string, which is the style’s other texture ' +
+            'and was simply absent here.',
+        },
+        {
+          heading: 'Diminished chords keep their tritone',
+          text:
+            'Asked for F♯°, the wizard gave four strings with no tritone in them and one of ' +
+            'those spent doubling a note. The fifth is the note this style drops — but not when ' +
+            'it is a flat fifth, which is the note that makes a diminished chord diminished. It ' +
+            'stays now, and so does the sharp fifth of an augmented chord.',
+        },
+        {
+          heading: 'One chord, two shapes, where the song wants them',
+          text:
+            'The wizard chose one shape per chord for a whole song. It can now give the same ' +
+            'chord a different shape in a different bar where its policy calls for one, and ' +
+            'writes the footnote marker itself. The preview shows the song as it will actually ' +
+            'be — the shapes it will carry, and how many bars each one covers — so a chord it ' +
+            'has split in two is something you see before you accept it rather than after.',
         },
       ],
     },

@@ -101,6 +101,30 @@ test.describe('the voicing wizard', () => {
     await expect(page.locator('#wizard-apply')).toBeDisabled();
   });
 
+  test('offers its stylistic choices where it has them, and answers to them', async ({
+    page,
+  }) => {
+    await page.locator('#voicing-wizard').click();
+    await page.locator('#wizard-choroCentro').click();
+
+    // The choro texture leaves one question open; the others do not ask any.
+    const option = page.locator('#wizard-option-whenThirdRepeats');
+    await expect(option).toBeVisible();
+    await expect(page.locator('#wizard-whenThirdRepeats-repeat')).toBeChecked();
+
+    // The rules answer to the choice, so the list never contradicts the control.
+    await page.locator('.ec-wizard-how > summary').click();
+    await expect(page.locator('.ec-wizard-rules')).toContainText('it is played again');
+
+    await page.locator('#wizard-whenThirdRepeats-thirdBelow').check();
+    await expect(page.locator('#wizard-preview')).toBeVisible();
+    await expect(page.locator('.ec-wizard-rules')).toContainText('a third below');
+
+    await page.locator('#wizard-back').click();
+    await page.locator('#wizard-smoothest').click();
+    await expect(page.locator('#wizard-option-whenThirdRepeats')).toHaveCount(0);
+  });
+
   test('keeps a policy off an instrument it makes no sense on', async ({ page }) => {
     await addInstrument(page, { instrument: 'ukulele', name: 'Uke' });
     await songWith(page, SONG);

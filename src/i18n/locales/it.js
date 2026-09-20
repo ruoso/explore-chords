@@ -506,6 +506,10 @@ export default {
             'sette corde.',
           'Quattro corde che suonano, o cinque. Quattro è la norma in questo idioma e cinque ' +
             'l’eccezione occasionale: un basso col pollice e il resto con tre dita.',
+          'Oppure tre note, col pollice sulla quarta corda e la corda bassa soppressa, che è ' +
+            'l’altra tessitura dell’idioma. Solo per un accordo con settima: quel che esce è ' +
+            'una fondamentale o una quinta, e le fonti lo permettono perché il tritono — la ' +
+            'terza e la settima — continua a suonare.',
           'Le corde che suonano sono vicine, col pollice sulla più bassa o sulla seconda più ' +
             'bassa e la presa che arriva alla seconda corda dall’alto. Un buco in mezzo è una ' +
             'decisione che puoi ancora prendere; una forma che ne ha bisogno non si disfa.',
@@ -515,21 +519,52 @@ export default {
             'dopo la barra quando la cifra ne scrive una, la fondamentale altrimenti — ' +
             'nell’ottava in cui si trova quella chitarra. È tutto qui: le due chitarre ' +
             'prendono rivolti diversi per non raddoppiarsi.',
-          'Dove una terza sopra quel basso non appartiene all’accordo, si usa una sesta, e in ' +
-            'mancanza di quella un’ottava. Quel caso è nominato nella letteratura, non è una ' +
-            'lacuna di qui: una terza sopra la settima di una dominante che risolve su un ' +
-            'accordo maggiore cade su una nota che lo stile non usa.',
-          'Ogni nota dell’accordo è mantenuta tranne la quinta, che è quella che questo idioma ' +
-            'lascia.',
+          'Dove una terza sopra quel basso non appartiene all’accordo, si usa una sesta, ' +
+            'poi un’ottava, poi una terza SOTTO di esso — posandosi sulla quinta ' +
+            'dell’accordo. Sono i rimedi che dà la letteratura, nell’ordine in cui li dà: ' +
+            'una terza sopra la settima di una dominante che risolve su un accordo maggiore ' +
+            'cade su una nota che lo stile non usa.',
+          'Ogni nota dell’accordo è mantenuta tranne la quinta, che è quella che questo ' +
+            'idioma lascia — a meno che quella quinta sia diminuita o aumentata, perché una ' +
+            '5b o una 5# è ciò che rende l’accordo quell’accordo.',
           'La cifra è percorsa nell’ordine di lettura, preferendo forme che tengano le stesse ' +
             'corde in vibrazione, ed è questo che trasforma una serie come Gm, Gm6, Gm7 in una ' +
             'sola presa con un dito che si muove.',
+          'Dove due forme costano uguale, vince quella più in basso sul manico, e un accordo ' +
+            'più pieno batte uno che spende una corda a raddoppiare una nota.',
         ],
+        options: {
+          whenThirdRepeats: {
+            label: 'Quando la terza ripete la nota precedente',
+            values: {
+              repeat: 'Suonarla di nuovo',
+              thirdBelow: 'Scendere a una terza sotto',
+            },
+            rules: {
+              repeat:
+                'Dove quella terza è la nota che questa chitarra ha appena suonato, la si suona ' +
+                'di nuovo. Armonizzare per terze un basso che cammina ripete una nota ogni ' +
+                'volta che una terza maggiore si stringe in minore, e le fonti dicono ' +
+                'esplicitamente che questo non toglie nulla al contrappunto, perché a muoversi ' +
+                'è l’altra chitarra.',
+              thirdBelow:
+                'Dove quella terza è la nota che questa chitarra ha appena suonato e il ' +
+                'basso sta camminando, la presa scende a una terza sotto l’altra chitarra. ' +
+                'Le fonti registrano quella mossa come in perfetto accordo con lo stile, ' +
+                'benché la diano per una terza che non funziona affatto, non per una che si ' +
+                'ripete.',
+            },
+          },
+        },
       },
     },
     summary: {
       one: '{count} accordo su {total} cambierebbe.',
       other: '{count} accordi su {total} cambierebbero.',
+    },
+    covers: {
+      one: '{count} battuta',
+      other: '{count} battute',
     },
     nothing: 'Ogni accordo ha già la forma che questo scegliereb­be.',
     missing: 'Nessuna forma per {list}.',
@@ -941,6 +976,49 @@ export default {
             'La pagina di lettura di un brano con il testo mostrava la parola null sotto il ' +
             'titolo, e così il pannello delle forme di un brano senza accordi. Entrambi sono ' +
             'corretti, insieme al motivo per cui succedeva.',
+        },
+      ],
+    },
+    '0.14.0': {
+      title: 'Cosa è cambiato nella 0.14',
+      sections: [
+        {
+          heading: 'L’assistente choro chiede come vuoi suonarlo',
+          text:
+            'Alcune domande di questo stile non hanno una risposta giusta, solo una ' +
+            'preferenza. Quando la sette corde sale di un semitono — fa a fa#, in una battuta ' +
+            'di F e una di F#° — una terza sopra è la in entrambe, così la sei corde prende ' +
+            'due volte la stessa nota al basso. Un chorão può fare esattamente questo, oppure ' +
+            'scendere a una terza sotto. Entrambe sono nella letteratura. Quella scelta sta ora ' +
+            'accanto alle forme: giralà e guarda rispondere tutto il brano. L’elenco “Come ' +
+            'sceglie” gira con lei, così quel che dice è sempre quel che sta per fare.',
+        },
+        {
+          heading: 'Accordi che lasciava in bianco',
+          text:
+            'Una dominante con la settima al basso — C7/Bb diretto a F — tornava senza alcuna ' +
+            'forma. Una risposta documentata c’è: la sei corde va una terza SOTTO l’altra ' +
+            'chitarra e si posa sulla quinta, C7/G. Ora suona quella. A Cm7 mancava la terza ' +
+            'per un motivo simile. E una dominante può ora essere suonata con tre note e il ' +
+            'pollice sulla quarta corda, che è l’altra tessitura dello stile e qui semplicemente ' +
+            'non c’era.',
+        },
+        {
+          heading: 'Gli accordi diminuiti tengono il loro tritono',
+          text:
+            'Chiedendo F#°, l’assistente dava quattro corde senza alcun tritono e una di esse ' +
+            'spesa a raddoppiare una nota. La quinta è la nota che questo stile lascia — ma non ' +
+            'quando è diminuita, che è proprio quella che rende diminuito l’accordo. Ora resta, ' +
+            'e così la quinta aumentata dell’accordo aumentato.',
+        },
+        {
+          heading: 'Un accordo, due forme, dove il brano le chiede',
+          text:
+            'L’assistente sceglieva una forma per accordo per tutto il brano. Ora può dare allo ' +
+            'stesso accordo una forma diversa in un’altra battuta, dove la sua politica lo ' +
+            'richiede, e scrive da sé il segno di rimando. L’anteprima mostra il brano come ' +
+            'sarà — le forme che porterà e quante battute copre ciascuna — così un accordo ' +
+            'diviso in due è qualcosa che vedi prima di accettare e non dopo.',
         },
       ],
     },

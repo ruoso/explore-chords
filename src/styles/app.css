@@ -1631,9 +1631,41 @@ body {
   margin: 0.25rem 0;
 }
 
+/* A stylistic question the policy leaves open, sitting with the shapes it
+   changes rather than on a step of its own (DESIGN.md 2.10). */
+.ec-wizard-option {
+  margin: 0.5rem 0 0;
+  padding: 0.4rem 0.6rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.ec-wizard-option > legend {
+  padding: 0 0.3rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.ec-wizard-option-value {
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  margin: 0.15rem 0;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
 .ec-wizard-summary {
   margin: 0.5rem 0 0;
   font-weight: 650;
+}
+
+/* How many bars this one shape covers, so a chord the plan split into two is
+   visible as two before it is accepted. */
+.ec-wizard-covers {
+  margin: 0.1rem 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
 }
 
 .ec-wizard-preview {

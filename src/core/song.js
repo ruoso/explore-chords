@@ -856,6 +856,32 @@ export function setVoicingForKey(text, key, frets, { tuning, dialect, variation 
 }
 
 /**
+ * Choose the voicing for many occurrences at once, on one tuning.
+ *
+ * What the wizard applies (§2.10). A planner decides per bar and knows nothing
+ * about footnote slots; this is where per-bar shapes become the text's keys —
+ * bars given the same shape share a slot, bars given different ones are told
+ * apart by a marker, and slots nothing uses any more go away.
+ *
+ * Not a fold of setVoicing, for two reasons. Writing `F[2]` where `F` stood
+ * shifts every later offset, so a loop over offsets gathered up front goes
+ * wrong the moment the first marker is minted. And the tidying pass runs after
+ * every edit, so intermediate states renumber slots that later edits were
+ * aiming at: the answer might come out right, but nobody could say why.
+ *
+ * Given the whole song at once the allocation is also simpler than the one-bar
+ * case, which has to disturb nothing around it. The rule that survives
+ * untouched is the refusal to merge two slots another tuning tells apart.
+ *
+ * @param {string} text
+ * @param {Map<number,(number|'x')[]>} shapes  occurrence position -> frets
+ * @param {{ tuning: string, dialect?: string, variation?: string }} options
+ */
+export function setVoicingsForOccurrences(text, shapes, { tuning, dialect, variation } = {}) {
+  return applyEdit(text, { kind: 'occurrences', shapes, variation }, tuning, dialect);
+}
+
+/**
  * Apply an edit and normalise.
  *
  * Footnote slots are stable identities shared by every tuning, so the rules
@@ -931,6 +957,62 @@ export function addVariation(text, { tuning, name, copyFrom = null, dialect } = 
   return writeBlocks(text, blocks, dialect);
 }
 
+/**
+ * Give every planned occurrence a slot, in one pass.
+ *
+ * Bars of one symbol given the same shape share a slot; the distinct shapes
+ * take slots in the order they first appear, the first taking the bare form.
+ * Two bars are kept apart, though, where another tuning's block already tells
+ * their slots apart — collapsing those would quietly destroy that instrument's
+ * arrangement.
+ */
+function allocateBatch(shapes, occurrences, slots, mine, sameShape, distinguishedElsewhere) {
+  const bySymbol = new Map();
+  occurrences.forEach((c, i) => {
+    if (!shapes.has(i)) return;
+    if (!bySymbol.has(c.symbol)) bySymbol.set(c.symbol, []);
+    bySymbol.get(c.symbol).push(i);
+  });
+
+  for (const [symbol, planned] of bySymbol) {
+    // Bars of this symbol the plan says nothing about keep the slot they have,
+    // so those slots are not ours to hand out.
+    const taken = new Set();
+    occurrences.forEach((c, i) => {
+      if (c.symbol === symbol && !shapes.has(i)) taken.add(slots[i]);
+    });
+
+    const groups = [];
+    for (const i of planned) {
+      const frets = shapes.get(i);
+      const group = groups.find(
+        (g) =>
+          sameShape(g.frets, frets) &&
+          ![...g.slots].some((s) => distinguishedElsewhere(symbol, s, slots[i]))
+      );
+      if (group) {
+        group.members.push(i);
+        group.slots.add(slots[i]);
+      } else {
+        groups.push({ frets, slots: new Set([slots[i]]), members: [i] });
+      }
+    }
+
+    for (const group of groups) {
+      // Keep a slot the group already sits on where that is still free, so a
+      // plan agreeing with the song rewrites no markers.
+      let n = [...group.slots].sort((a, b) => a - b).find((s) => !taken.has(s));
+      if (n === undefined) {
+        n = 1;
+        while (taken.has(n)) n += 1;
+      }
+      taken.add(n);
+      for (const i of group.members) slots[i] = n;
+      mine.set(keyFor(symbol, n), group.frets);
+    }
+  }
+}
+
 function applyEdit(text, edit, tuning, dialect) {
   if (!tuning) throw new Error('A tuning is needed to edit voicings.');
   const parsed = parseSong(text, dialect);
@@ -960,13 +1042,6 @@ function applyEdit(text, edit, tuning, dialect) {
   const occurrences = parsed.occurrences;
   const slots = occurrences.map((c) => c.index);
 
-  const targets = [];
-  occurrences.forEach((c, i) => {
-    if (edit.kind === 'occurrence' ? c.start === edit.offset : c.key === edit.key) targets.push(i);
-  });
-  if (targets.length === 0) return text;
-  const symbol = occurrences[targets[0]].symbol;
-
   const sameShape = (a, b) => Boolean(a && b) && shorthandOf(a) === shorthandOf(b);
   const slotsOf = (sym) => {
     const used = new Set();
@@ -985,45 +1060,58 @@ function applyEdit(text, edit, tuning, dialect) {
     return false;
   };
 
-  if (edit.frets === null) {
-    for (const i of targets) mine.delete(keyFor(symbol, slots[i]));
+  if (edit.kind === 'occurrences') {
+    allocateBatch(edit.shapes, occurrences, slots, mine, sameShape, distinguishedElsewhere);
   } else {
-    const frets = edit.frets;
-    const currentSlot = slots[targets[0]];
-    const currentShape = mine.get(keyFor(symbol, currentSlot));
+    const targets = [];
+    occurrences.forEach((c, i) => {
+      if (edit.kind === 'occurrence' ? c.start === edit.offset : c.key === edit.key) {
+        targets.push(i);
+      }
+    });
+    if (targets.length === 0) return text;
+    const symbol = occurrences[targets[0]].symbol;
 
-    // A slot of this symbol that already holds this shape on this tuning.
-    let match = null;
-    for (const s of slotsOf(symbol)) {
-      if (s !== currentSlot && sameShape(mine.get(keyFor(symbol, s)), frets)) match = s;
-    }
-    if (match !== null && distinguishedElsewhere(symbol, currentSlot, match)) match = null;
-
-    if (sameShape(currentShape, frets)) {
-      // Already so. Without this, choosing the shape a slot already has would
-      // fall through and split off a duplicate footnote with the same shape.
-    } else if (match !== null) {
-      for (const i of targets) slots[i] = match;
-    } else if (edit.kind === 'key') {
-      mine.set(keyFor(symbol, currentSlot), frets);
+    if (edit.frets === null) {
+      for (const i of targets) mine.delete(keyFor(symbol, slots[i]));
     } else {
-      const i = targets[0];
-      const alone = !occurrences.some(
-        (c, j) => j !== i && c.symbol === symbol && slots[j] === currentSlot
-      );
-      // Writing in place is right when this occurrence is the only one on the
-      // slot, and also when the slot has no shape on this tuning yet: then the
-      // choice becomes the shape for every bare occurrence, rather than
-      // splitting the first one chosen off into a footnote.
-      const slotHasShape = mine.has(keyFor(symbol, currentSlot));
-      if (alone || !slotHasShape) {
+      const frets = edit.frets;
+      const currentSlot = slots[targets[0]];
+      const currentShape = mine.get(keyFor(symbol, currentSlot));
+
+      // A slot of this symbol that already holds this shape on this tuning.
+      let match = null;
+      for (const s of slotsOf(symbol)) {
+        if (s !== currentSlot && sameShape(mine.get(keyFor(symbol, s)), frets)) match = s;
+      }
+      if (match !== null && distinguishedElsewhere(symbol, currentSlot, match)) match = null;
+
+      if (sameShape(currentShape, frets)) {
+        // Already so. Without this, choosing the shape a slot already has would
+        // fall through and split off a duplicate footnote with the same shape.
+      } else if (match !== null) {
+        for (const i of targets) slots[i] = match;
+      } else if (edit.kind === 'key') {
         mine.set(keyFor(symbol, currentSlot), frets);
       } else {
-        const used = slotsOf(symbol);
-        let n = 1;
-        while (used.has(n)) n += 1;
-        slots[i] = n;
-        mine.set(keyFor(symbol, n), frets);
+        const i = targets[0];
+        const alone = !occurrences.some(
+          (c, j) => j !== i && c.symbol === symbol && slots[j] === currentSlot
+        );
+        // Writing in place is right when this occurrence is the only one on the
+        // slot, and also when the slot has no shape on this tuning yet: then the
+        // choice becomes the shape for every bare occurrence, rather than
+        // splitting the first one chosen off into a footnote.
+        const slotHasShape = mine.has(keyFor(symbol, currentSlot));
+        if (alone || !slotHasShape) {
+          mine.set(keyFor(symbol, currentSlot), frets);
+        } else {
+          const used = slotsOf(symbol);
+          let n = 1;
+          while (used.has(n)) n += 1;
+          slots[i] = n;
+          mine.set(keyFor(symbol, n), frets);
+        }
       }
     }
   }

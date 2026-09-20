@@ -506,6 +506,10 @@ export default {
             'o sete cordas as tem.',
           'Quatro cordas soando, ou cinco. Quatro é o padrão nesse idioma e cinco a exceção ' +
             'ocasional: um baixo no polegar e o resto em três dedos.',
+          'Ou três notas, com o polegar na quarta corda e a corda grave suprimida, que é a ' +
+            'outra textura do idioma. Só para acorde com sétima: o que sai é tônica ou ' +
+            'quinta, e as fontes permitem porque o trítono — a terça e a sétima — continua ' +
+            'soando.',
           'As cordas que soam são vizinhas, com o polegar na mais grave ou na segunda mais ' +
             'grave e a pega alcançando a segunda corda de cima. Um buraco no meio é uma ' +
             'decisão que você ainda pode tomar; um desenho que precisa de um não se desfaz.',
@@ -515,20 +519,50 @@ export default {
             'barra quando a cifra escreve uma, a fundamental caso contrário — na oitava em que ' +
             'aquele violão estiver. É disso que se trata: os dois violões pegam inversões ' +
             'diferentes para não se dobrarem.',
-          'Quando uma terça acima desse baixo não pertence ao acorde, usa-se uma sexta, e na ' +
-            'falta dela uma oitava. Esse caso está nomeado na literatura, não é uma falha ' +
-            'daqui: uma terça acima da sétima de um dominante que resolve em acorde maior cai ' +
-            'numa nota que o estilo não usa.',
-          'Toda nota do acorde é mantida, exceto a quinta, que é a que esse idioma dispensa.',
+          'Quando uma terça acima desse baixo não pertence ao acorde, usa-se uma sexta, ' +
+            'depois uma oitava, e depois uma terça ABAIXO dele — repousando na quinta do ' +
+            'acorde. São os remédios que a literatura dá, na ordem em que os dá: uma terça ' +
+            'acima da sétima de um dominante que resolve em acorde maior cai numa nota que ' +
+            'o estilo não usa.',
+          'Toda nota do acorde é mantida, exceto a quinta, que é a que esse idioma ' +
+            'dispensa — a não ser que essa quinta seja diminuta ou aumentada, pois uma 5b ' +
+            'ou 5# é o que faz o acorde ser aquele acorde.',
           'A cifra é percorrida na ordem de leitura, preferindo desenhos que mantenham as ' +
             'mesmas cordas soando, o que transforma uma sequência como Gm, Gm6, Gm7 em uma ' +
             'só pega com um dedo se movendo.',
+          'Quando dois desenhos custam o mesmo, vence o mais grave no braço, e um acorde ' +
+            'mais cheio vence um que gasta uma corda dobrando nota.',
         ],
+        options: {
+          whenThirdRepeats: {
+            label: 'Quando a terça repete a nota anterior',
+            values: {
+              repeat: 'Tocar de novo',
+              thirdBelow: 'Descer a uma terça abaixo',
+            },
+            rules: {
+              repeat:
+                'Quando essa terça é a nota que este violão acabou de tocar, ela é tocada de ' +
+                'novo. Harmonizar em terças um baixo que caminha repete nota sempre que uma ' +
+                'terça maior se estreita em menor, e as fontes dizem com todas as letras que ' +
+                'isso não tira nada do contraponto, pois quem se move é o outro violão.',
+              thirdBelow:
+                'Quando essa terça é a nota que este violão acabou de tocar e o baixo está ' +
+                'caminhando, a pega desce a uma terça abaixo do outro violão. As fontes ' +
+                'registram esse movimento como em perfeita consonância com o estilo, embora ' +
+                'o deem para uma terça que não funciona, não para uma que repete.',
+            },
+          },
+        },
       },
     },
     summary: {
       one: '{count} de {total} acordes mudariam.',
       other: '{count} de {total} acordes mudariam.',
+    },
+    covers: {
+      one: '{count} compasso',
+      other: '{count} compassos',
     },
     nothing: 'Todo acorde já tem o desenho que este escolheria.',
     missing: 'Nenhum desenho para {list}.',
@@ -937,6 +971,49 @@ export default {
             'A página de leitura de uma música com letra mostrava a palavra null embaixo do ' +
             'título, e o painel de desenhos de uma música sem acordes também. Os dois foram ' +
             'corrigidos, junto com o motivo de acontecerem.',
+        },
+      ],
+    },
+    '0.14.0': {
+      title: 'O que mudou na 0.14',
+      sections: [
+        {
+          heading: 'O assistente de choro pergunta como você quer tocar',
+          text:
+            'Algumas perguntas desse estilo não têm resposta certa, só preferência. Quando o ' +
+            'sete cordas sobe um semitom — fá para fá#, num compasso de F e outro de F#° — a ' +
+            'terça acima é lá nos dois, então o seis cordas repete a mesma nota no baixo. Um ' +
+            'chorão pode fazer exatamente isso, ou descer a uma terça abaixo. As duas coisas ' +
+            'estão na literatura. Essa escolha agora fica ao lado dos desenhos: vire a chave e ' +
+            'veja a música inteira responder. A lista “Como esta escolha é feita” vira junto, ' +
+            'de modo que o que ela diz é sempre o que vai ser feito.',
+        },
+        {
+          heading: 'Acordes que ele deixava em branco',
+          text:
+            'Um dominante com a sétima no baixo — C7/Bb a caminho de F — voltava sem desenho ' +
+            'nenhum. Existe resposta documentada: o seis cordas vai uma terça ABAIXO do outro ' +
+            'violão e repousa na quinta, C7/G. Agora ele toca isso. Cm7 estava sem a terça por ' +
+            'um motivo parecido. E um dominante pode agora ser tocado com três notas e o ' +
+            'polegar na quarta corda, que é a outra textura do estilo e aqui simplesmente ' +
+            'faltava.',
+        },
+        {
+          heading: 'Acordes diminutos mantêm o trítono',
+          text:
+            'Pedindo F#°, o assistente dava quatro cordas sem trítono nenhum e uma delas ' +
+            'gasta dobrando nota. A quinta é a nota que esse estilo dispensa — mas não quando ' +
+            'ela é diminuta, que é justamente a nota que faz o acorde ser diminuto. Agora ela ' +
+            'fica, e a quinta aumentada do acorde aumentado também.',
+        },
+        {
+          heading: 'Um acorde, dois desenhos, quando a música pede',
+          text:
+            'O assistente escolhia um desenho por acorde para a música inteira. Agora ele pode ' +
+            'dar ao mesmo acorde um desenho diferente em outro compasso, quando a política ' +
+            'pedir, e escreve a marca de rodapé sozinho. A prévia mostra a música como ela vai ' +
+            'ficar — os desenhos que ela vai carregar e quantos compassos cada um cobre — ' +
+            'então um acorde dividido em dois é coisa que você vê antes de aceitar, não depois.',
         },
       ],
     },

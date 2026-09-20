@@ -506,6 +506,10 @@ export default {
             'siete cuerdas.',
           'Cuatro cuerdas sonando, o cinco. Cuatro es la norma en este idioma y cinco la ' +
             'excepción ocasional: un bajo con el pulgar y el resto con tres dedos.',
+          'O tres notas, con el pulgar en la cuarta cuerda y la cuerda grave suprimida, que ' +
+            'es la otra textura del idioma. Solo para un acorde con séptima: lo que sale es ' +
+            'fundamental o quinta, y las fuentes lo permiten porque el trítono — la tercera ' +
+            'y la séptima — sigue sonando.',
           'Las cuerdas que suenan son vecinas, con el pulgar en la más grave o la segunda más ' +
             'grave y la toma llegando a la segunda cuerda desde arriba. Un hueco en el medio ' +
             'es una decisión que todavía podés tomar; una forma que lo necesita no se deshace.',
@@ -515,20 +519,51 @@ export default {
             'nota tras la barra cuando la cifra escribe una, la fundamental si no — en la ' +
             'octava en que esté esa guitarra. De eso se trata: las dos guitarras toman ' +
             'inversiones distintas para no duplicarse.',
-          'Cuando una tercera arriba de ese bajo no pertenece al acorde, se usa una sexta, y ' +
-            'en su defecto una octava. Ese caso está nombrado en la literatura, no es una ' +
-            'falla de acá: una tercera arriba de la séptima de un dominante que resuelve en ' +
-            'acorde mayor cae en una nota que el estilo no usa.',
-          'Se conserva toda nota del acorde salvo la quinta, que es la que este idioma deja.',
+          'Cuando una tercera arriba de ese bajo no pertenece al acorde, se usa una sexta, ' +
+            'después una octava, y después una tercera ABAJO de él — quedando en la quinta ' +
+            'del acorde. Son los remedios que da la literatura, en el orden en que los da: ' +
+            'una tercera arriba de la séptima de un dominante que resuelve en acorde mayor ' +
+            'cae en una nota que el estilo no usa.',
+          'Se conserva toda nota del acorde salvo la quinta, que es la que este idioma ' +
+            'deja — a menos que esa quinta esté disminuida o aumentada, porque una 5b o ' +
+            '5# es lo que hace que el acorde sea ese acorde.',
           'La cifra se recorre en orden de lectura, prefiriendo formas que mantengan las ' +
             'mismas cuerdas sonando, que es lo que vuelve una serie como Gm, Gm6, Gm7 una ' +
             'sola toma con un dedo moviéndose.',
+          'Cuando dos formas cuestan lo mismo, gana la más grave en el mástil, y un acorde ' +
+            'más lleno le gana a uno que gasta una cuerda duplicando una nota.',
         ],
+        options: {
+          whenThirdRepeats: {
+            label: 'Cuando la tercera repite la nota anterior',
+            values: {
+              repeat: 'Tocarla de nuevo',
+              thirdBelow: 'Bajar a una tercera abajo',
+            },
+            rules: {
+              repeat:
+                'Cuando esa tercera es la nota que esta guitarra acaba de tocar, se toca de ' +
+                'nuevo. Armonizar en terceras un bajo que camina repite nota cada vez que una ' +
+                'tercera mayor se estrecha en menor, y las fuentes dicen expresamente que eso ' +
+                'no le quita nada al contrapunto, porque la que se mueve es la otra guitarra.',
+              thirdBelow:
+                'Cuando esa tercera es la nota que esta guitarra acaba de tocar y el bajo ' +
+                'está caminando, la toma baja a una tercera abajo de la otra guitarra. Las ' +
+                'fuentes registran ese movimiento como en perfecta consonancia con el ' +
+                'estilo, aunque lo dan para una tercera que no funciona, no para una que ' +
+                'repite.',
+            },
+          },
+        },
       },
     },
     summary: {
       one: '{count} de {total} acordes cambiarían.',
       other: '{count} de {total} acordes cambiarían.',
+    },
+    covers: {
+      one: '{count} compás',
+      other: '{count} compases',
     },
     nothing: 'Cada acorde ya tiene la forma que esto elegiría.',
     missing: 'Ninguna forma para {list}.',
@@ -941,6 +976,49 @@ export default {
             'La página de lectura de una canción con letra mostraba la palabra null debajo del ' +
             'título, y el panel de formas de una canción sin acordes también. Los dos están ' +
             'arreglados, junto con la razón por la que pasaba.',
+        },
+      ],
+    },
+    '0.14.0': {
+      title: 'Qué cambió en 0.14',
+      sections: [
+        {
+          heading: 'El asistente de choro pregunta cómo lo querés tocar',
+          text:
+            'Algunas preguntas de este estilo no tienen respuesta correcta, solo preferencia. ' +
+            'Cuando la siete cuerdas sube un semitono — fa a fa#, en un compás de F y otro de ' +
+            'F#° — una tercera arriba es la en los dos, así que la seis cuerdas toma la misma ' +
+            'nota en el bajo dos veces. Un chorão puede hacer exactamente eso, o bajar a una ' +
+            'tercera abajo. Las dos están en la literatura. Esa elección ahora está al lado de ' +
+            'las formas: giralá y mirá responder a toda la canción. La lista “Cómo elige esto” ' +
+            'gira con ella, así que lo que dice es siempre lo que va a hacer.',
+        },
+        {
+          heading: 'Acordes que dejaba en blanco',
+          text:
+            'Un dominante con la séptima en el bajo — C7/Bb camino a F — volvía sin forma ' +
+            'alguna. Hay una respuesta documentada: la seis cuerdas va una tercera ABAJO de la ' +
+            'otra guitarra y queda en la quinta, C7/G. Ahora toca eso. A Cm7 le faltaba la ' +
+            'tercera por un motivo parecido. Y un dominante puede tocarse ahora con tres notas ' +
+            'y el pulgar en la cuarta cuerda, que es la otra textura del estilo y acá ' +
+            'simplemente no estaba.',
+        },
+        {
+          heading: 'Los acordes disminuidos conservan su trítono',
+          text:
+            'Al pedir F#°, el asistente daba cuatro cuerdas sin trítono y una de ellas gastada ' +
+            'en duplicar una nota. La quinta es la nota que este estilo deja — pero no cuando ' +
+            'está disminuida, que es justamente la que hace que el acorde sea disminuido. Ahora ' +
+            'se queda, y la quinta aumentada del acorde aumentado también.',
+        },
+        {
+          heading: 'Un acorde, dos formas, cuando la canción las pide',
+          text:
+            'El asistente elegía una forma por acorde para toda la canción. Ahora puede darle ' +
+            'al mismo acorde una forma distinta en otro compás, cuando su política lo pida, y ' +
+            'escribe la marca al pie solo. La vista previa muestra la canción como va a quedar ' +
+            '— las formas que va a llevar y cuántos compases cubre cada una — así que un acorde ' +
+            'partido en dos es algo que ves antes de aceptar y no después.',
         },
       ],
     },

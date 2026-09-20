@@ -599,16 +599,305 @@ one click would be something you undo rather than something you use, and the
 preview shows the same diagram and the same "voiced as" label (§6.2) the song
 will carry, so it is the thing itself rather than a description of it.
 
-A planner is two functions in `core/voicing-plan.js`: which shapes it will
-consider for a chord, and what they cost given where the hand already is. The
-walk through the chart is shared, greedy and in reading order, which is the
-order a player meets the chords in. Nothing there writes text; a plan is a map
-from voicing key to frets, and the caller applies it through the same
-`setVoicingForKey` the one-chord picker uses, so the footnote and tidying rules
-apply exactly as they would to thirty separate choices.
-
 `appliesTo` keeps a planner off an instrument it makes no sense on, rather than
 letting it return nothing and look broken.
+
+#### A planner decides the song, not each chord
+
+A planner is one function. It is handed the whole song and gives back a shape
+per chord *occurrence*; it is not handed one chord at a time.
+
+```js
+/**
+ * @typedef {object} Planner
+ * @property {string}   id
+ * @property {string[]} sources                      ids into src/data/sources.js
+ * @property {(instrument) => boolean} [appliesTo]
+ * @property {StyleOption[]} [options]
+ * @property {(request: PlanRequest) => PlanResult} plan
+ *
+ * @typedef {object} PlanRequest
+ * @property {ParsedSong} song
+ * @property {SongReading} reading
+ * @property {object} instrument
+ * @property {string} dialect
+ * @property {Record<string,string>} choices    answers to `options`, defaults filled
+ *
+ * @typedef {object} PlanResult
+ * @property {Map<number,(number|'x')[]>} shapes    `at` -> frets
+ * @property {number[]} missing                     `at` of chords it could not voice
+ */
+```
+
+This was the second design. The first made a planner two functions — which
+shapes it would consider, and what they cost given where the hand already was —
+and had a shared greedy walk call them chord by chord. That works for a policy
+about hands and fails for any policy about a passage. A cost is a number about
+one chord in one place; a rule like "use octaves through this chromatic run
+rather than repeat the same third twice" is a decision about a span of bars, and
+routing it through a per-chord scalar means the planner must infer the span from
+a single remembered fingering. It cannot, and the attempt distorts both halves:
+the shared walk grows knowledge of what planners want, and the cost function
+grows arguments it needs only sometimes.
+
+**`plan` is the only API, and there is deliberately no second one.** The obvious
+convenience — a shared `greedyWalk(request, { candidates, cost })` for the
+planners that only want a chord-by-chord loop — is the two-function design
+wearing a different hat: same two functions, same per-chord evaluation, moved to
+a call site inside the planner instead of above it. Keeping it would leave the
+shape we know to be wrong sitting there as the easy road, and it shows: written
+that way, the choro planner has to smuggle its whole-song decision in as a
+candidate pre-filter, so the real choice happens outside the walk while the walk
+takes the credit.
+
+So what is shared is *utilities*, never a second contract. Each planner writes
+its own loop. That costs the two simple ones about fifteen lines each of
+ordinary bookkeeping, which is the right price for having one way to write a
+planner rather than two.
+
+```js
+// candidates.js
+searched(chord, instrument, config?)             -> Fingering[]
+centroCandidates(chord, instrument, { bassPc })  -> { fingering, interval }[]
+//   interval: 'third' | 'sixth' | 'octave' | 'thirdBelow'   — tagged, not cascaded
+
+// shape.js
+position(frets)   movement(candidate, previous)   doubling(f)
+stringChange(a, b)   highestString(f)   sounding(f)
+best(candidates, (candidate) => number)          -> Candidate
+```
+
+The whole of "keep the hand still", written against that:
+
+```js
+plan({ reading, instrument }) {
+  const shapes = new Map();
+  const missing = [];
+  const already = new Map();               // key -> frets, so a chord stays itself
+  let previous = null;
+
+  for (const entry of reading.line) {
+    if (!entry.chord) continue;
+    if (already.has(entry.ref.key)) {
+      shapes.set(entry.at, already.get(entry.ref.key));
+      continue;
+    }
+    const options = searched(entry.chord, instrument);
+    if (options.length === 0) {
+      missing.push(entry.at);
+      continue;
+    }
+    const pick = best(options, (c) => c.score.total * 0.5 + movement(c, previous) * 1.2);
+    previous = pick;
+    already.set(entry.ref.key, pick.frets);
+    shapes.set(entry.at, pick.frets);
+  }
+  return { shapes, missing };
+}
+```
+
+And a planner that needs to see a passage decides what it needs to decide before
+it starts choosing shapes, in its own code, where you can read it:
+
+```js
+plan({ reading, instrument, choices }) {
+  // Which interval families each bar may use — read off the spans, once, for
+  // the whole song, before any shape is chosen.
+  const allowed = intervalPlan(reading, choices.whenThirdRepeats);
+  // … the same loop, picking from
+  //   centroCandidates(entry.chord, instrument, { bassPc: entry.bassPc })
+  //     .filter((c) => allowed.get(entry.at).includes(c.interval))
+}
+```
+
+`planVoicings` stays the single entry point and becomes thin: analyse, dispatch,
+and diff the result against what the song already had. That last part is
+bookkeeping rather than policy, so it stays outside the planner.
+
+Two things that used to be the framework's are now visibly each planner's, which
+is the point. **Tie-breaking**: the shared walk picked with `reduce` and a strict
+`<`, so two candidates of equal cost were settled by their position in a list —
+which is how `F#°` once came out as a grip with no tritone in it, tying exactly
+with the complete chord and winning by enumeration order. A planner now breaks
+its own ties and says in "How it works" how it breaks them. And **stability**:
+deciding per occurrence lets two bars of the same chord diverge merely because
+the shape before them differed, and every divergence becomes a footnote marker
+in the chart. The `already` map above is three lines and it is the planner's own
+— so a chord staying itself, and a chord deliberately split in two, are both
+decisions somebody wrote down rather than a flag's default.
+
+#### `at`, and why not `index`
+
+A chord's `at` is its position in `song.occurrences`: the Nth chord token in the
+chart, in reading order, one per token written. Two bars of `F` are two
+occurrences. It is not a bar number — a bar may hold several chords, and `%`
+writes none — and it is deliberately not called an index, because `ChordRef`
+already has an `index` and it means the footnote slot (`F[2]` is index 2, a bare
+`F` is index 1). Two numbers on the same object, one meaning "which chord in the
+song" and the other "which shape of that chord", must not share a name.
+
+`at` is the planner's only numbering: the reading is ordered by it, spans are
+ranges of it, and the shapes handed back are keyed by it. Source offsets stay
+where they already live, in the editing layer (§2.6).
+
+#### Reading the song before choosing
+
+`core/song-analysis.js` turns a parsed song into a `SongReading`, once per run,
+before any planner sees it.
+
+```js
+/**
+ * @typedef {object} ReadingEntry
+ * @property {number} at                  position in song.occurrences
+ * @property {ChordRef} ref               symbol, key, start, valid
+ * @property {Chord|null} chord
+ * @property {number|null} bassPc         the chart's bass: slash note, else root
+ *
+ * @typedef {object} Span
+ * @property {'walking'} kind
+ * @property {number} from                inclusive `at`
+ * @property {number} to                  inclusive `at`
+ * @property {{direction:'up'|'down', chromatic:boolean}} detail
+ *
+ * @typedef {object} SongReading
+ * @property {ReadingEntry[]} line
+ * @property {Span[]} spans
+ * @property {(at:number, kind?:string) => Span[]} spansAt
+ */
+```
+
+`line` is the bass line the other instrument is playing, which is what the choro
+rules are stated against. `spans` are findings over it.
+
+It is a separate module from `song.js` because `song.js` is about the *text* —
+parsing, editing, round-tripping — while this is about the music in it. They
+have different reasons to change. Keeping it out of `voicing-plan.js` too means
+the claim "these three bars are a walking bass" is testable with no instrument
+and no planner anywhere near it, which is the only way an analysis earns being
+trusted by three planners at once.
+
+##### What is analysis, and what is not
+
+**Anything one array index away is not analysis.** A planner holds `line`
+entire, so "what does this chord resolve to" is `line[at + 1]` and needs no
+machinery. Analysis earns its place only for what takes a scan — where a run
+begins and ends — or for a derivation every planner would otherwise repeat.
+
+By that test the choro planner needs exactly two things, `bassPc` and one span
+kind, and everything else it wants belongs to it: which notes lie a third, a
+sixth, an octave or a third below the other guitar's bass; whether the third
+would repeat the note the last bar took; whether this chord is a dominant with
+its seventh in the bass. Those are the centro idiom's own arithmetic, and a
+planner for some other music would want none of them.
+
+##### `walking`, not `chromatic`
+
+The span we need is not a chromatic run. The sources do not describe one: they
+describe a *"baixo cromático-diatônico"*, a line that avoids leaps — "um caminho
+grave que evita grandes saltos, que procura o menor caminho e 'oferece' uma
+melodia" (Campos Ramos, p.121) — and the line he analyses in *Vibrações* is
+ré-mi-fá-fá#-sol-lá-sib, whole tones and semitones mixed. It is that shape, not
+chromaticism as such, that the octave rule below answers to.
+
+So a `walking` span is a maximal run whose bass moves by one or two semitones in
+a consistent direction, and `detail.chromatic` says whether every step in it was
+a semitone, for a planner that wants the narrower case. Naming the kind
+`chromatic` would have had us implement the wrong figure and miss the one the
+sources are actually about.
+
+One kind is where the vocabulary starts. Cycles of fourths, pedals and passing
+diminished chords are all real and all documented, and each should arrive with
+the planner that needs it — an unused `kind` is a guess about music we have not
+sourced. An earlier draft of this section also proposed a `repeatedBass` kind,
+on the assumption that the choro planner would ask whether the bass had just
+repeated. It does not: what it needs to know is whether the *third* repeats,
+which is `bassPc` plus the idiom's own arithmetic and never leaves the planner.
+A repeated bass in the chart is a pedal, which is a different thing with no rule
+attached to it yet.
+
+#### Stylistic choices the wizard asks about
+
+Some questions have no right answer, only a preference. When the third above the
+other guitar's bass repeats the note the six-string just played, a chorão might
+repeat it, octave the bass line instead, or drop to a third below. All three are
+documented. Which one *you* want is not something the software knows.
+
+So a planner may declare its options:
+
+```js
+/**
+ * @typedef {object} StyleOption
+ * @property {string}   id           'whenThirdRepeats'
+ * @property {string[]} values       ['repeat','thirdBelow'] — the order shown
+ * @property {string}   default      one of `values`
+ * @property {string[]} [sources]
+ */
+```
+
+and `plan` receives the answers in `choices`, defaults filled in. The dialog
+renders a radio group per declared option and knows nothing about what any of
+them mean — which is what stops the wizard UI growing a branch per planner.
+Labels and the one-line justification for each value live in `src/i18n` beside
+the planner's `name`, `text` and `how`, and each option carries its own
+`sources` for the same reason a planner does: "a third below, landing on the
+fifth" is somebody's documented practice, not our invention.
+
+**The controls go on the preview step, not on a step of their own.** You choose
+a policy, see thirty shapes, then turn the knob and watch them change. An option
+explained by what it does to the chart in front of you needs much less prose
+than one explained before you have seen anything, and re-running a plan is
+instant. "How it works" then has to take its affected rule from the chosen
+value, or the list will claim "a third above" while the control says otherwise.
+
+Choices are not remembered between songs. "Octave rather than repeat" is a
+decision about the arrangement in front of you, not a fact about you, and a
+preference that silently followed you into the next song would be a surprise the
+first time it mattered. If they should persist at all they belong keyed per
+sheet, the way a chosen variation already is (§2.13) — not in global prefs.
+
+#### One shape per bar, reconciled afterwards
+
+A planner returns a shape per occurrence, and keys are none of its business. It
+thinks about bars, which is what the reading is indexed by.
+
+Turning that into text is a separate step, and it is mostly machinery the
+one-chord picker already has. `setVoicing` (§2.6) takes one occurrence's shape
+and does the whole dance: reuse a slot of that symbol which already holds this
+exact shape rather than minting a duplicate footnote, mint the next free index
+when the occurrence needs a shape its slot cannot carry, refuse to collapse two
+slots that another tuning or variation tells apart, then garbage-collect what
+nothing uses and renumber chart and blocks together so a chord back to one
+voicing loses its marker.
+
+What the wizard needs is that in batch:
+
+```js
+setVoicingsForOccurrences(text, shapes, { tuning, dialect, variation }) -> text
+```
+
+and it must not be a fold of the single-occurrence version. Two reasons. An edit
+that widens a token — `F` becoming `F[2]` — shifts every later offset in the
+text, so a loop over offsets collected up front goes wrong the moment the first
+marker is minted. And the garbage-collect-and-renumber pass runs after every
+edit, so intermediate states renumber slots that later edits were aiming at; the
+end result may well be right, but nobody can reason about it.
+
+Given every occurrence's shape at once, the allocation is also simpler than the
+incremental case. The picker's careful dance exists because it changes one bar
+and must disturb nothing else. A wizard assigning the whole song can group each
+symbol's occurrences by shape and let the distinct shapes become slots in
+first-appearance order, the first taking the bare form. The one rule that
+survives untouched is the refusal to merge slots another instrument's block
+depends on: collapsing those would silently destroy that arrangement.
+
+**A planner that gives one chord several shapes is doing its job.** Deciding per
+occurrence means a policy can legitimately want a different grip for the `F`
+inside a chromatic run than for the `F` in the last bar, and the chart will come
+back carrying `F` and `F[2]`. The reconciler does not second-guess that —
+collapsing near-duplicates would be policy, and policy belongs to the planner.
+What it owes you is visibility: the preview shows the *reconciled* result, one
+entry per resulting key with the bars it covers, so a chord split three ways is
+something you see before you accept it rather than after.
 
 #### Each planner cites its own sources
 
@@ -632,15 +921,20 @@ seven-string carries the bass line. The rules, and where each comes from:
 - **Enumerated, not searched.** The ordinary search discards a muted shape when
   a fuller one is no harder (§5.2). Right for a solo player, wrong here, where
   the low strings are quiet because another instrument has them.
-- **Four sounding strings, or five.** A bass note under the thumb and the rest
-  under three fingers. Four is called the predominant pattern of the style and
-  five the occasional departure.
-- **Contiguous strings**, thumb on the lowest or second-lowest, the grip
-  reaching the second string from the top. Contiguity is our rule rather than
-  the idiom's — the transcriptions do show gapped grips — on the reasoning that
-  a hole is a decision the player can still make, while a shape that needs one
-  cannot be undone. Reaching the second string from the top is the idiom: the
-  fingers go on the second, third and fourth strings.
+- **Four sounding strings, or five — or three, in the other texture.** A bass
+  note under the thumb and the rest under three fingers. Four is called the
+  predominant pattern of the style and five the occasional departure. The third
+  case is the thumb up on the fourth string with the low string dropped, which
+  the sources give for dominants: what is lost is a root or a fifth, and it
+  costs nothing because the tritone still sounds. So it is offered only for a
+  chord with a seventh to make that tritone with.
+- **Contiguous strings**, thumb on the lowest or second-lowest — or on the
+  fourth string in that other texture — and the grip reaching the second string
+  from the top. Contiguity is our rule rather than the idiom's — the
+  transcriptions do show gapped grips — on the reasoning that a hole is a
+  decision the player can still make, while a shape that needs one cannot be
+  undone. Reaching the second string from the top is the idiom: the fingers go
+  on the second, third and fourth strings.
 - **Nothing above the seventh fret, open strings welcome.** The sources put this
   work in the first quarter of the neck. This is the rule that most contradicted
   our first attempt, which had been mid-neck with no open strings.
@@ -649,13 +943,18 @@ seven-string carries the bass line. The rules, and where each comes from:
   octave that instrument is in. This is the substance: the two guitars take
   different inversions so they do not double each other. It is a simple third
   between two bass lines in the same register, not a tenth.
-- **A sixth, or failing that an octave, where a third is not a chord tone.** A
-  third above the seventh of a dominant resolving to a major chord lands on a
-  note the style does not use. The literature names that case and gives the
-  sixth as its answer, so this is a documented exception rather than a gap.
+- **A sixth, then an octave, then a third *below*, where a third above is not a
+  chord tone.** A third above the seventh of a dominant resolving to a major
+  chord lands on a note the style does not use. The literature names that case
+  and gives all three remedies, in that order, so this is a documented
+  exception rather than a gap.
 - **Every tone kept but the fifth**, which is the note this idiom drops — not
   the root. "Rootless" in the jazz sense is the wrong frame: the six-string
-  displaces its bass rather than surrendering it.
+  displaces its bass rather than surrendering it. Only a *perfect* fifth,
+  though: the ♭5 of a diminished chord or the ♯5 of an augmented one is what
+  makes the chord that chord, and the ordinary search already refuses to drop
+  it (§5.2). Dropping it here gave `F#°` a grip with no tritone in it and a
+  string spent doubling the third.
 - **Prefer keeping the same strings sounding.** The picking hand has a pattern,
   and a chord that moves the strings under it interrupts that pattern as surely
   as a jump interrupts the fretting hand. It is also what turns a run like
@@ -663,14 +962,165 @@ seven-string carries the bass line. The rules, and where each comes from:
 - **No note sounded more than twice.** Doubling once is ordinary on a guitar;
   twice over is a four-voice grip giving the chord two notes.
 
-Worth recording what this replaced. An earlier attempt gave the six-string
-top-four-string voicings with the two lowest strings muted, on the reasoning
-that the seven-string owns the bass. No source in any language recommends
-muting those strings, and the one Brazilian source that does prescribe that
-profile — top four strings, high register, deferring to the instruments below —
-is writing about an electric guitar in MPB, and says itself that it sounds like
-a cavaquinho. The six-string's slot is *médio-grave*, with a bass note of its
-own.
+##### A repeated third is not a mistake
+
+Harmonising a moving bass line in thirds makes the upper line repeat wherever a
+major third narrows to a minor one. Under `F | F#°` the other guitar walks F to
+F♯ and the centro sits on A both times, because A is the only chord tone a third
+above either. Campos Ramos raises exactly this and defends it (p.125, on
+*Vibrações*, where the seven-string walks ré-mi-fá-fá#-sol-lá-sib): the V6 plays
+Dm/A then D7/A, "o que não diminui a consistência do contraponto, uma vez que o
+V7 irá gerar movimento ascendente no mesmo trecho – Dm/F D7/F#". The motion is
+the other instrument's to supply; inside the grip it shows up as an inner voice
+walking F to F♯ under a held A.
+
+So the default stays the third, and what follows are preferences, not
+corrections.
+
+##### The octave is a peer of the third, not a fallback
+
+The rule above tries third, then sixth, then octave, and stops at the first that
+yields anything. That ordering overstates the case. Campos Ramos names the
+octave and the third together as "os frequentes intervalos de oitava e de terça"
+(p.127), and over precisely this kind of walking bass says "frequentemente, o V6
+realiza este tipo de situação com os baixos oitavados […] a execução em oitavas
+reforça a melodia do baixo e 'timbra' melhor o V7" (p.124). Fourths, sixths and
+seconds occur too, more rarely.
+
+A third option appears where the exact third fails: the V6 may drop a third
+*below* the other guitar, landing on the fifth of the chord — "em perfeita
+consonância com o estilo", observed in Época de Ouro's recording of *Sofres
+porque queres* (p.161). Our enumeration only ever looked upward.
+
+The third below is also what the `whenThirdRepeats` option offers, and taking
+either meant the interval cascade had to become a set of tagged candidates
+rather than an early return: relations the planner never sees cannot be
+preferences.
+
+**The extrapolation in that option is ours, and is worth naming.** The sources
+give the third below as a remedy for a third that *does not work*, not for one
+that merely repeats. Offering it where the third repeats extends their remedy to
+a situation they do not discuss, in the same way the contiguous-string rule is
+ours rather than the idiom's. The option's own text says so, so nobody reads it
+as a claim about how anyone plays.
+
+##### What `C7/Bb` resolves to, and how long it took to find out
+
+Worth recording, because the answer was nearly guessed at. The other guitar
+rests on the seventh of C7 and the chord heads for F. The third above B♭2 is D♭
+or D, neither in C7. The sixth is G3 and the octave B♭3, and both want the
+thumb on the fourth string, which the contiguous-string rule does not allow —
+so for a while this chord simply came back in `missing` with nothing voiced.
+(`F7/Eb` in our tests passes only because E♭2 sits low enough for its sixth to
+reach C3, which the fifth string can still play.)
+
+The temptation was to reason it out. What settled it instead was Campos Ramos,
+who poses the problem in §5.3.3 (p.131–133) and answers it twenty-eight pages
+later in §5.4.3, p.161:
+
+> "o V6 pode ainda optar em fazer a baixaria **uma terça ABAIXO** do V7,
+> repousando, assim, na quinta do acorde (segunda inversão), em perfeita
+> consonância com o estilo."
+
+and names the instance, p.162, from Época de Ouro's *Sofres porque queres*:
+
+> "o V7 repousa com o baixo na sétima (C/Bb – terceira inversão) e o V6, uma
+> terça abaixo, repousa como baixo na quinta (C7/G – segunda inversão)."
+
+So `C7/Bb` is voiced with G *below* the other guitar's B♭ — not the G a sixth
+above it, which is the same pitch class and the wrong register. The wizard gives
+`31201x`, G2 under a B♭2.
+
+Three caveats belong with it. The author flags his own uncertainty about which
+guitar is which on that recording. His reason for the move is about where the
+whole phrase lands — "para evitar ter de terminar com o baixo uma terça acima da
+m7" — while we encode only the chord it rests on. And "oitavas ou sextas" is
+named in the same breath but never exemplified or given a direction anywhere in
+the literature, so our reading of the sixth as *above* is an interpretation, not
+a citation.
+
+##### The second texture: three notes, thumb on the fourth string
+
+The transcriptions carry no tablature at all — the author says so (p.63): he
+notates the bass alone, because full fingerings "geraria uma quantidade de
+informações que acabaria por dificultar a visualização". So almost nothing about
+grips is directly documented. One thing is, and for a while we had it wrong.
+For the second chromatic path through a cycle of dominants — A/G, D7/F♯, G/F,
+C7/E — the centro's bass is on the *fourth* string and the low string is dropped
+(p.128–129):
+
+> "Neste segundo caso, com o baixo na **quarta corda**, é comum que os chorões
+> suprimam a nota do acorde gerada na corda mi, formando acordes dominantes com
+> apenas **3 notas** […] pois se tratam de tônicas ou quintas do acordes (as
+> notas do trítono - terça e sétima - são realizadas nesta digitação)."
+
+Two of our rules were wrong at once: the thumb may sit on the fourth string, and
+a grip may sound three notes rather than four or five. Both are now allowed, for
+a chord with a seventh only — the justification the sources give is the tritone,
+and a triad has none to keep, so thinning one would be our idea rather than
+theirs.
+
+This is not a correction to the ordinary texture but a second one beside it. The
+four-and-five-voice grips still cover the ordinary case, which is why nothing
+had shown the rules to be wrong; the three-voice family is reached where the
+centro's bass has to sit high, and it does two useful things there. It is what
+the octave relation needs — an octave above the other guitar's F2 is F3, which
+inside the first seven frets lives nowhere but the fourth string. And it fills
+a hole we had not noticed: `Cm7` had no third at all before, because a third
+above C2 is E♭2, below the guitar, and the E♭3 an octave up is only on the
+fourth string. It now voices as `xx131x`.
+
+One thing our model still cannot say. In the source, that chromatic path is the
+*centro's own* line — the six-string walking G, F♯, F, E while the other guitar
+is elsewhere. We always place the centro relative to the chart's bass, which we
+read as the seven-string's, so a passage where the six-string leads is outside
+what a planner here can express. Recorded rather than solved.
+
+One more rule of the idiom we do not yet implement, recorded so it is not
+rediscovered: the triad outranks the exact third. Where the interval would land
+on a note the chord does not contain, the V6 takes the nearest one that it does
+— "o V6 não responde com a terça exata (fá#) e sim com uma quarta (sol),
+respeitando a questão das tríades" (p.160).
+
+##### Diminished chords
+
+The sources approach these from the opposite side. A diminished chord is
+typically what the V6 *arrives at* when the seven-string rests on a dominant's
+seventh: against D/C it plays E♭dim, "como se fosse a 'quarta' inversão de D7
+(D7/Eb), funcionando como uma terça exata de D/C" (p.133). That is the same
+third rule seen from the other end, and it is why a diminished written into a
+chart needs no special case here.
+
+It is also where the exception for a dominant preparing a *major* chord comes
+from: "não existe um correspondente do acorde diminuto capaz de realizar as
+terças exatas" there, since the exact third of C/Bb would give C/D, heard as
+D9sus4 and foreign to the style (p.133). The remedy the sources give is the
+octave or the sixth (p.161) — the fallback we already had, arriving now with a
+page number.
+
+The *minor*-preparation case is one we cannot currently play at all. There the
+exact third does work, and what it produces is the ♭9: against C/Bb heading to
+Fm the V6 takes D♭, "uma espécie de C7/Db" (p.132), which is why a diminished
+chord turns up where the chart wrote a dominant. Knowing that Fm is next is
+free — it is `line[at + 1]` — but D♭ is not a tone of C7, and `centroCandidates`
+considers only `chordTones(chord)`, so no enumeration of ours can reach it. The
+planner would have to be able to hand the candidate generator an added tone.
+Recorded rather than fixed, because it wants the same decision as `C7/Bb` above.
+
+And the ♭5 rule above has independent backing: what may safely be suppressed
+from a dominant tetrad is a root or a fifth, explicitly because "as notas do
+trítono — terça e sétima — são realizadas nesta digitação" (p.129). The tritone
+is the part that has to sound.
+
+#### What this replaced
+
+An earlier attempt gave the six-string top-four-string voicings with the two
+lowest strings muted, on the reasoning that the seven-string owns the bass. No
+source in any language recommends muting those strings, and the one Brazilian
+source that does prescribe that profile — top four strings, high register,
+deferring to the instruments below — is writing about an electric guitar in MPB,
+and says itself that it sounds like a cavaquinho. The six-string's slot is
+*médio-grave*, with a bass note of its own.
 
 ---
 

@@ -3,6 +3,7 @@ import {
   parseSong,
   setVoicing,
   setVoicingForKey,
+  setVoicingsForOccurrences,
   countForKey,
   songLegend,
   unvoicedKeys,
@@ -592,6 +593,78 @@ describe('choosing a voicing', () => {
     const song = parseSong(text);
     const frets = song.occurrences.map((c) => voicingsFor(song, GUITAR).get(c.key) ?? null);
     expect(frets).toEqual([null, CM_OPEN, null, CM_HIGH]);
+  });
+});
+
+/**
+ * What the wizard applies (§2.10). A planner decides per bar; this is where
+ * per-bar shapes become the text's keys, all at once.
+ */
+describe('choosing voicings for many bars at once', () => {
+  const plan = (text, shapes) =>
+    setVoicingsForOccurrences(text, new Map(Object.entries(shapes).map(([k, v]) => [Number(k), v])), g);
+
+  it('gives one chord one entry when every bar of it agrees', () => {
+    const text = plan('A | Cm | A', { 0: A_OPEN, 1: CM_OPEN, 2: A_OPEN });
+    expect([...block(text, GUITAR).keys()].sort()).toEqual(['A', 'Cm']);
+    expect(text).not.toContain('A[2]');
+  });
+
+  it('tells two bars of one chord apart when the plan differs', () => {
+    const text = plan('Cm | A | Cm', { 0: CM_OPEN, 1: A_OPEN, 2: CM_HIGH });
+    const voicings = block(text, GUITAR);
+    expect(shorthandOf(voicings.get('Cm'))).toBe(shorthandOf(CM_OPEN));
+    expect(shorthandOf(voicings.get('Cm[2]'))).toBe(shorthandOf(CM_HIGH));
+    // The marker lands on the bar that got the second shape, not the first.
+    expect(text.split('\n')[0]).toBe('Cm | A | Cm[2]');
+  });
+
+  it('writes no marker where a plan agrees with the song it is replacing', () => {
+    let text = 'A | Cm | A';
+    text = setVoicing(text, at(text, 'Cm'), CM_OPEN, g);
+    const again = plan(text, { 0: A_OPEN, 1: CM_OPEN, 2: A_OPEN });
+    expect(again.split('\n')[0]).toBe('A | Cm | A');
+  });
+
+  it('takes a chord back to one shape, and the marker goes with it', () => {
+    let text = plan('Cm | Cm', { 0: CM_OPEN, 1: CM_HIGH });
+    expect(text).toContain('Cm[2]');
+    text = plan(text, { 0: CM_OPEN, 1: CM_OPEN });
+    expect(text).not.toContain('Cm[2]');
+    expect([...block(text, GUITAR).keys()]).toEqual(['Cm']);
+  });
+
+  it('leaves a bar the plan says nothing about where it was', () => {
+    // An unparseable chord gets no shape, and nothing around it shifts.
+    const text = plan('A | Zq9 | A', { 0: A_OPEN, 2: A_OPEN });
+    expect(text.split('\n')[0]).toBe('A | Zq9 | A');
+    expect([...block(text, GUITAR).keys()]).toEqual(['A']);
+  });
+
+  it('will not merge two slots another instrument tells apart', () => {
+    // The ukulele plays these two Cm bars differently, so collapsing them here
+    // would destroy that arrangement rather than tidy this one.
+    let text = 'Cm | Cm';
+    text = setVoicing(text, at(text, 'Cm', 1), CM_HIGH, g);
+    text = setVoicing(text, at(text, 'Cm', 0), CM_UKE, u);
+    text = setVoicing(text, at(text, 'Cm', 1), [0, 3, 3, 4], u);
+
+    const after = plan(text, { 0: CM_OPEN, 1: CM_OPEN });
+    expect(after).toContain('Cm[2]');
+    expect(block(after, UKE).size).toBe(2);
+  });
+
+  it('applies the whole plan in one pass, whatever the markers do to the text', () => {
+    // Writing `A[2]` where `A` stood moves every later bar along; a fold over
+    // offsets gathered up front would land the rest in the wrong place.
+    const text = plan('A | A | A | A', {
+      0: A_OPEN,
+      1: ['x', 0, 2, 2, 2, 'x'],
+      2: A_OPEN,
+      3: ['x', 5, 7, 7, 6, 5],
+    });
+    expect(text.split('\n')[0]).toBe('A | A[2] | A | A[3]');
+    expect(block(text, GUITAR).size).toBe(3);
   });
 });
 
